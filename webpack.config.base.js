@@ -9,16 +9,18 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 
-const cesiumSource = 'node_modules/cesium/Source';
-const cesiumStaticFiles = 'static/cesiumJS/'
-const distFolderPath = path.resolve(__dirname, 'dist')
+const nodeModulePathConstant = "node_modules/";
+const cesiumSourcePathConstant = 'node_modules/cesium/Source';
+const cesiumStaticFilesPathConstant = 'static/cesiumJS/'
+const distFolderPathConstant = path.resolve(__dirname, 'dist')
+
 
 module.exports = {
   mode: 'development',
   entry: './src/js/main.js',
   output: {
     filename: 'bundle.js',
-    path: distFolderPath,
+    path: distFolderPathConstant,
     clean: true,
     sourcePrefix: '' // Needed to compile multiline strings in Cesium
   },
@@ -48,10 +50,10 @@ module.exports = {
     new CopyWebpackPlugin({ 
       patterns: [
           // Copy Cesium Assets, Widgets, and Workers to a static directory
-          { from: path.resolve(cesiumSource, '../Build/Cesium/Workers'), to: path.join(cesiumStaticFiles, "Workers") },
-          { from: path.join(cesiumSource, 'Assets'), to: path.join(cesiumStaticFiles, "Assets") },
-          { from: path.join(cesiumSource, 'Widgets'), to: path.join(cesiumStaticFiles, "Widgets") },
-          { from: path.join(cesiumSource, 'ThirdParty'), to: path.join(cesiumStaticFiles, "ThirdParty") },
+          { from: path.resolve(cesiumSourcePathConstant, '../Build/Cesium/Workers'), to: path.join(cesiumStaticFilesPathConstant, "Workers") },
+          { from: path.join(cesiumSourcePathConstant, 'Assets'), to: path.join(cesiumStaticFilesPathConstant, "Assets") },
+          { from: path.join(cesiumSourcePathConstant, 'Widgets'), to: path.join(cesiumStaticFilesPathConstant, "Widgets") },
+          { from: path.join(cesiumSourcePathConstant, 'ThirdParty'), to: path.join(cesiumStaticFilesPathConstant, "ThirdParty") },
       ]
     }),
     new webpack.DefinePlugin({
@@ -66,7 +68,7 @@ module.exports = {
     {
       apply: (compiler) => {
         compiler.hooks.done.tap('myFileRemoverPlugin', () => {
-            let filePath = distFolderPath + "/2a0c2998445d1ea07470.png";
+            let filePath = distFolderPathConstant + "/2a0c2998445d1ea07470.png";
             fs.stat(filePath, function (err) {
                 if (err && err.message.includes("no such file or directory")) return // might happen and is fine, no error msg needed
             
@@ -76,6 +78,12 @@ module.exports = {
             });
         });
       }
-    }
+    },
+    // copy dist folders of dependencies
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: nodeModulePathConstant + 'bootstrap/dist', to: 'dependencies/bootstrap/' },
+      ]
+    })
   ]
 };
