@@ -5,26 +5,90 @@ import "../css/main.css"
 
 
 Cesium.Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
+const initialCameraView = {
+  position: {
+    lat: 51.54062,
+    lon: 7.22472,
+    height: 240 // meter
+  },
+  orientation: { // in degree
+    heading: 295,
+    pitch: -30,
+    roll: 0.0,
+  }
+}
 
-let viewer = new Cesium.Viewer('cesiumContainer', {
-    terrainProvider: Cesium.createWorldTerrain()
+var imageryViewModels = [];
+imageryViewModels.push(new Cesium.ProviderViewModel({
+    name: 'Sentinel-2',
+    iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/sentinel-2.png'),
+    tooltip: 'Sentinel-2 cloudless',
+    creationFunction: function () {
+        return new Cesium.IonImageryProvider({ assetId: 3954 });
+    }
+}));
+
+var viewer = new Cesium.Viewer('cesiumContainer', {
+    terrainProvider: Cesium.createWorldTerrain(),
+    imageryProviderViewModels: imageryViewModels,
+    baseLayerPicker: false, // probably enable later down the line
+    geocoder: false
+
 });
 
-let imageryLayers = viewer.baseLayerPicker.viewModel.imageryProviderViewModels;
-let osmImageryLayer = imageryLayers.filter( layer => {
-    return layer.name === "Open­Street­Map"
-})
-osmImageryLayer = osmImageryLayer[0];
-viewer.baseLayerPicker.viewModel.selectedImagery = osmImageryLayer;
+var camera = viewer.camera;
+var coordOverlayLat = document.getElementById("coordOverlayLat")
+var coordOverlayLon = document.getElementById("coordOverlayLon")
+var coordOverlayHeight = document.getElementById("coordOverlayHeight")
+var coordOverlayHeading = document.getElementById("coordOverlayHeading")
+var coordOverlayPitch = document.getElementById("coordOverlayPitch")
+var coordOverlayRoll = document.getElementById("coordOverlayRoll")
+camera.moveEnd.addEventListener(function() { 
+  // the camera stopped moving
+  // transform coords to radiants, then to degree (lon lat)
+  var cartographic = Cesium.Cartographic.fromCartesian(camera.position)
+  coordOverlayLat.innerHTML = round(Cesium.Math.toDegrees(cartographic.latitude), 5)
+  coordOverlayLon.innerHTML =  round(Cesium.Math.toDegrees(cartographic.longitude), 5);
+  coordOverlayHeight.innerHTML = Math.round(cartographic.height); // +- 1 meter should be accurate enough
+  // orientation
+  coordOverlayHeading.innerHTML = round(Cesium.Math.toDegrees(camera.heading), 5);
+  coordOverlayPitch.innerHTML = round(Cesium.Math.toDegrees(camera.pitch), 5);
+  var roll = round(Cesium.Math.toDegrees(camera.roll), 5);
+  coordOverlayRoll.innerHTML = roll > 359 ? 0 : roll; // display as 0 if it is close to 360 due to rounding errors 
+});
+// set initial camera view defined above
+camera.setView({
+  destination : Cesium.Cartesian3.fromDegrees(
+    initialCameraView.position.lon,
+    initialCameraView.position.lat,
+    initialCameraView.position.height
+  ),
+  orientation : {
+    heading: Cesium.Math.toRadians(initialCameraView.orientation.heading),
+    pitch: Cesium.Math.toRadians(initialCameraView.orientation.pitch),
+    roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
+  }
+});
+
+
+// switch base layer to OSM
+// let imageryLayers = viewer.baseLayerPicker.viewModel.imageryProviderViewModels;
+// let osmImageryLayer = imageryLayers.filter( layer => {
+//     return layer.name === "Open­Street­Map"
+// })
+// osmImageryLayer = osmImageryLayer[0];
+// //viewer.baseLayerPicker.viewModel.selectedImagery = osmImageryLayer;
 
 
 // Add Cesium OSM Buildings, a global 3D buildings layer.
 const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());   
-// Fly the camera to San Francisco at the given longitude, latitude, and height.
-viewer.camera.setView({
-  destination : Cesium.Cartesian3.fromDegrees(7.2180656, 51.5431457, 1200), //lon, lat, height in meter
-  orientation : {
-    heading : Cesium.Math.toRadians(-20),
-    pitch : Cesium.Math.toRadians(-60.0),
-  }
-});
+
+
+
+// A simple rounding method for utility.
+// Not accurate in some edge cases
+// e.g. round(1.005, 2) should be 1.01 but result is 1
+const round = (num, places) => {
+  var x = Math.pow(10, places)
+  return Math.round(num * x) / x;
+}
