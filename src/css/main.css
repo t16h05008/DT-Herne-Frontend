@@ -3,6 +3,8 @@
     --footer-height: 10px;
     --sidebar-width: 100px; /* width of the sidebar menu (always visible) */
     --menu-width: 400px; /* width of the menu ( opens on btn click) */
+    --sidebar-bg-color: rgb(50, 50, 50);
+    --header-spacer-height: 5px;
 }
 
 body, html {
@@ -10,6 +12,7 @@ body, html {
     padding: 0;
     overflow: hidden;
 }
+
 
 #cesiumContainer {
     margin: 0;
@@ -37,6 +40,66 @@ body, html {
 
 #headerDiv {
     height: var(--header-height);
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    text-align: center;
+}
+
+
+#headerDiv a {
+    color: white;
+}
+
+#header-img-copyright {
+    position: absolute;
+    bottom: 4px;
+    right: 8px;
+    color: white;
+    font-size: 9pt;
+    z-index: 5;
+}
+
+#header-img-title {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 40pt;
+    z-index: 3;
+    font-family:monospace;
+}
+
+#header-bg {
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+}
+
+#header-bg-network {
+    position: absolute;
+    left: 50%;
+    top: -15%;
+    width: 90%;
+    transform: translateX(-50%);
+    z-index: 2;
+}
+
+#header-title-bg {
+    position: absolute;
+    left: 50%;
+    top: -10%;
+    height: 150%;
+    transform: translateX(-50%);
+    z-index: 3;
+}
+
+
+#header-spacer {
+    height: var(--header-spacer-height);
+    background: var(--sidebar-bg-color);
 }
 
 #footerDiv {
@@ -46,7 +109,7 @@ body, html {
 #sidebar {
     width: var(--sidebar-width);
     z-index: 1100; /* menu has 1045 */
-    background-color: rgb(50, 50, 50);
+    background-color: var(--sidebar-bg-color);
     display: flex;
     flex-direction:column;
     justify-content: flex-start;
@@ -61,8 +124,6 @@ body, html {
     margin-top: 5px;
 }
 
-
-
 .sidebarSpacer {
     margin-top: 5px;
     margin-bottom: 5px;
@@ -71,7 +132,7 @@ body, html {
 }
 
 #menu {
-    top: var(--header-height);
+    top: var(--header-height) + var(--header-spacer-height);
     left: 12px + var(--sidebar-width); /* 12px is bootstrap gutter */
     bottom: var(--footer-height);
     width: var(--menu-width);

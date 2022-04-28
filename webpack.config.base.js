@@ -54,6 +54,12 @@ module.exports = {
           { from: path.join(cesiumSourcePathConstant, 'Assets'), to: path.join(cesiumStaticFilesPathConstant, "Assets") },
           { from: path.join(cesiumSourcePathConstant, 'Widgets'), to: path.join(cesiumStaticFilesPathConstant, "Widgets") },
           { from: path.join(cesiumSourcePathConstant, 'ThirdParty'), to: path.join(cesiumStaticFilesPathConstant, "ThirdParty") },
+          // Copy dist folders of dependencies
+          // TODO specify files to copy to reduce size of dist folder
+          { from: nodeModulePathConstant + 'bootstrap/dist', to: 'dependencies/bootstrap/' },
+          { from: nodeModulePathConstant + '@fortawesome/fontawesome-free', to: 'dependencies/fontawesome'},
+          // Copy images
+          { from: 'src/images', to: 'static/images/'}
       ]
     }),
     new webpack.DefinePlugin({
@@ -79,13 +85,5 @@ module.exports = {
         });
       }
     },
-    // copy dist folders of dependencies
-    // TODO specify files to copy to reduce size of dist folder
-    new CopyWebpackPlugin({
-      patterns: [
-        { from: nodeModulePathConstant + 'bootstrap/dist', to: 'dependencies/bootstrap/' },
-        { from: nodeModulePathConstant + '@fortawesome/fontawesome-free', to: 'dependencies/fontawesome'}
-      ]
-    })
   ]
 };
