@@ -1,16 +1,30 @@
-body, html, #cesiumContainer {
-    width: 100%;
-    height: 100%;
+:root {
+    --header-height: 120px;
+    --footer-height: 10px;
+    --sidebar-width: 100px; /* width of the sidebar menu (always visible) */
+    --menu-width: 400px; /* width of the menu ( opens on btn click) */
+}
+
+body, html {
     margin: 0;
     padding: 0;
     overflow: hidden;
 }
 
+#cesiumContainer {
+    margin: 0;
+    padding: 0;
+    height: calc(100vh - var(--header-height) - var(--footer-height));
+    overflow: hidden;
+    transition: margin .3s ease-in-out;
+}
+
 #coordOverlay {
     z-index: 2;
-    position: absolute;
-    bottom: 35px;
-    right: 10px;
+    position:absolute;
+    bottom:40px;
+    right:15px;
+    width:min-content;
     background-color: rgba(255, 255, 255, 0.3)
 }
 
@@ -19,4 +33,46 @@ body, html, #cesiumContainer {
 }
 #coordOverlay td:last-child {
     text-align: right;
+}
+
+#headerDiv {
+    height: var(--header-height);
+}
+
+#footerDiv {
+    height: var(--footer-height)
+}
+
+#sidebar {
+    width: var(--sidebar-width);
+    z-index: 1100; /* menu has 1045 */
+    background-color: rgb(50, 50, 50);
+    display: flex;
+    flex-direction:column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.sidebarBtn {
+    color: white;
+}
+
+.sidebarBtn:first-child {
+    margin-top: 5px;
+}
+
+
+
+.sidebarSpacer {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    width: calc(var(--sidebar-width) - 20px);
+    color: white;
+}
+
+#menu {
+    top: var(--header-height);
+    left: 12px + var(--sidebar-width); /* 12px is bootstrap gutter */
+    bottom: var(--footer-height);
+    width: var(--menu-width);
 }
