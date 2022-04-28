@@ -31,59 +31,96 @@ imageryViewModels.push(new Cesium.ProviderViewModel({
     }
 }));
 
-var viewer = new Cesium.Viewer('cesiumContainer', {
-    terrainProvider: Cesium.createWorldTerrain(),
-    imageryProviderViewModels: imageryViewModels,
-    baseLayerPicker: false, // probably enable later down the line
-    geocoder: false
 
+document.addEventListener("DOMContentLoaded", function(event) {
+  initializeApplication();
 });
 
-var camera = viewer.camera;
-var coordOverlayLat = document.getElementById("coordOverlayLat")
-var coordOverlayLon = document.getElementById("coordOverlayLon")
-var coordOverlayHeight = document.getElementById("coordOverlayHeight")
-var coordOverlayHeading = document.getElementById("coordOverlayHeading")
-var coordOverlayPitch = document.getElementById("coordOverlayPitch")
-var coordOverlayRoll = document.getElementById("coordOverlayRoll")
-camera.moveEnd.addEventListener(function() { 
-  // the camera stopped moving
-  // transform coords to radiants, then to degree (lon lat)
-  var cartographic = Cesium.Cartographic.fromCartesian(camera.position)
-  coordOverlayLat.innerHTML = round(Cesium.Math.toDegrees(cartographic.latitude), 5)
-  coordOverlayLon.innerHTML =  round(Cesium.Math.toDegrees(cartographic.longitude), 5);
-  coordOverlayHeight.innerHTML = Math.round(cartographic.height); // +- 1 meter should be accurate enough
-  // orientation
-  coordOverlayHeading.innerHTML = round(Cesium.Math.toDegrees(camera.heading), 5);
-  coordOverlayPitch.innerHTML = round(Cesium.Math.toDegrees(camera.pitch), 5);
-  var roll = round(Cesium.Math.toDegrees(camera.roll), 5);
-  coordOverlayRoll.innerHTML = roll > 359 ? 0 : roll; // display as 0 if it is close to 360 due to rounding errors 
-});
-// set initial camera view defined above
-camera.setView({
-  destination : Cesium.Cartesian3.fromDegrees(
-    initialCameraView.position.lon,
-    initialCameraView.position.lat,
-    initialCameraView.position.height
-  ),
-  orientation : {
-    heading: Cesium.Math.toRadians(initialCameraView.orientation.heading),
-    pitch: Cesium.Math.toRadians(initialCameraView.orientation.pitch),
-    roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
-  }
-});
+function initializeApplication() {
+    var sidebarBtns = document.querySelectorAll(".sidebarBtn")
+    // initialize cesium viewer
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        terrainProvider: Cesium.createWorldTerrain(),
+        imageryProviderViewModels: imageryViewModels,
+        baseLayerPicker: false, // probably enable later down the line
+        geocoder: false
+    });
+    // add osm buildings to scene
+    const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());   
 
-var menu = document.getElementById('menu')
-menu.addEventListener('show.bs.offcanvas', function () {
-  var menuWidth = getComputedStyle(document.documentElement,null).getPropertyValue('--menu-width');
-  // no need to add the sidebar width since it is not in this div
-  document.getElementById("cesiumContainer").style.marginLeft = menuWidth;
-})
+     // initialize camera view defined above
+     var camera = viewer.camera;
+     camera.setView({
+        destination : Cesium.Cartesian3.fromDegrees(
+            initialCameraView.position.lon,
+            initialCameraView.position.lat,
+            initialCameraView.position.height
+        ),
+        orientation : {
+            heading: Cesium.Math.toRadians(initialCameraView.orientation.heading),
+            pitch: Cesium.Math.toRadians(initialCameraView.orientation.pitch),
+            roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
+        }
+    });
 
-menu.addEventListener('hide.bs.offcanvas', function () {
-  document.getElementById("cesiumContainer").style.marginLeft = "0";
-});
+    // initialize camera position overlay
+    var coordOverlayLat = document.getElementById("coordOverlayLat")
+    var coordOverlayLon = document.getElementById("coordOverlayLon")
+    var coordOverlayHeight = document.getElementById("coordOverlayHeight")
+    var coordOverlayHeading = document.getElementById("coordOverlayHeading")
+    var coordOverlayPitch = document.getElementById("coordOverlayPitch")
+    var coordOverlayRoll = document.getElementById("coordOverlayRoll")
+    camera.moveEnd.addEventListener(function() { 
+        // the camera stopped moving
+        // transform coords to radiants, then to degree (lon lat)
+        var cartographic = Cesium.Cartographic.fromCartesian(camera.position)
+        coordOverlayLat.innerHTML = round(Cesium.Math.toDegrees(cartographic.latitude), 5)
+        coordOverlayLon.innerHTML =  round(Cesium.Math.toDegrees(cartographic.longitude), 5);
+        coordOverlayHeight.innerHTML = Math.round(cartographic.height); // +- 1 meter should be accurate enough
+        // orientation
+        coordOverlayHeading.innerHTML = round(Cesium.Math.toDegrees(camera.heading), 5);
+        coordOverlayPitch.innerHTML = round(Cesium.Math.toDegrees(camera.pitch), 5);
+        var roll = round(Cesium.Math.toDegrees(camera.roll), 5);
+        coordOverlayRoll.innerHTML = roll > 359 ? 0 : roll; // display as 0 if it is close to 360 due to rounding errors 
+    });
 
+    for(var btn of sidebarBtns) {
+
+        var menuId = btn.dataset.bsTarget
+        var menu = document.querySelector(menuId)
+        // listeners for toggling the menu
+        menu.addEventListener('show.bs.offcanvas', function () {
+            var menuWidth = getComputedStyle(document.documentElement,null).getPropertyValue('--menu-width');
+            // move the scene to the right when menu opens
+            // no need to add the sidebar width since it is not in this div
+            document.getElementById("cesiumContainer").style.marginLeft = menuWidth;
+        })
+        
+        menu.addEventListener('hide.bs.offcanvas', function () {
+            // on menu close move scene back to the left edge
+            document.getElementById("cesiumContainer").style.marginLeft = "0";
+        });
+
+        btn.addEventListener('click', function(event) {
+            // get the menu of the clicked button
+            let clickedBtn = event.target;
+            var clickedBtnMenuId = clickedBtn.dataset.bsTarget
+            var clickedBtnMenu = document.querySelector(clickedBtnMenuId)
+
+            // iterate buttons and remove highlight color
+            for(var btn of sidebarBtns) {
+                btn.style.setProperty("color", "white", "important")
+            }
+
+            // for the clicked button: check if menu is visible and set color based on that
+            if(clickedBtnMenu.classList.contains("show")) {
+                var highlightColor = getComputedStyle(document.documentElement,null).getPropertyValue('--sidebar-btn-highlight-color');
+                clickedBtn.style.setProperty("color", highlightColor, "important")
+            }
+        })
+    }
+
+}
 
 // switch base layer to OSM
 // let imageryLayers = viewer.baseLayerPicker.viewModel.imageryProviderViewModels;
@@ -92,12 +129,6 @@ menu.addEventListener('hide.bs.offcanvas', function () {
 // })
 // osmImageryLayer = osmImageryLayer[0];
 // //viewer.baseLayerPicker.viewModel.selectedImagery = osmImageryLayer;
-
-
-// Add Cesium OSM Buildings, a global 3D buildings layer.
-const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());   
-
-
 
 // A simple rounding method for utility.
 // Not accurate in some edge cases

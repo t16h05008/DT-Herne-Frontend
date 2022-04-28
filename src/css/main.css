@@ -1,10 +1,16 @@
 :root {
     --header-height: 120px;
-    --footer-height: 10px;
+    --footer-height: 0px;
     --sidebar-width: 100px; /* width of the sidebar menu (always visible) */
     --menu-width: 400px; /* width of the menu ( opens on btn click) */
-    --sidebar-bg-color: rgb(50, 50, 50);
+    --sidebar-bg-color: #323232;
     --header-spacer-height: 5px;
+
+    --herne-logo-blue: #00A4D7;
+    --herne-logo-green: #007C33;
+    --herne-logo-yellow: #FBBC23;
+
+    --sidebar-btn-highlight-color: var(--herne-logo-blue)
 }
 
 body, html {
@@ -118,6 +124,17 @@ body, html {
 
 .sidebarBtn {
     color: white;
+    outline: none;
+    box-shadow: none;
+    box-shadow: none !important
+}
+
+.sidebarBtn:hover {
+    color: var(--herne-logo-blue);
+}
+
+.sidebarBtn * {
+    pointer-events: none;
 }
 
 .sidebarBtn:first-child {
@@ -131,9 +148,9 @@ body, html {
     color: white;
 }
 
-#menu {
-    top: var(--header-height) + var(--header-spacer-height);
-    left: 12px + var(--sidebar-width); /* 12px is bootstrap gutter */
+.sidebar-menu {
+    top: calc( var(--header-height) + var(--header-spacer-height) );
+    left: var(--sidebar-width);
     bottom: var(--footer-height);
     width: var(--menu-width);
 }
