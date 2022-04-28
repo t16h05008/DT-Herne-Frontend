@@ -80,9 +80,11 @@ module.exports = {
       }
     },
     // copy dist folders of dependencies
+    // TODO specify files to copy to reduce size of dist folder
     new CopyWebpackPlugin({
       patterns: [
         { from: nodeModulePathConstant + 'bootstrap/dist', to: 'dependencies/bootstrap/' },
+        { from: nodeModulePathConstant + '@fortawesome/fontawesome-free', to: 'dependencies/fontawesome'}
       ]
     })
   ]

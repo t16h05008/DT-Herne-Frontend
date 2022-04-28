@@ -3,6 +3,9 @@ import * as Cesium from 'cesium';
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import "../css/main.css"
 
+// dependencies could be added like this, but they are added in the index file
+// import "bootstrap/dist/css/bootstrap.css"
+// import "bootstrap/dist/js/bootstrap.bundle"
 
 Cesium.Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
 const initialCameraView = {
@@ -68,6 +71,17 @@ camera.setView({
     pitch: Cesium.Math.toRadians(initialCameraView.orientation.pitch),
     roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
   }
+});
+
+var menu = document.getElementById('menu')
+menu.addEventListener('show.bs.offcanvas', function () {
+  var menuWidth = getComputedStyle(document.documentElement,null).getPropertyValue('--menu-width');
+  // no need to add the sidebar width since it is not in this div
+  document.getElementById("cesiumContainer").style.marginLeft = menuWidth;
+})
+
+menu.addEventListener('hide.bs.offcanvas', function () {
+  document.getElementById("cesiumContainer").style.marginLeft = "0";
 });
 
 

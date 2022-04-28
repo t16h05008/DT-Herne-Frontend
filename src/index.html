@@ -5,60 +5,82 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Untergrundviewer Bahnhofstraße Herne</title>
+    <link rel="stylesheet" href="dependencies/bootstrap/css/bootstrap.min.css">
+    <script defer src="dependencies/bootstrap/js/bootstrap.min.js"></script>
+    <script defer src="dependencies/fontawesome/js/all.js"></script>
 </head>
 <body>
-    <div id="cesiumContainer"></div>
-    <div id="coordOverlay">
-        <table>
-            <tr>
-                <td>
-                    Lat: 
-                </td>
-                <td>
-                    <span id="coordOverlayLat"></span>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Lon:
-                </td>
-                <td>
-                    <span id="coordOverlayLon"></span>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Höhe:
-                </td>
-                <td>
-                    <span id="coordOverlayHeight"></span>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Heading:
-                </td>
-                <td>
-                    <span id="coordOverlayHeading"></span>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Pitch:
-                </td>
-                <td>
-                    <span id="coordOverlayPitch"></span>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Roll:
-                </td>
-                <td>
-                    <span id="coordOverlayRoll"></span>
-                </td>
-            </tr>
-        </table>
+    
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col" id="headerDiv">
+                <!-- <img class="img-fluid mx-auto d-block" src=""> -->
+                
+            </div>
+        </div>
+        <div class="row">
+            <div id="sidebar" class="gx-0">
+                <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas"
+                    data-bs-target="#menu" aria-controls="menu">
+                    <i class="fa-solid fa-lg fa-layer-group"></i><br />Daten
+                </button>
+                <hr class="sidebarSpacer" />
+                <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas"
+                    data-bs-target="#menu" aria-controls="menu">
+                    <i class="fa-solid fa-lg fa-tools"></i><br />Werkzeuge
+                </button>
+                <hr class="sidebarSpacer" />
+            </div>
+
+            <div class="col gx-0">
+                 <!-- menu that toggles on sidebar btn click -->
+                <div id="menu" class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuTitle">
+                    <div class="offcanvas-header">
+                      <h5 class="offcanvas-title" id="menuTitle">Title</h5>
+                      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="offcanvas-body">
+                      <p>Text</p>
+                    </div>
+                </div>
+
+                <div id="cesiumContainer"></div>
+                <div id="coordOverlay">
+                    <table>
+                        <tr>
+                            <td>Lat:</td>
+                            <td><span id="coordOverlayLat"></span></td>
+                        </tr>
+                        <tr>
+                            <td>Lon:</td>
+                            <td><span id="coordOverlayLon"></span></td>
+                        </tr>
+                        <tr>
+                            <td>Höhe:</td>
+                            <td><span id="coordOverlayHeight"></span></td>
+                        </tr>
+                        <tr>
+                            <td>Heading:
+                            </td>
+                            <td><span id="coordOverlayHeading"></span></td>
+                        </tr>
+                        <tr>
+                            <td>Pitch:</td>
+                            <td><span id="coordOverlayPitch"></span></td>
+                        </tr>
+                        <tr>
+                            <td>Roll:</td>
+                            <td><span id="coordOverlayRoll"></span></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col" id="footerDiv">
+                <!-- nothing for now, just a spacer -->
+            </div>
+        </div>
     </div>
 </body>
 </html>
