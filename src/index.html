@@ -32,12 +32,12 @@
         <div class="row">
             <div id="sidebar" class="gx-0">
                 <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas"
-                    data-bs-target="#menu" aria-controls="menu">
+                    data-bs-target="#menu-data" aria-controls="menu-data">
                     <i class="fa-solid fa-lg fa-layer-group"></i><br />Daten
                 </button>
                 <hr class="sidebarSpacer" />
                 <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas"
-                    data-bs-target="#menu" aria-controls="menu">
+                    data-bs-target="#menu-tools" aria-controls="menu-tools">
                     <i class="fa-solid fa-lg fa-tools"></i><br />Werkzeuge
                 </button>
                 <hr class="sidebarSpacer" />
@@ -45,9 +45,19 @@
 
             <div class="col gx-0">
                  <!-- menu that toggles on sidebar btn click -->
-                <div id="menu" class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuTitle">
+                <div id="menu-data" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuDataTitle">
                     <div class="offcanvas-header">
-                      <h5 class="offcanvas-title" id="menuTitle">Title</h5>
+                      <h5 class="offcanvas-title" id="menuDataTitle">Datenkatalog</h5>
+                      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="offcanvas-body">
+                      <p>Text</p>
+                    </div>
+                </div>
+
+                <div id="menu-tools" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuToolsTitle">
+                    <div class="offcanvas-header">
+                      <h5 class="offcanvas-title" id="menuToolsTitle">Werkzeuge</h5>
                       <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
                     </div>
                     <div class="offcanvas-body">
