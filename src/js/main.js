@@ -20,46 +20,65 @@ const initialCameraView = {
     roll: 0.0,
   }
 }
-
-
+// declare global variables so they are available in every function
+var sidebarBtns;
+var baseLayersImageryContainer;
+var baseLayersTerrainContainer;
+var viewer, camera;
+var bLayerPickerViewModel
+var imageryViewModels
+var terrainViewModels;
 
 document.addEventListener("DOMContentLoaded", function(event) {
     initializeApplication();
 });
 
 function initializeApplication() {
-    var sidebarBtns = document.querySelectorAll(".sidebarBtn")
-    var baseLayersImageryContainer = document.querySelector("#base-layers-imagery .accordion-body")
-    var baseLayersTerrainContainer = document.querySelector("#base-layers-terrain .accordion-body")
-
-    // select Sentinel-2 layer on startup for reduced quota usage during development
-    var imageryViewModels = Cesium.createDefaultImageryProviderViewModels();
-    var layerName = "Sentinel-2"
-    var filtered = imageryViewModels.filter( viewModel => {
+    sidebarBtns = document.querySelectorAll(".sidebarBtn")
+    baseLayersImageryContainer = document.querySelector("#base-layers-imagery .accordion-body")
+    baseLayersTerrainContainer = document.querySelector("#base-layers-terrain .accordion-body")
+    
+    // select Open­Street­Map layer on startup for reduced quota usage during development
+    var defaultImageryViewModels = Cesium.createDefaultImageryProviderViewModels();
+    var defaultTerrainViewModels = Cesium.createDefaultTerrainProviderViewModels();
+    var layerName = "Open­Street­Map"
+    var filtered = defaultImageryViewModels.filter( viewModel => {
         return viewModel.name === layerName;
     });
-    var sentinel2Imagery = filtered.length === 1 ? filtered[0] : undefined;
-    if(sentinel2Imagery === undefined) throw new Error("Layer '" + layerName + "' could not be found.");
-    
+    var imageryToSelect = filtered.length === 1 ? filtered[0] : undefined;
+    if(imageryToSelect === undefined) throw new Error("Layer '" + layerName + "' could not be found.");
+
+    // layerName = "WGS84 Ellipsoid"
+    // filtered = defaultTerrainViewModels.filter( viewModel => {
+    //     console.log(viewModel);
+    //     return viewModel.name === layerName;
+    // });
+    // var terrainToSelect = filtered.length === 1 ? filtered[0] : undefined;
+    // if(terrainToSelect === undefined) throw new Error("Layer '" + layerName + "' could not be found.");
+
     // initialize cesium viewer
-    var viewer = new Cesium.Viewer('cesiumContainer', {
+    viewer = new Cesium.Viewer('cesiumContainer', {
         terrainProvider: Cesium.createWorldTerrain(),
-        imageryProviderViewModels: imageryViewModels, // has to be provided for some reason, even though the layers are the same
+        // has to be provided for some reason, even though the layers are the same
+        imageryProviderViewModels: defaultImageryViewModels, 
+        terrainProviderViewModels: defaultTerrainViewModels,
         baseLayerPicker: true,
-        selectedImageryProviderViewModel: sentinel2Imagery,
+        selectedImageryProviderViewModel: imageryToSelect,
+        // selectedTerrainProviderViewModel: terrainToSelect,
         geocoder: false,
         fullscreenButton: false
     });
 
-    var bLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
-    var imageryViewModels = bLayerPickerViewModel.imageryProviderViewModels;
-    var terrainViewModels = bLayerPickerViewModel.terrainProviderViewModels;
-
+    bLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
+    console.log(bLayerPickerViewModel);
+    imageryViewModels = bLayerPickerViewModel.imageryProviderViewModels;
+    terrainViewModels = bLayerPickerViewModel.terrainProviderViewModels;
+    console.log(imageryViewModels);
     // add osm buildings to scene
-    const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
+    // const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
 
      // initialize camera view defined above
-     var camera = viewer.camera;
+     camera = viewer.camera;
      camera.setView({
         destination : Cesium.Cartesian3.fromDegrees(
             initialCameraView.position.lon,
@@ -140,13 +159,26 @@ function initializeApplication() {
         });
     }
 
-    populateBaseLayers('imagery', imageryViewModels, baseLayersImageryContainer, bLayerPickerViewModel)
-    populateBaseLayers('terrain', terrainViewModels, baseLayersTerrainContainer, bLayerPickerViewModel)
+    populateBaseLayers('imagery')
+    populateBaseLayers('terrain')
 }
 
-function populateBaseLayers(type, layers, layerContainer, layerPickerViewModel) {
+function populateBaseLayers(type) {
+
+    var layers, layerContainerDom;
+
     if(type !== "imagery" && type !== "terrain")
         throw new Error("Parameter 'type' was neither 'imagery' nor 'terrain'");
+    
+    if(type === "imagery") {
+        layers = imageryViewModels;
+        layerContainerDom = baseLayersImageryContainer;
+    }
+
+    if(type === "terrain") {
+        layers = terrainViewModels;
+        layerContainerDom = baseLayersTerrainContainer;
+    }
 
     for(const [idx, layer] of layers.entries()) {
         var container = document.createElement("div");
@@ -157,10 +189,11 @@ function populateBaseLayers(type, layers, layerContainer, layerPickerViewModel) 
         radioBtn.type = "radio";
         radioBtn.name = type === "imagery" ? "radioImagery" : "radioTerrain";
         radioBtn.value = "";
-        if(type === "imagery" && layerPickerViewModel.selectedImagery === layer) {
+        if(bLayerPickerViewModel.selectedImagery === layer) {
             radioBtn.checked = true;
         }
-        if(type === "terrain" && layerPickerViewModel.selectedTerrain === layer) {
+        console.log(bLayerPickerViewModel.selectedTerrain);
+        if(bLayerPickerViewModel.selectedTerrain === layer) {
             radioBtn.checked = true;
         }
 
@@ -175,16 +208,14 @@ function populateBaseLayers(type, layers, layerContainer, layerPickerViewModel) 
         span.innerHTML = layer.name;
         container.appendChild(span);
 
-        if(type === "imagery") layerContainer.appendChild(container);
-        if(type === "terrain") layerContainer.appendChild(container);
+        layerContainerDom.appendChild(container);
 
         // if not last layer
         if(idx < layers.length-1) {
             // add a spacer below
             var spacer = document.createElement("hr");
             spacer.classList.add("layerSpacer");
-            if(type === "imagery") layerContainer.appendChild(spacer);
-            if(type === "terrain") layerContainer.appendChild(spacer);
+            layerContainerDom.appendChild(spacer);
         }
     }
 }
