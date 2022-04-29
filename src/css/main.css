@@ -248,7 +248,8 @@ body, html {
     height: 1.25em;
 }
 
-.menu-base-layer-entry img {
+.menu-base-layer-entry img,
+.menu-base-layer-entry canvas {
     margin-right: 10px;
 }
 

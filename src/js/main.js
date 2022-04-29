@@ -64,16 +64,18 @@ function initializeApplication() {
         terrainProviderViewModels: defaultTerrainViewModels,
         baseLayerPicker: true,
         selectedImageryProviderViewModel: imageryToSelect,
-        // selectedTerrainProviderViewModel: terrainToSelect,
+        selectedTerrainProviderViewModel: undefined,
         geocoder: false,
         fullscreenButton: false
     });
+    
 
     bLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
     imageryViewModels = bLayerPickerViewModel.imageryProviderViewModels;
     terrainViewModels = bLayerPickerViewModel.terrainProviderViewModels;
+    //viewer.baseLayerPicker.destroy(); // No longer needed, we manage base layers in the sidebar based on the stored references 
     // add osm buildings to scene
-    // const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
+    const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
 
      // initialize camera view defined above
      camera = viewer.camera;
@@ -178,11 +180,10 @@ function populateBaseLayers(type) {
         layerContainerDom = baseLayersTerrainContainer;
     }
 
-    for(const [idx, layer] of layers.entries()) {
+    for(const layer of layers) {
         var layerDiv = document.createElement("div");
         layerDiv.classList.add("menu-base-layer-entry");
         
-
         var radioBtn = document.createElement("input");
         radioBtn.classList.add("form-check-input")
         radioBtn.type = "radio";
@@ -221,14 +222,51 @@ function populateBaseLayers(type) {
 
         layerContainerDom.appendChild(layerDiv);
 
-        // if not last layer
-        if(idx < layers.length-1) {
-            // add a spacer below
-            var spacer = document.createElement("hr");
-            spacer.classList.add("layerSpacer");
-            layerContainerDom.appendChild(spacer);
-        }
+        // add a spacer below
+        var spacer = document.createElement("hr");
+        spacer.classList.add("layerSpacer");
+        layerContainerDom.appendChild(spacer);
     }
+
+    // TODO only for imagery for now. Terrain leads to an error.
+    if(type === "imagery") {
+        // add option to remove layer as last entry
+        var layerDiv = document.createElement("div");
+        layerDiv.classList.add("menu-base-layer-entry");
+            
+        var radioBtn = document.createElement("input");
+        radioBtn.classList.add("form-check-input")
+        radioBtn.type = "radio";
+        radioBtn.name = "radioImagery";
+        radioBtn.value = "";
+            
+        radioBtn.addEventListener("click", function() {
+            changeBaseLayer(type, undefined);
+        });
+        
+        layerDiv.appendChild(radioBtn)
+        
+        var canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        canvas.style.display = "block";
+        canvas.style.borderRadius = "6px";
+        var ctx = canvas.getContext("2d");
+        ctx.strokeStyle = 'red';
+        ctx.moveTo(0,0);
+        ctx.lineTo(64,64);
+        ctx.moveTo(64,0);
+        ctx.lineTo(0,64);
+        ctx.stroke();
+        layerDiv.appendChild(canvas);
+        
+        var span = document.createElement("span");
+        span.innerHTML = "Kein Layer";
+        layerDiv.appendChild(span);
+        
+        layerContainerDom.appendChild(layerDiv);
+    }
+    
 }
 
 
