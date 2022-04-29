@@ -3,7 +3,7 @@
     --footer-height: 0px;
     --sidebar-width: 100px; /* width of the sidebar menu (always visible) */
     --menu-width: 400px; /* width of the menu ( opens on btn click) */
-    --sidebar-bg-color: #0A0A0A;
+    --sidebar-bg-color: #111111;
     --header-spacer-height: 5px;
 
     --herne-logo-blue: #00A4D7;
@@ -28,7 +28,7 @@ body, html {
 #cesiumContainer {
     margin: 0;
     padding: 0;
-    height: calc(100vh - var(--header-height) - var(--footer-height));
+    height: calc(100vh - var(--header-height) - var(--header-spacer-height) - var(--footer-height));
     overflow: hidden;
     transition: margin .3s ease-in-out;
 }
