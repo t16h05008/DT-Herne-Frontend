@@ -43,6 +43,7 @@ function initializeApplication() {
     var defaultTerrainViewModels = Cesium.createDefaultTerrainProviderViewModels();
     var layerName = "Open­Street­Map"
     var filtered = defaultImageryViewModels.filter( viewModel => {
+        console.log(viewModel);
         return viewModel.name === layerName;
     });
     var imageryToSelect = filtered.length === 1 ? filtered[0] : undefined;
@@ -185,14 +186,18 @@ function populateBaseLayers(type) {
         var radioBtn = document.createElement("input");
         radioBtn.classList.add("form-check-input")
         radioBtn.type = "radio";
-        radioBtn.name = type === "imagery" ? "radioImagery" : "radioTerrain";
-        radioBtn.value = "";
+        radioBtn.name = (type === "imagery") ? "radioImagery" : "radioTerrain";
+        radioBtn.value = layer.name;
         if(bLayerPickerViewModel.selectedImagery === layer) {
             radioBtn.checked = true;
         }
         if(bLayerPickerViewModel.selectedTerrain === layer) {
             radioBtn.checked = true;
         }
+
+        radioBtn.addEventListener("click", function() {
+            changeBaseLayer(type, layer);
+        });
 
         layerDiv.appendChild(radioBtn)
 
@@ -224,6 +229,21 @@ function populateBaseLayers(type) {
             layerContainerDom.appendChild(spacer);
         }
     }
+}
+
+
+/**
+ * changes base imagery or terrain
+ */
+function changeBaseLayer(type, layer) {
+    try {
+        if(type === "imagery") bLayerPickerViewModel.selectedImagery = layer;
+        if(type === "terrain") bLayerPickerViewModel.selectedTerrain = layer;
+    } catch (e) {
+        console.error("Something went wrong while changing base layers.")
+        console.error(e); 
+    }
+   
 }
 
 // switch base layer to OSM
