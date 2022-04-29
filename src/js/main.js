@@ -50,7 +50,6 @@ function initializeApplication() {
 
     // layerName = "WGS84 Ellipsoid"
     // filtered = defaultTerrainViewModels.filter( viewModel => {
-    //     console.log(viewModel);
     //     return viewModel.name === layerName;
     // });
     // var terrainToSelect = filtered.length === 1 ? filtered[0] : undefined;
@@ -70,10 +69,8 @@ function initializeApplication() {
     });
 
     bLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
-    console.log(bLayerPickerViewModel);
     imageryViewModels = bLayerPickerViewModel.imageryProviderViewModels;
     terrainViewModels = bLayerPickerViewModel.terrainProviderViewModels;
-    console.log(imageryViewModels);
     // add osm buildings to scene
     // const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
 
@@ -181,8 +178,9 @@ function populateBaseLayers(type) {
     }
 
     for(const [idx, layer] of layers.entries()) {
-        var container = document.createElement("div");
-        container.classList.add("menu-base-layer-entry");
+        var layerDiv = document.createElement("div");
+        layerDiv.classList.add("menu-base-layer-entry");
+        
 
         var radioBtn = document.createElement("input");
         radioBtn.classList.add("form-check-input")
@@ -192,23 +190,31 @@ function populateBaseLayers(type) {
         if(bLayerPickerViewModel.selectedImagery === layer) {
             radioBtn.checked = true;
         }
-        console.log(bLayerPickerViewModel.selectedTerrain);
         if(bLayerPickerViewModel.selectedTerrain === layer) {
             radioBtn.checked = true;
         }
 
-        container.appendChild(radioBtn)
+        layerDiv.appendChild(radioBtn)
 
         var thumb = new Image(64, 64);
         thumb.src = layer.iconUrl;
         thumb.alt = "Layer Vorschaubild";
-        container.appendChild(thumb);
+        thumb.style.borderRadius = "10%";
+        layerDiv.appendChild(thumb);
 
         var span = document.createElement("span");
         span.innerHTML = layer.name;
-        container.appendChild(span);
+        layerDiv.appendChild(span);
 
-        layerContainerDom.appendChild(container);
+        var infoBtn = document.createElement("i");
+        infoBtn.classList.add("fa-solid", "fa-lg", "fa-circle-info")
+        infoBtn.style.marginLeft = "auto";
+        infoBtn.dataset.bsToggle = "tooltip";
+        infoBtn.dataset.bsPlacement = "bottom";
+        infoBtn.title = layer.tooltip;
+        layerDiv.appendChild(infoBtn)
+
+        layerContainerDom.appendChild(layerDiv);
 
         // if not last layer
         if(idx < layers.length-1) {
