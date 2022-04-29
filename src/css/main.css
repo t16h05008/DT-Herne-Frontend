@@ -3,14 +3,19 @@
     --footer-height: 0px;
     --sidebar-width: 100px; /* width of the sidebar menu (always visible) */
     --menu-width: 400px; /* width of the menu ( opens on btn click) */
-    --sidebar-bg-color: #323232;
+    --sidebar-bg-color: #0A0A0A;
     --header-spacer-height: 5px;
 
     --herne-logo-blue: #00A4D7;
     --herne-logo-green: #007C33;
     --herne-logo-yellow: #FBBC23;
 
-    --sidebar-btn-highlight-color: var(--herne-logo-blue)
+    --sidebar-btn-highlight-color: var(--herne-logo-blue);
+
+    --menu-background-color: #191919;
+    --menu-background-color-level-1: #282828;
+    --menu-background-color-level-2: #414141;
+    --menu-background-color-level-3: #505050;
 }
 
 body, html {
@@ -153,4 +158,105 @@ body, html {
     left: var(--sidebar-width);
     bottom: var(--footer-height);
     width: var(--menu-width);
+    background-color: var(--menu-background-color);
+    color: white;
+}
+
+.offcanvas-body {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+
+.accordion-body {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.accordion-button {
+    color: white;
+    background-color: rgb(120, 120, 120);
+    font-size: 1.4rem;
+    outline: none;
+    box-shadow: none;
+    box-shadow: none !important
+}
+
+/* move the open-closed-indicators to the left side */
+.accordion-button::after {
+    display: none;
+}
+
+.accordion-button:not(.collapsed)::after {
+    display: none;
+}
+.accordion-button::before {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 15px;
+    content: "";
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-size: 1.25rem;
+    transition: transform .2s ease-in-out;
+}
+
+.accordion-button:not(.collapsed)::before {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+    transform: rotate(-180deg);
+}
+
+.menu-item-level-1, .menu-btn-level-1 {
+    background-color: var(--menu-background-color-level-1);
+}
+
+.menu-btn-level-1:not(.collapsed) {
+    color: white;
+    background-color: var(--herne-logo-blue);
+}
+
+.menu-item-level-2, .menu-btn-level-2 {
+    background-color: var(--menu-background-color-level-2);
+}
+
+.menu-btn-level-2:not(.collapsed) {
+    color: white;
+    background-color: var(--herne-logo-green);
+}
+
+.menu-item-level-3, .menu-btn-level-3 {
+    background-color: var(--menu-background-color-level-3);
+}
+
+.menu-btn-level-3:not(.collapsed) {
+    color: black;
+    background-color: var(--herne-logo-yellow);
+}
+
+.menu-base-layer-entry {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+}
+
+.menu-base-layer-entry input {
+    margin-right: 15px;
+    background-color: var(--herne-logo-green) !important;
+    border-color: var(--herne-logo-green) !important;
+    width: 1.25em;
+    height: 1.25em;
+}
+
+.menu-base-layer-entry img {
+    margin-right: 10px;
+}
+
+.layerSpacer {
+    color: white;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 90%;
 }

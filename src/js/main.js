@@ -21,32 +21,42 @@ const initialCameraView = {
   }
 }
 
-var imageryViewModels = [];
-imageryViewModels.push(new Cesium.ProviderViewModel({
-    name: 'Sentinel-2',
-    iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/sentinel-2.png'),
-    tooltip: 'Sentinel-2 cloudless',
-    creationFunction: function () {
-        return new Cesium.IonImageryProvider({ assetId: 3954 });
-    }
-}));
 
 
 document.addEventListener("DOMContentLoaded", function(event) {
-  initializeApplication();
+    initializeApplication();
 });
 
 function initializeApplication() {
     var sidebarBtns = document.querySelectorAll(".sidebarBtn")
+    var baseLayersImageryContainer = document.querySelector("#base-layers-imagery .accordion-body")
+    var baseLayersTerrainContainer = document.querySelector("#base-layers-terrain .accordion-body")
+
+    // select Sentinel-2 layer on startup for reduced quota usage during development
+    var imageryViewModels = Cesium.createDefaultImageryProviderViewModels();
+    var layerName = "Sentinel-2"
+    var filtered = imageryViewModels.filter( viewModel => {
+        return viewModel.name === layerName;
+    });
+    var sentinel2Imagery = filtered.length === 1 ? filtered[0] : undefined;
+    if(sentinel2Imagery === undefined) throw new Error("Layer '" + layerName + "' could not be found.");
+    
     // initialize cesium viewer
     var viewer = new Cesium.Viewer('cesiumContainer', {
         terrainProvider: Cesium.createWorldTerrain(),
-        imageryProviderViewModels: imageryViewModels,
-        baseLayerPicker: false, // probably enable later down the line
-        geocoder: false
+        imageryProviderViewModels: imageryViewModels, // has to be provided for some reason, even though the layers are the same
+        baseLayerPicker: true,
+        selectedImageryProviderViewModel: sentinel2Imagery,
+        geocoder: false,
+        fullscreenButton: false
     });
+
+    var bLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
+    var imageryViewModels = bLayerPickerViewModel.imageryProviderViewModels;
+    var terrainViewModels = bLayerPickerViewModel.terrainProviderViewModels;
+
     // add osm buildings to scene
-    const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());   
+    const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
 
      // initialize camera view defined above
      var camera = viewer.camera;
@@ -88,6 +98,8 @@ function initializeApplication() {
 
         var menuId = btn.dataset.bsTarget
         var menu = document.querySelector(menuId)
+        var closeBtn = menu.querySelector(".btn-close"); // only one close btn exists
+
         // listeners for toggling the menu
         menu.addEventListener('show.bs.offcanvas', function () {
             var menuWidth = getComputedStyle(document.documentElement,null).getPropertyValue('--menu-width');
@@ -101,6 +113,7 @@ function initializeApplication() {
             document.getElementById("cesiumContainer").style.marginLeft = "0";
         });
 
+        // set sidebar button highlight color on click
         btn.addEventListener('click', function(event) {
             // get the menu of the clicked button
             let clickedBtn = event.target;
@@ -117,9 +130,63 @@ function initializeApplication() {
                 var highlightColor = getComputedStyle(document.documentElement,null).getPropertyValue('--sidebar-btn-highlight-color');
                 clickedBtn.style.setProperty("color", highlightColor, "important")
             }
-        })
+        });
+
+        // remove highlight color from all sidebar btns
+        closeBtn.addEventListener("click", function() {
+            for(var btn of sidebarBtns) {
+                btn.style.setProperty("color", "white", "important")
+            }
+        });
     }
 
+    populateBaseLayers('imagery', imageryViewModels, baseLayersImageryContainer, bLayerPickerViewModel)
+    populateBaseLayers('terrain', terrainViewModels, baseLayersTerrainContainer, bLayerPickerViewModel)
+}
+
+function populateBaseLayers(type, layers, layerContainer, layerPickerViewModel) {
+    if(type !== "imagery" && type !== "terrain")
+        throw new Error("Parameter 'type' was neither 'imagery' nor 'terrain'");
+
+    for(const [idx, layer] of layers.entries()) {
+        var container = document.createElement("div");
+        container.classList.add("menu-base-layer-entry");
+
+        var radioBtn = document.createElement("input");
+        radioBtn.classList.add("form-check-input")
+        radioBtn.type = "radio";
+        radioBtn.name = type === "imagery" ? "radioImagery" : "radioTerrain";
+        radioBtn.value = "";
+        if(type === "imagery" && layerPickerViewModel.selectedImagery === layer) {
+            radioBtn.checked = true;
+        }
+        if(type === "terrain" && layerPickerViewModel.selectedTerrain === layer) {
+            radioBtn.checked = true;
+        }
+
+        container.appendChild(radioBtn)
+
+        var thumb = new Image(64, 64);
+        thumb.src = layer.iconUrl;
+        thumb.alt = "Layer Vorschaubild";
+        container.appendChild(thumb);
+
+        var span = document.createElement("span");
+        span.innerHTML = layer.name;
+        container.appendChild(span);
+
+        if(type === "imagery") layerContainer.appendChild(container);
+        if(type === "terrain") layerContainer.appendChild(container);
+
+        // if not last layer
+        if(idx < layers.length-1) {
+            // add a spacer below
+            var spacer = document.createElement("hr");
+            spacer.classList.add("layerSpacer");
+            if(type === "imagery") layerContainer.appendChild(spacer);
+            if(type === "terrain") layerContainer.appendChild(spacer);
+        }
+    }
 }
 
 // switch base layer to OSM

@@ -70,7 +70,7 @@ module.exports = {
     // Below is a custom plugin definition
     // For whatever reason webpack creates an additional png-file in the dist folder.
     // It seem to be part of a dependency of cesiumJS and is not a valid image either.
-    // The plugin uses the hook to remove this file after each build
+    // The plugin uses the hook to remove this file after each build.
     {
       apply: (compiler) => {
         compiler.hooks.done.tap('myFileRemoverPlugin', () => {
