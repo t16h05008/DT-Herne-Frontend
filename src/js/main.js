@@ -67,6 +67,7 @@ function initializeApplication() {
         geocoder: false,
         fullscreenButton: false
     });
+    viewer.scene.globe.baseColor = Cesium.Color.BLACK;
 
     bLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
     imageryViewModels = bLayerPickerViewModel.imageryProviderViewModels;
