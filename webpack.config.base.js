@@ -58,6 +58,7 @@ module.exports = {
           // TODO specify files to copy to reduce size of dist folder
           { from: nodeModulePathConstant + 'bootstrap/dist', to: 'dependencies/bootstrap/' },
           { from: nodeModulePathConstant + '@fortawesome/fontawesome-free', to: 'dependencies/fontawesome'},
+          { from: nodeModulePathConstant + 'range-slider-element/dist', to: 'dependencies/range-slider-element'},
           // Copy images
           { from: 'src/images', to: 'static/images/'}
       ]

@@ -16,6 +16,8 @@
     --menu-background-color-level-1: #282828;
     --menu-background-color-level-2: #414141;
     --menu-background-color-level-3: #505050;
+
+    --layer-opacity-slider-color: var(var(--herne-logo-green));
 }
 
 body, html {
@@ -240,7 +242,7 @@ body, html {
     padding: 10px;
 }
 
-.menu-base-layer-entry input {
+.menu-base-layer-entry input:first-child {
     margin-right: 15px;
     background-color: var(--herne-logo-green) !important;
     border-color: var(--herne-logo-green) !important;
@@ -260,4 +262,22 @@ body, html {
     margin-left: auto;
     margin-right: auto;
     width: 90%;
+}
+
+.opacitySlider {
+    width: 100px;
+    margin-top: 12px;
+}
+
+
+.opacitySliderWrapperDisabled {
+    pointer-events: none;
+}
+
+.opacitySlider:before {
+    background: linear-gradient(90deg, var(--menu-background-color-level-2),var(--herne-logo-green)) 0/var(--value-percent,0) 100% no-repeat lightgray !important; 
+}
+
+.opacitySlider .thumb {
+    background-color: var(--herne-logo-green)
 }
