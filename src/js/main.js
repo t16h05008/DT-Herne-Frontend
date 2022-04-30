@@ -37,13 +37,12 @@ function initializeApplication() {
     sidebarBtns = document.querySelectorAll(".sidebarBtn")
     baseLayersImageryContainer = document.querySelector("#base-layers-imagery .accordion-body")
     baseLayersTerrainContainer = document.querySelector("#base-layers-terrain .accordion-body")
-    
+
     // select Open­Street­Map layer on startup for reduced quota usage during development
     var defaultImageryViewModels = Cesium.createDefaultImageryProviderViewModels();
     var defaultTerrainViewModels = Cesium.createDefaultTerrainProviderViewModels();
     var layerName = "Open­Street­Map"
     var filtered = defaultImageryViewModels.filter( viewModel => {
-        console.log(viewModel);
         return viewModel.name === layerName;
     });
     var imageryToSelect = filtered.length === 1 ? filtered[0] : undefined;
@@ -68,18 +67,17 @@ function initializeApplication() {
         geocoder: false,
         fullscreenButton: false
     });
-    
 
     bLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
     imageryViewModels = bLayerPickerViewModel.imageryProviderViewModels;
     terrainViewModels = bLayerPickerViewModel.terrainProviderViewModels;
-    //viewer.baseLayerPicker.destroy(); // No longer needed, we manage base layers in the sidebar based on the stored references 
+    viewer.baseLayerPicker.destroy(); // No longer needed, we manage base layers in the sidebar based on the stored references 
     // add osm buildings to scene
-    const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
-
-     // initialize camera view defined above
-     camera = viewer.camera;
-     camera.setView({
+    // const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
+    console.log(viewer.dataSources);
+    // initialize camera view defined above
+    camera = viewer.camera;
+    camera.setView({
         destination : Cesium.Cartesian3.fromDegrees(
             initialCameraView.position.lon,
             initialCameraView.position.lat,
@@ -159,8 +157,21 @@ function initializeApplication() {
         });
     }
 
-    populateBaseLayers('imagery')
-    populateBaseLayers('terrain')
+    populateBaseLayers('imagery');
+    populateBaseLayers('terrain');
+
+    
+    // Cesium.GeoJsonDataSource.clampToGround = true; // this leads to polygon outlines not showing and is a bug in Cesium
+    // const promise = Cesium.GeoJsonDataSource.load('http://localhost:8080/grid1000_epsg4326.geojson', {
+    //     name: "Grid 1000x1000m",
+    //     stroke: Cesium.Color.BLACK,
+    //     fill: Cesium.Color.GREEN.withAlpha(0.5),
+    //     strokeWidth: 10,
+    // });
+    // promise.then(function (dataSource) {
+    //     viewer.dataSources.add(dataSource);
+    // });
+
 }
 
 function populateBaseLayers(type) {
@@ -196,8 +207,8 @@ function populateBaseLayers(type) {
             radioBtn.checked = true;
         }
 
-        radioBtn.addEventListener("click", function() {
-            changeBaseLayer(type, layer);
+        radioBtn.addEventListener("click", function(event) {
+            changeBaseLayer(event, type, layer);
         });
 
         layerDiv.appendChild(radioBtn)
@@ -208,12 +219,50 @@ function populateBaseLayers(type) {
         thumb.style.borderRadius = "10%";
         layerDiv.appendChild(thumb);
 
-        var span = document.createElement("span");
-        span.innerHTML = layer.name;
-        layerDiv.appendChild(span);
+        if(type === "imagery") {
+            var innerDiv = document.createElement("div");
+
+            var span = document.createElement("span");
+            span.style.display = "block";
+            span.style.width = "100%";
+            span.style.marginTop = "10px";
+            span.innerHTML = layer.name;
+            innerDiv.appendChild(span);
+    
+            var opacitySlider = document.createElement("range-slider");
+            opacitySlider.value = 100;
+            opacitySlider.classList.add("opacitySlider")
+            if( !radioBtn.checked ) opacitySlider.disabled = true; // only visually disabled
+            opacitySlider.dataset.layerName = layer.name;
+            opacitySlider.addEventListener("input", function(event) {
+                var value = event.target.value;
+                for(var i=0; i<viewer.imageryLayers.length;i++) {
+                    var layer = viewer.imageryLayers.get(i);
+                    if(layer.isBaseLayer) {
+                        layer.alpha = value / 100;
+                    }
+                }
+            });
+            // The easiest method to disable the slider is to wrap it inside a div and disable pointer events on that.
+            var opacitySliderWrapper = document.createElement("div");
+            opacitySliderWrapper.classList.add("opacitySliderWrapper");
+            if( !radioBtn.checked ) {
+                opacitySliderWrapper.classList.add("opacitySliderWrapperDisabled")
+            }
+            
+            opacitySliderWrapper.appendChild(opacitySlider)
+            innerDiv.appendChild(opacitySliderWrapper)
+    
+            layerDiv.appendChild(innerDiv)
+        } else {
+            // no opacity slider needed for terrain
+            var span = document.createElement("span");
+            span.innerHTML = layer.name;
+            layerDiv.appendChild(span);
+        }
 
         var infoBtn = document.createElement("i");
-        infoBtn.classList.add("fa-solid", "fa-lg", "fa-circle-info")
+        infoBtn.classList.add("fa-solid", "fa-lg", "fa-circle-info");
         infoBtn.style.marginLeft = "auto";
         infoBtn.dataset.bsToggle = "tooltip";
         infoBtn.dataset.bsPlacement = "bottom";
@@ -240,8 +289,8 @@ function populateBaseLayers(type) {
         radioBtn.name = "radioImagery";
         radioBtn.value = "";
             
-        radioBtn.addEventListener("click", function() {
-            changeBaseLayer(type, undefined);
+        radioBtn.addEventListener("click", function(event) {
+            changeBaseLayer(event, type, undefined);
         });
         
         layerDiv.appendChild(radioBtn)
@@ -266,22 +315,51 @@ function populateBaseLayers(type) {
         
         layerContainerDom.appendChild(layerDiv);
     }
-    
 }
 
 
 /**
  * changes base imagery or terrain
  */
-function changeBaseLayer(type, layer) {
+function changeBaseLayer(event, type, layer) {
+    // disable all opacity sliders except the one of the clicked layer
+    // if terrain layer was clicked do nothing
+    var sliderValue;
+    if(type !== "terrain") {
+        var opacitySliderWrappers = document.querySelectorAll("#base-layers-imagery .opacitySliderWrapper")
+        sliderValue = 100;
+    
+        for(var wrapper of opacitySliderWrappers) {
+            var slider = wrapper.querySelector("range-slider");
+    
+            if(slider.dataset.layerName === layer.name) {
+                wrapper.classList.remove("opacitySliderWrapperDisabled");
+                slider.removeAttribute("disabled")
+                sliderValue = slider.value;
+            } else {
+                wrapper.classList.add("opacitySliderWrapperDisabled");
+                slider.disabled = true;
+            }
+        }
+    }
+
     try {
-        if(type === "imagery") bLayerPickerViewModel.selectedImagery = layer;
+        if(type === "imagery") {
+            bLayerPickerViewModel.selectedImagery = layer;
+            // set opacity according to slider
+            for(var i=0; i<viewer.imageryLayers.length;i++) {
+                var layer = viewer.imageryLayers.get(i);
+                if(layer.isBaseLayer) {
+                    console.log(layer);
+                    layer.alpha = sliderValue / 100;
+                }
+            };
+        }
         if(type === "terrain") bLayerPickerViewModel.selectedTerrain = layer;
     } catch (e) {
         console.error("Something went wrong while changing base layers.")
         console.error(e); 
     }
-   
 }
 
 // switch base layer to OSM
