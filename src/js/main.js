@@ -67,7 +67,8 @@ function initializeApplication() {
         selectedImageryProviderViewModel: imageryToSelect,
         selectedTerrainProviderViewModel: undefined,
         geocoder: false,
-        fullscreenButton: false
+        fullscreenButton: false,
+        sceneModePicker: false
     });
     viewer.scene.globe.baseColor = Cesium.Color.BLACK;
 
