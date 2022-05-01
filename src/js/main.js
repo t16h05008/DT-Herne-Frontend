@@ -158,7 +158,7 @@ function initializeApplication() {
 
             // iterate buttons and remove highlight color
             for(var btn of sidebarBtns) {
-                btn.style.setProperty("color", "white", "important")
+                btn.style.color = "white";
             }
 
             // for the clicked button: check if menu is visible and set color based on that
@@ -171,7 +171,7 @@ function initializeApplication() {
         // remove highlight color from all sidebar btns
         closeBtn.addEventListener("click", function() {
             for(var btn of sidebarBtns) {
-                btn.style.setProperty("color", "white", "important")
+                btn.style.color = "white";
             }
         });
     }
