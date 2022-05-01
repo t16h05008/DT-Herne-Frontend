@@ -80,21 +80,7 @@ function initializeApplication() {
 
     // initialize camera view defined above
     camera = viewer.camera;
-    camera.setView({
-        destination : Cesium.Cartesian3.fromDegrees(
-            initialCameraView.position.lon,
-            initialCameraView.position.lat,
-            initialCameraView.position.height
-        ),
-        orientation : {
-            heading: Cesium.Math.toRadians(initialCameraView.orientation.heading),
-            pitch: Cesium.Math.toRadians(initialCameraView.orientation.pitch),
-            roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
-        }
-    });
-    // rotate north arrow img according to heading
-    northArrowImg.style.transform = "rotate(" + (initialCameraView.orientation.heading * -1) + "deg)";
-
+    
     // initialize camera position overlay
     var coordOverlayLat = document.getElementById("coordOverlayLat")
     var coordOverlayLon = document.getElementById("coordOverlayLon")
@@ -119,6 +105,20 @@ function initializeApplication() {
          // rotate north arrow img according to heading
         northArrowImg.style.transform = "rotate(" + (newHeadingDeg * -1) + "deg)";
     });
+
+    camera.setView({
+        destination : Cesium.Cartesian3.fromDegrees(
+            initialCameraView.position.lon,
+            initialCameraView.position.lat,
+            initialCameraView.position.height
+        ),
+        orientation : {
+            heading: Cesium.Math.toRadians(initialCameraView.orientation.heading),
+            pitch: Cesium.Math.toRadians(initialCameraView.orientation.pitch),
+            roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
+        }
+    });
+    camera.changed.raiseEvent(); // trigger 'changed' event programmatically since it doesn't fire on initial setView
 
     for(var btn of sidebarBtns) {
 
