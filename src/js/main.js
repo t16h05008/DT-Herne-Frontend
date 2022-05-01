@@ -20,6 +20,19 @@ const initialCameraView = {
     roll: 0.0,
   }
 }
+// derived from initialCameraView in the format needed by cesium
+const initialCameraViewFormatted = {
+    destination : Cesium.Cartesian3.fromDegrees(
+        initialCameraView.position.lon,
+        initialCameraView.position.lat,
+        initialCameraView.position.height
+    ),
+    orientation : {
+        heading: Cesium.Math.toRadians(initialCameraView.orientation.heading),
+        pitch: Cesium.Math.toRadians(initialCameraView.orientation.pitch),
+        roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
+    }
+}
 // declare global variables so they are available in every function
 var sidebarBtns;
 var baseLayersImageryContainer;
@@ -107,19 +120,15 @@ function initializeApplication() {
         northArrowImg.style.transform = "rotate(" + (newHeadingDeg * -1) + "deg)";
     });
 
-    camera.setView({
-        destination : Cesium.Cartesian3.fromDegrees(
-            initialCameraView.position.lon,
-            initialCameraView.position.lat,
-            initialCameraView.position.height
-        ),
-        orientation : {
-            heading: Cesium.Math.toRadians(initialCameraView.orientation.heading),
-            pitch: Cesium.Math.toRadians(initialCameraView.orientation.pitch),
-            roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
-        }
-    });
+    camera.setView(initialCameraViewFormatted);
     camera.changed.raiseEvent(); // trigger 'changed' event programmatically since it doesn't fire on initial setView
+
+    // overwrite home button behavior to zoom to our custom initial position instead of the cesium default one, which is in space
+    viewer.homeButton.viewModel.command.beforeExecute.addEventListener(
+        function(e) {
+           e.cancel = true;
+           viewer.scene.camera.flyTo(initialCameraViewFormatted);
+    });
 
     for(var btn of sidebarBtns) {
 
