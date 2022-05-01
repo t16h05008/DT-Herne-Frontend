@@ -28,6 +28,7 @@ var viewer, camera;
 var bLayerPickerViewModel
 var imageryViewModels
 var terrainViewModels;
+var northArrowImg;
 
 document.addEventListener("DOMContentLoaded", function(event) {
     initializeApplication();
@@ -37,6 +38,7 @@ function initializeApplication() {
     sidebarBtns = document.querySelectorAll(".sidebarBtn")
     baseLayersImageryContainer = document.querySelector("#base-layers-imagery .accordion-body")
     baseLayersTerrainContainer = document.querySelector("#base-layers-terrain .accordion-body")
+    northArrowImg = document.querySelector("#north-arrow-overlay")
 
     // select Open­Street­Map layer on startup for reduced quota usage during development
     var defaultImageryViewModels = Cesium.createDefaultImageryProviderViewModels();
@@ -75,7 +77,7 @@ function initializeApplication() {
     viewer.baseLayerPicker.destroy(); // No longer needed, we manage base layers in the sidebar based on the stored references 
     // add osm buildings to scene
     // const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
-    console.log(viewer.dataSources);
+
     // initialize camera view defined above
     camera = viewer.camera;
     camera.setView({
@@ -90,6 +92,8 @@ function initializeApplication() {
             roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
         }
     });
+    // rotate north arrow img according to heading
+    northArrowImg.style.transform = "rotate(" + (initialCameraView.orientation.heading * -1) + "deg)";
 
     // initialize camera position overlay
     var coordOverlayLat = document.getElementById("coordOverlayLat")
@@ -98,18 +102,22 @@ function initializeApplication() {
     var coordOverlayHeading = document.getElementById("coordOverlayHeading")
     var coordOverlayPitch = document.getElementById("coordOverlayPitch")
     var coordOverlayRoll = document.getElementById("coordOverlayRoll")
-    camera.moveEnd.addEventListener(function() { 
-        // the camera stopped moving
+    // gets called multiple times during camera movement
+    camera.changed.addEventListener(function() { 
         // transform coords to radiants, then to degree (lon lat)
         var cartographic = Cesium.Cartographic.fromCartesian(camera.position)
         coordOverlayLat.innerHTML = round(Cesium.Math.toDegrees(cartographic.latitude), 5)
         coordOverlayLon.innerHTML =  round(Cesium.Math.toDegrees(cartographic.longitude), 5);
         coordOverlayHeight.innerHTML = Math.round(cartographic.height); // +- 1 meter should be accurate enough
         // orientation
-        coordOverlayHeading.innerHTML = round(Cesium.Math.toDegrees(camera.heading), 5);
+        var newHeadingDeg = round(Cesium.Math.toDegrees(camera.heading), 5);
+        coordOverlayHeading.innerHTML = newHeadingDeg;
         coordOverlayPitch.innerHTML = round(Cesium.Math.toDegrees(camera.pitch), 5);
         var roll = round(Cesium.Math.toDegrees(camera.roll), 5);
         coordOverlayRoll.innerHTML = roll > 359 ? 0 : roll; // display as 0 if it is close to 360 due to rounding errors 
+
+         // rotate north arrow img according to heading
+        northArrowImg.style.transform = "rotate(" + (newHeadingDeg * -1) + "deg)";
     });
 
     for(var btn of sidebarBtns) {
@@ -351,7 +359,6 @@ function changeBaseLayer(event, type, layer) {
             for(var i=0; i<viewer.imageryLayers.length;i++) {
                 var layer = viewer.imageryLayers.get(i);
                 if(layer.isBaseLayer) {
-                    console.log(layer);
                     layer.alpha = sliderValue / 100;
                 }
             };
