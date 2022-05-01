@@ -294,3 +294,7 @@ body, html {
 .opacitySlider .thumb {
     background-color: var(--herne-logo-green)
 }
+
+#measurement-tools-wrapper {
+    padding: 10px;
+}
