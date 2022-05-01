@@ -145,6 +145,10 @@ body, html {
     box-shadow: none !important
 }
 
+.sidebarBtn span {
+    font-size: 0.9em;
+}
+
 .sidebarBtn:hover {
     color: var(--herne-logo-blue);
 }
