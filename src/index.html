@@ -36,12 +36,17 @@
             <div id="sidebar" class="gx-0">
                 <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas"
                     data-bs-target="#menu-data" aria-controls="menu-data">
-                    <i class="fa-solid fa-lg fa-layer-group"></i><br />Daten
+                    <i class="fa-solid fa-lg fa-layer-group"></i><br /><span>Daten</span>
                 </button>
                 <hr class="sidebarSpacer" />
                 <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas"
                     data-bs-target="#menu-tools" aria-controls="menu-tools">
-                    <i class="fa-solid fa-lg fa-tools"></i><br />Werkzeuge
+                    <i class="fa-solid fa-lg fa-tools"></i><br /><span>Werkzeuge</span>
+                </button>
+                <hr class="sidebarSpacer" />
+                <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas"
+                    data-bs-target="#menu-settings" aria-controls="menu-settings">
+                    <i class="fa-solid fa-lg fa-sliders"></i><br /><span>Einstellungen</span>
                 </button>
                 <hr class="sidebarSpacer" />
             </div>
@@ -133,6 +138,16 @@
                       <p>Text</p>
                     </div>
                 </div>
+
+                <div id="menu-settings" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuSettingsTitle">
+                  <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="menuSettingsTitle">Einstellungen</h5>
+                    <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                  </div>
+                  <div class="offcanvas-body">
+                    <p>Text</p>
+                  </div>
+              </div>
 
                 <div id="cesiumContainer"></div>
 
