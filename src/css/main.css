@@ -150,7 +150,7 @@ body, html {
 }
 
 .sidebarBtn:hover {
-    color: var(--herne-logo-blue);
+    color: var(--herne-logo-blue) !important;
 }
 
 .sidebarBtn * {
