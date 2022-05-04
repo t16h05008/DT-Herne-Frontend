@@ -33,11 +33,14 @@ const initialCameraViewFormatted = {
         roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
     }
 }
+
 // declare global variables so they are available in every function
+const defaultGlobeColor = "#9A13D5"; // margenta
+const defaultUndergroundColor = "#11C91F"; // lime-green
 var sidebarBtns;
 var baseLayersImageryContainer;
 var baseLayersTerrainContainer;
-var viewer, camera;
+var viewer, camera, scene, globe;
 var bLayerPickerViewModel
 var imageryViewModels
 var terrainViewModels;
@@ -82,9 +85,9 @@ function initializeApplication() {
         geocoder: false,
         fullscreenButton: false,
         sceneModePicker: false
+        
     });
-    viewer.scene.globe.baseColor = Cesium.Color.BLACK;
-
+    viewer.extend(Cesium.viewerCesiumInspectorMixin);
     bLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
     imageryViewModels = bLayerPickerViewModel.imageryProviderViewModels;
     terrainViewModels = bLayerPickerViewModel.terrainProviderViewModels;
@@ -128,6 +131,88 @@ function initializeApplication() {
         function(e) {
            e.cancel = true;
            viewer.scene.camera.flyTo(initialCameraViewFormatted);
+    });
+
+    scene = viewer.scene;
+    globe = scene.globe;
+
+    // globe settings
+    var settingsGlobeColor = document.getElementById("settingsGlobeColor");
+    const globeColorPicker = createNewColorPicker(settingsGlobeColor, defaultGlobeColor);
+    globeColorPicker.on("save", (color, instance) => {
+        if(!color) { return }
+        const newColor = convertColorPickerResultToCesiumColor(color);
+        globe.baseColor  = newColor;
+    });
+    globe.baseColor = convertColorToCesiumColor(defaultGlobeColor);
+
+
+    var settingsGlobeTransparencySlider = document.getElementById("settingsGlobeTransparencySlider");
+    settingsGlobeTransparencySlider.addEventListener("input", function(event) {
+        var value = event.target.value;
+        if(value < 100) {
+            globe.translucency.enabled = true;
+            globe.translucency.frontFaceAlpha = value / 100;
+            globe.translucency.backFaceAlpha = value / 100;
+        } else {
+            globe.translucency.enabled = false;
+        }
+    });
+   
+    // underground settings
+    var settingsUndergroundCameraSwitch = document.getElementById("settingsUndergroundCameraSwitch");
+    scene.screenSpaceCameraController.enableCollisionDetection = true;
+    settingsUndergroundCameraSwitch.addEventListener("change", function(event) {
+        var chb = event.target;
+        // allow camera to move underground
+        scene.screenSpaceCameraController.enableCollisionDetection = !(chb.checked); 
+    });
+    
+
+    var settingsUndergroundColor = document.getElementById("settingsUndergroundColor");
+    const undergroundColorPicker = createNewColorPicker(settingsUndergroundColor, defaultUndergroundColor);
+    undergroundColorPicker.on("save", (color, instance) => {
+        if(!color) { return }
+        const newColor = convertColorPickerResultToCesiumColor(color);
+        globe.undergroundColor  = newColor;
+    });
+    globe.undergroundColor = convertColorToCesiumColor(defaultUndergroundColor);
+ 
+    var settingsNearFarScalar = new Cesium.NearFarScalar(
+        1000,      // near
+        0.5,    // nearValue
+        3000000,    // far
+        0.5     // farValue
+    )
+    globe.undergroundColorAlphaByDistance = settingsNearFarScalar
+
+    var settingsGlobeNear = document.getElementById("settingsGlobeNear");
+    settingsGlobeNear.value = settingsNearFarScalar.near;
+    settingsGlobeNear.addEventListener("input", function(event) {
+        console.log("near");
+        globe.undergroundColorAlphaByDistance.near = event.target.value;
+    });
+
+    var settingsGlobeFar = document.getElementById("settingsGlobeFar");
+    settingsGlobeFar.value = settingsNearFarScalar.far;
+    settingsGlobeFar.addEventListener("input", function(event) {
+        console.log("far");
+        globe.undergroundColorAlphaByDistance.far = event.target.value;
+        
+    });
+
+    var settingsGlobeNearAlpha = document.getElementById("settingsGlobeNearAlpha");
+    settingsGlobeNearAlpha.value = settingsNearFarScalar.nearValue * 100;
+    settingsGlobeNearAlpha.addEventListener("input", function(event) {
+        console.log("NearAlpha");
+        globe.undergroundColorAlphaByDistance.nearValue = event.target.value / 100;
+    });
+
+    var settingsGlobeFarAlpha= document.getElementById("settingsGlobeFarAlpha");
+    settingsGlobeFarAlpha.value = settingsNearFarScalar.farValue * 100;
+    settingsGlobeFarAlpha.addEventListener("input", function(event) {
+        console.log("FarAlpha");
+        globe.undergroundColorAlphaByDistance.farValue = event.target.value / 100;
     });
 
     for(var btn of sidebarBtns) {
@@ -190,8 +275,45 @@ function initializeApplication() {
     // promise.then(function (dataSource) {
     //     viewer.dataSources.add(dataSource);
     // });
+    import3DModel()
+
+    
+}
+
+function import3DModel() {
+    // Import a 3D-Model
+    // console.log(Cesium.HeightReference.RELATIVE_TO_GROUND);
+    // var position = Cesium.Cartesian3.fromDegrees(7.2169987, 51.5451096, 0);
+    // var heading = Cesium.Math.toRadians(90);
+    // var pitch =  0
+    // var roll =  0
+    // console.log(heading, pitch, roll);
+    // var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
+    // var entity = viewer.entities.add({
+    //     position : position,
+    //     model : {
+    //         uri : '3D-Models/Bahnhofsplatz_16-18.gltf'
+    //     },
+    //     orientation: orientation
+    // });
+    var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(7.2169987,51.5451096, 0));
+    console.log(modelMatrix);
+    const model = scene.primitives.add(Cesium.Model.fromGltf({
+        url : '3D-Models/Bahnhofsplatz_16-18.gltf',
+        modelMatrix : modelMatrix,
+        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+        scene: scene,
+        globe: globe
+      }));
+      
+      model.readyPromise.then(function(model) {
+        // Play all animations when the model is ready to render
+        model.activeAnimations.addAll();
+      });
+
 
 }
+
 
 function populateBaseLayers(type) {
 
@@ -213,6 +335,7 @@ function populateBaseLayers(type) {
     for(const layer of layers) {
         var layerDiv = document.createElement("div");
         layerDiv.classList.add("menu-base-layer-entry");
+        layerDiv.classList.add("menu-content-wrapper")
         
         var radioBtn = document.createElement("input");
         radioBtn.classList.add("form-check-input")
@@ -251,6 +374,7 @@ function populateBaseLayers(type) {
             var opacitySlider = document.createElement("range-slider");
             opacitySlider.value = 100;
             opacitySlider.classList.add("opacitySlider")
+            opacitySlider.classList.add("baseLayerOpacitySlider")
             if( !radioBtn.checked ) opacitySlider.disabled = true; // only visually disabled
             opacitySlider.dataset.layerName = layer.name;
             opacitySlider.addEventListener("input", function(event) {
@@ -262,6 +386,7 @@ function populateBaseLayers(type) {
                     }
                 }
             });
+            opacitySlider.dispatchEvent(new Event("input"))
             // The easiest method to disable the slider is to wrap it inside a div and disable pointer events on that.
             var opacitySliderWrapper = document.createElement("div");
             opacitySliderWrapper.classList.add("opacitySliderWrapper");
@@ -351,9 +476,9 @@ function changeBaseLayer(event, type, layer) {
         for(var wrapper of opacitySliderWrappers) {
             var slider = wrapper.querySelector("range-slider");
     
-            if(slider.dataset.layerName === layer.name) {
+            if(layer && slider.dataset.layerName === layer.name) {
                 wrapper.classList.remove("opacitySliderWrapperDisabled");
-                slider.removeAttribute("disabled")
+                slider.removeAttribute("disabled");
                 sliderValue = slider.value;
             } else {
                 wrapper.classList.add("opacitySliderWrapperDisabled");
@@ -395,3 +520,91 @@ const round = (num, places) => {
   var x = Math.pow(10, places)
   return Math.round(num * x) / x;
 }
+
+
+function createNewColorPicker(wrapper, defaultColor) {
+    return new Pickr({
+        el: wrapper,
+        default: defaultColor,
+        theme: 'classic',
+        lockOpacity: true,
+    
+        swatches: [
+          'rgba(244, 67, 54, 1)',
+          'rgba(233, 30, 99, 0.95)',
+          'rgba(156, 39, 176, 0.9)',
+          'rgba(103, 58, 183, 0.85)',
+          'rgba(63, 81, 181, 0.8)',
+          'rgba(33, 150, 243, 0.75)',
+          'rgba(3, 169, 244, 0.7)',
+          'rgba(0, 188, 212, 0.7)',
+          'rgba(0, 150, 136, 0.75)',
+          'rgba(76, 175, 80, 0.8)',
+          'rgba(139, 195, 74, 0.85)',
+          'rgba(205, 220, 57, 0.9)',
+          'rgba(255, 235, 59, 0.95)',
+          'rgba(255, 193, 7, 1)'
+        ],
+    
+        components: {
+          preview: true,
+          opacity: true,
+          hue: true,
+    
+          interaction: {
+            hex: true,
+            rgba: true,
+            hsva: true,
+            input: true,
+            clear: true,
+            save: true
+          }
+        }
+    });
+}
+
+// color is in format: [r(0-255), g(0-255),b(0-255), a(0-1)]
+function convertColorPickerResultToCesiumColor(color) {
+    var newColor =  {
+        red: 0,
+        green: 0,
+        blue: 0,
+        alpha: 1
+    }
+
+    var colorPickerResultRGBA = color.toRGBA();
+    newColor.red = colorPickerResultRGBA[0] / 256;
+    newColor.green = colorPickerResultRGBA[1] / 256;
+    newColor.blue = colorPickerResultRGBA[2] / 256;
+    newColor.alpha = colorPickerResultRGBA[3];
+
+    return newColor;
+}
+
+
+// works with hex colors for now
+function convertColorToCesiumColor(color) {
+    var newColor =  {
+        red: 0,
+        green: 0,
+        blue: 0,
+        alpha: 1
+    }
+
+    var rgb = hexToRgb(color);
+    newColor.red = rgb.r / 256;
+    newColor.green = rgb.g / 256;
+    newColor.blue = rgb.b / 256;
+    
+    return newColor;
+}
+
+// https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+  }

@@ -59,6 +59,8 @@ module.exports = {
           { from: nodeModulePathConstant + 'bootstrap/dist', to: 'dependencies/bootstrap/' },
           { from: nodeModulePathConstant + '@fortawesome/fontawesome-free', to: 'dependencies/fontawesome'},
           { from: nodeModulePathConstant + 'range-slider-element/dist', to: 'dependencies/range-slider-element'},
+          { from: nodeModulePathConstant + '@simonwep/pickr/dist', to: 'dependencies/pickr'},
+          { from: "src/libs/toggle-switchy/toggle-switchy.css", to: "dependencies/toggle-switchy/toggle-switchy.css"},
           // Copy images
           { from: 'src/images', to: 'static/images/'}
       ]

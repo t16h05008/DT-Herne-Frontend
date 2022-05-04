@@ -1,5 +1,5 @@
 :root {
-    --header-height: 120px;
+    --header-height: 150px;
     --footer-height: 0px;
     --sidebar-width: 100px; /* width of the sidebar menu (always visible) */
     --menu-width: 400px; /* width of the menu ( opens on btn click) */
@@ -252,7 +252,6 @@ body, html {
 .menu-base-layer-entry {
     display: flex;
     align-items: center;
-    padding: 10px;
 }
 
 .menu-base-layer-entry input:first-child {
@@ -279,6 +278,9 @@ body, html {
 
 .opacitySlider {
     width: 100px;
+}
+
+#menu-data-base-layers .opacitySlider {
     margin-top: 12px;
 }
 
@@ -287,14 +289,28 @@ body, html {
     pointer-events: none;
 }
 
-.opacitySlider:before {
+.menu-item-level-1 .opacitySlider:before {
+    background: linear-gradient(90deg, var(--menu-background-color-level-1),var(--herne-logo-blue)) 0/var(--value-percent,0) 100% no-repeat lightgray !important; 
+}
+
+.menu-item-level-1 .opacitySlider .thumb {
+    background-color: var(--herne-logo-blue)
+}
+
+
+.menu-item-level-2 .opacitySlider:before {
     background: linear-gradient(90deg, var(--menu-background-color-level-2),var(--herne-logo-green)) 0/var(--value-percent,0) 100% no-repeat lightgray !important; 
 }
 
-.opacitySlider .thumb {
+.menu-item-level-2 .opacitySlider .thumb {
     background-color: var(--herne-logo-green)
 }
 
-#measurement-tools-wrapper {
+
+.menu-content-wrapper {
     padding: 10px;
+}
+
+#advancedTransluencyOptionsWrapper {
+    padding-left: 20px;
 }

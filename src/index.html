@@ -1,67 +1,78 @@
 <!DOCTYPE html>
 <html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digitaler Zwilling Herne</title>
-    <link rel="stylesheet" href="dependencies/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="dependencies/range-slider-element/styles.css">
-    <script defer src="dependencies/bootstrap/js/bootstrap.min.js"></script>
-    <script defer src="dependencies/fontawesome/js/all.js"></script>
-    <script defer src="dependencies/range-slider-element/index.js"></script>
-</head>
-<body>
-    
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col g-0" id="headerDiv">
-                <img id="header-bg" src="static/images/herneAerial_2814x120.webp">
-                <img id="header-bg-network" src="static/images/title-bg-network.svg">
-                <img id="header-title-bg" src="static/images/title-bg.svg">
-                <div id="header-img-title">
-                    Digitaler Zwilling Herne
-                    <div style="font-size:15pt">(Pilotanwendung Bahnhofstraße)</div>
-                </div>
-                <div id="header-img-copyright">
-                    Von
-                    <a href="//commons.wikimedia.org/wiki/User:Laniakea-rubikon" title="User:Laniakea-rubikon">Rolf Kickuth</a> - <span class="int-own-work" lang="de">Eigenes Werk, bearbeitet</span>, <a href="https://creativecommons.org/licenses/by-sa/4.0" title="Creative Commons Attribution-Share Alike 4.0">CC BY-SA 4.0</a>, <a href="https://commons.wikimedia.org/w/index.php?curid=98132137">Link</a>
-                </div>
-            </div>
-        </div>
-        <div class="row" id="header-spacer">
-            <div class="col"></div>
-        </div>
-        <div class="row">
-            <div id="sidebar" class="gx-0">
-                <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas"
-                    data-bs-target="#menu-data" aria-controls="menu-data">
-                    <i class="fa-solid fa-lg fa-layer-group"></i><br /><span>Daten</span>
-                </button>
-                <hr class="sidebarSpacer" />
-                <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas"
-                    data-bs-target="#menu-tools" aria-controls="menu-tools">
-                    <i class="fa-solid fa-lg fa-tools"></i><br /><span>Werkzeuge</span>
-                </button>
-                <hr class="sidebarSpacer" />
-                <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas"
-                    data-bs-target="#menu-settings" aria-controls="menu-settings">
-                    <i class="fa-solid fa-lg fa-sliders"></i><br /><span>Einstellungen</span>
-                </button>
-                <hr class="sidebarSpacer" />
-            </div>
 
-            <div class="col gx-0">
-                 <!-- menu that toggles on sidebar btn click -->
-                <div id="menu-data" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuDataTitle">
-                    <div class="offcanvas-header">
-                      <span class="offcanvas-title h3" id="menuDataTitle">Datenkatalog</span>
-                      <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                    </div>
-                    <div class="offcanvas-body">
-                        <!-- data catalog start -->
-                        <div class="accordion" id="menu-data-main-accordion">
-                            <!--
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digitaler Zwilling Herne</title>
+  <link rel="stylesheet" href="dependencies/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="dependencies/range-slider-element/styles.css">
+  <link rel="stylesheet" href="dependencies/pickr/themes/classic.min.css">
+  <link rel="stylesheet" href="dependencies/toggle-switchy/toggle-switchy.css">
+  <script defer src="dependencies/bootstrap/js/bootstrap.min.js"></script>
+  <script defer src="dependencies/fontawesome/js/all.js"></script>
+  <script defer src="dependencies/range-slider-element/index.js"></script>
+  <script defer src="dependencies/pickr/pickr.min.js"></script>
+</head>
+
+<body>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col g-0" id="headerDiv">
+        <img id="header-bg" src="static/images/herneAerial_2814x120.webp">
+        <img id="header-bg-network" src="static/images/title-bg-network.svg">
+        <img id="header-title-bg" src="static/images/title-bg.svg">
+        <div id="header-img-title">
+          Digitaler Zwilling Herne
+          <div style="font-size:15pt">(Pilotanwendung Bahnhofstraße)</div>
+        </div>
+        <div id="header-img-copyright">
+          Von
+          <a href="//commons.wikimedia.org/wiki/User:Laniakea-rubikon" title="User:Laniakea-rubikon">Rolf Kickuth</a> -
+          <span class="int-own-work" lang="de">Eigenes Werk, bearbeitet</span>, <a
+            href="https://creativecommons.org/licenses/by-sa/4.0"
+            title="Creative Commons Attribution-Share Alike 4.0">CC BY-SA 4.0</a>, <a
+            href="https://commons.wikimedia.org/w/index.php?curid=98132137">Link</a>
+        </div>
+      </div>
+    </div>
+    <div class="row" id="header-spacer">
+      <div class="col"></div>
+    </div>
+    <div class="row">
+      <div id="sidebar" class="gx-0">
+        <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas" data-bs-target="#menu-data"
+          aria-controls="menu-data">
+          <i class="fa-solid fa-lg fa-layer-group"></i><br /><span>Daten</span>
+        </button>
+        <hr class="sidebarSpacer" />
+        <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas" data-bs-target="#menu-tools"
+          aria-controls="menu-tools">
+          <i class="fa-solid fa-lg fa-tools"></i><br /><span>Werkzeuge</span>
+        </button>
+        <hr class="sidebarSpacer" />
+        <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas" data-bs-target="#menu-settings"
+          aria-controls="menu-settings">
+          <i class="fa-solid fa-lg fa-sliders"></i><br /><span>Einstellungen</span>
+        </button>
+        <hr class="sidebarSpacer" />
+      </div>
+
+      <div class="col gx-0">
+        <!-- menu that toggles on sidebar btn click -->
+        <div id="menu-data" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true"
+          data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuDataTitle">
+          <div class="offcanvas-header">
+            <span class="offcanvas-title h3" id="menuDataTitle">Datenkatalog</span>
+            <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"
+              aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <!-- data catalog start -->
+            <div class="accordion" id="menu-data-main-accordion">
+              <!--
                             <div class="accordion-item">
                               <h2 class="accordion-header" id="panelsStayOpen-headingOne">
                                 <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
@@ -87,127 +98,199 @@
                               </div>
                             </div>
                             -->
-                            <div class="accordion-item menu-item-level-1">
-                              <span class="accordion-header h2" id="menu-data-base-layers-heading">
-                                <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse" data-bs-target="#menu-data-base-layers" aria-expanded="false" aria-controls="menu-data-base-layers">
-                                  Basisdaten
-                                </button>
-                              </span>
-                              <div id="menu-data-base-layers" class="accordion-collapse collapse" aria-labelledby="menu-data-base-layers">
-                                <div class="accordion-body">
-                                    <div class="accordion" id="base-layers-accordion">
-                                        <div class="accordion-item menu-item-level-2">
-                                            <span class="accordion-header h2" id="base-layers-imagery-heading">
-                                              <button class="accordion-button collapsed menu-btn-level-2" type="button" data-bs-toggle="collapse" data-bs-target="#base-layers-imagery" aria-expanded="false" aria-controls="base-layers-imagery">
-                                                Bild-Daten
-                                              </button>
-                                            </span>
-                                            <div id="base-layers-imagery" class="accordion-collapse collapse" aria-labelledby="base-layers-imagery">
-                                                <div class="accordion-body">
-                                                    <!-- gets inserted dynamically -->
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="accordion-item menu-item-level-2">
-                                            <span class="accordion-header h2" id="base-layers-terrain-heading">
-                                              <button class="accordion-button collapsed menu-btn-level-2" type="button" data-bs-toggle="collapse" data-bs-target="#base-layers-terrain" aria-expanded="false" aria-controls="base-layers-terrain">
-                                                Terrain-Daten
-                                              </button>
-                                            </span>
-                                            <div id="base-layers-terrain" class="accordion-collapse collapse" aria-labelledby="base-layers-terrain">
-                                                <div class="accordion-body">
-                                                    <!-- gets inserted dynamically -->
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                              </div>
-                            </div>
-                        </div>
-                        <!-- data catalog end -->
-                    </div>
-                </div>
-
-                <div id="menu-tools" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuToolsTitle">
-                    <div class="offcanvas-header">
-                      <h5 class="offcanvas-title" id="menuToolsTitle">Werkzeuge</h5>
-                      <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                    </div>
-                    <div class="offcanvas-body">
-                      <div class="accordion" id="menu-tools-main-accordion">
-                        <div class="accordion-item menu-item-level-1">
-                          <span class="accordion-header h2" id="menu-tools-measuerments-heading">
-                            <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse" data-bs-target="#menu-tools-measurements" aria-expanded="false" aria-controls="menu-tools-measurements">
-                              Messwerkzeug
-                            </button>
-                          </span>
-                          <div id="menu-tools-measurements" class="accordion-collapse collapse" aria-labelledby="menu-tools-measurements">
-                            <div class="accordion-body">
-                                <div id="measurement-tools-wrapper">
-                                    TODO (Linie, Linienzug, Polygon, ...)<br /><br />
-                                    https://github.com/mokrayaGISka/cesium_measurementTool/blob/master/measurement.html<br /><br />
-                                    https://viewer.swissgeol.ch/?lang=en&map_transparency=0.00&lon=7.35549&lat=46.31056&elevation=55083&heading=24&pitch=-57&null=
-                                </div>
-                            </div>
+              <div class="accordion-item menu-item-level-1">
+                <span class="accordion-header h2" id="menu-data-base-layers-heading">
+                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menu-data-base-layers" aria-expanded="false" aria-controls="menu-data-base-layers">
+                    Basisdaten
+                  </button>
+                </span>
+                <div id="menu-data-base-layers" class="accordion-collapse collapse"
+                  aria-labelledby="menu-data-base-layers">
+                  <div class="accordion-body">
+                    <div class="accordion" id="base-layers-accordion">
+                      <div class="accordion-item menu-item-level-2">
+                        <span class="accordion-header h2" id="base-layers-imagery-heading">
+                          <button class="accordion-button collapsed menu-btn-level-2" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#base-layers-imagery" aria-expanded="false"
+                            aria-controls="base-layers-imagery">
+                            Bild-Daten
+                          </button>
+                        </span>
+                        <div id="base-layers-imagery" class="accordion-collapse collapse"
+                          aria-labelledby="base-layers-imagery">
+                          <div class="accordion-body">
+                            <!-- gets inserted dynamically -->
                           </div>
                         </div>
+                      </div>
+                      <div class="accordion-item menu-item-level-2">
+                        <span class="accordion-header h2" id="base-layers-terrain-heading">
+                          <button class="accordion-button collapsed menu-btn-level-2" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#base-layers-terrain" aria-expanded="false"
+                            aria-controls="base-layers-terrain">
+                            Terrain-Daten
+                          </button>
+                        </span>
+                        <div id="base-layers-terrain" class="accordion-collapse collapse"
+                          aria-labelledby="base-layers-terrain">
+                          <div class="accordion-body">
+                            <!-- gets inserted dynamically -->
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    </div>
+                  </div>
                 </div>
-
-                <div id="menu-settings" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuSettingsTitle">
-                  <div class="offcanvas-header">
-                    <h5 class="offcanvas-title" id="menuSettingsTitle">Einstellungen</h5>
-                    <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                  </div>
-                  <div class="offcanvas-body">
-                    <p>Text</p>
-                  </div>
               </div>
+            </div>
+            <!-- data catalog end -->
+          </div>
+        </div>
 
-                <div id="cesiumContainer"></div>
-
-                <div id="coordOverlay">
-                    <table>
-                        <tr>
-                            <td>Lat:</td>
-                            <td><span id="coordOverlayLat"></span></td>
-                        </tr>
-                        <tr>
-                            <td>Lon:</td>
-                            <td><span id="coordOverlayLon"></span></td>
-                        </tr>
-                        <tr>
-                            <td>Höhe:</td>
-                            <td><span id="coordOverlayHeight"></span></td>
-                        </tr>
-                        <tr>
-                            <td>Heading:
-                            </td>
-                            <td><span id="coordOverlayHeading"></span></td>
-                        </tr>
-                        <tr>
-                            <td>Pitch:</td>
-                            <td><span id="coordOverlayPitch"></span></td>
-                        </tr>
-                        <tr>
-                            <td>Roll:</td>
-                            <td><span id="coordOverlayRoll"></span></td>
-                        </tr>
-                    </table>
+        <div id="menu-tools" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true"
+          data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuToolsTitle">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="menuToolsTitle">Werkzeuge</h5>
+            <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"
+              aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <div class="accordion" id="menu-tools-main-accordion">
+              <div class="accordion-item menu-item-level-1">
+                <span class="accordion-header h2" id="menu-tools-measuerments-heading">
+                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menu-tools-measurements" aria-expanded="false"
+                    aria-controls="menu-tools-measurements">
+                    Messwerkzeug
+                  </button>
+                </span>
+                <div id="menu-tools-measurements" class="accordion-collapse collapse"
+                  aria-labelledby="menu-tools-measurements">
+                  <div class="accordion-body">
+                    <div class="menu-content-wrapper">
+                      TODO (Linie, Linienzug, Polygon, ...)<br /><br />
+                      https://github.com/mokrayaGISka/cesium_measurementTool/blob/master/measurement.html<br /><br />
+                      https://viewer.swissgeol.ch/?lang=en&map_transparency=0.00&lon=7.35549&lat=46.31056&elevation=55083&heading=24&pitch=-57&null=
+                    </div>
+                  </div>
                 </div>
+              </div>
             </div>
+          </div>
+        </div>
 
-            <div>
-              <img id="north-arrow-overlay" src="static/images/north-arrow.png" width="80" height="80" alt="Nordpfeil" />
+        <div id="menu-settings" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true"
+          data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuSettingsTitle">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="menuSettingsTitle">Einstellungen</h5>
+            <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"
+              aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <div class="accordion" id="menu-settings-main-accordion">
+              <div class="accordion-item menu-item-level-1">
+                <span class="accordion-header h2" id="menu-settings-measuerments-heading">
+                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menu-settings-globe" aria-expanded="false"
+                    aria-controls="menu-settings-globe">
+                    Globus-Visualisierung
+                  </button>
+                </span>
+                <div id="menu-settings-globe" class="accordion-collapse collapse"
+                  aria-labelledby="menu-settings-globe">
+                  <div class="accordion-body">
+                    <div class="menu-content-wrapper">
+                      Farbe: <div id="settingsGlobeColor"></div>
+                      Transparenz: <range-slider id="settingsGlobeTransparencySlider" value="100" class="opacitySlider"></range-slider>
+                        
+                      
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="accordion-item menu-item-level-1">
+                <span class="accordion-header h2" id="menu-settings-measuerments-heading">
+                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menu-settings-underground" aria-expanded="false"
+                    aria-controls="menu-settings-underground">
+                    Untergrund-Visualisierung
+                  </button>
+                </span>
+                <div id="menu-settings-underground" class="accordion-collapse collapse"
+                  aria-labelledby="menu-settings-underground">
+                  <div class="accordion-body">
+                    <div class="menu-content-wrapper">
+
+                      <label for="settingsUndergroundCameraSwitch" class="toggle-switchy" data-style="rounded" data-label="left" data-color="blue">
+                        
+                        <input checked type="checkbox" id="settingsUndergroundCameraSwitch">
+                        <span class="toggle">
+                          <span class="switch"></span>
+                        </span>
+                        Unterirdische Kameraposition
+                      </label>
+
+                      Farbe: <div id="settingsUndergroundColor"></div>
+
+
+                      <range-slider id="settingsGlobeNear" value="1000" min="0" max="3000000" class="opacitySlider"></range-slider>
+                      <range-slider id="settingsGlobeFar" value="3000000" min="0" max="3000000" class="opacitySlider"></range-slider>
+                      Transparenz Nah
+                      <range-slider id="settingsGlobeNearAlpha" value="0" class="opacitySlider"></range-slider>
+                      Transparenz Weit
+                      <range-slider id="settingsGlobeFarAlpha" value="100" class="opacitySlider"></range-slider>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
         </div>
-        <div class="row">
-            <div class="col" id="footerDiv">
-                <!-- nothing for now, just a spacer -->
-            </div>
+
+        <div id="cesiumContainer"></div>
+
+        <div id="coordOverlay">
+          <table>
+            <tr>
+              <td>Lat:</td>
+              <td><span id="coordOverlayLat"></span></td>
+            </tr>
+            <tr>
+              <td>Lon:</td>
+              <td><span id="coordOverlayLon"></span></td>
+            </tr>
+            <tr>
+              <td>Höhe:</td>
+              <td><span id="coordOverlayHeight"></span></td>
+            </tr>
+            <tr>
+              <td>Heading:
+              </td>
+              <td><span id="coordOverlayHeading"></span></td>
+            </tr>
+            <tr>
+              <td>Pitch:</td>
+              <td><span id="coordOverlayPitch"></span></td>
+            </tr>
+            <tr>
+              <td>Roll:</td>
+              <td><span id="coordOverlayRoll"></span></td>
+            </tr>
+          </table>
         </div>
+      </div>
+
+      <div>
+        <img id="north-arrow-overlay" src="static/images/north-arrow.png" width="80" height="80" alt="Nordpfeil" />
+      </div>
     </div>
+    <div class="row">
+      <div class="col" id="footerDiv">
+        <!-- nothing for now, just a spacer -->
+      </div>
+    </div>
+  </div>
 </body>
+
 </html>
