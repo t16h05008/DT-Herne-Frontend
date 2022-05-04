@@ -13,6 +13,7 @@
   <script defer src="dependencies/bootstrap/js/bootstrap.min.js"></script>
   <script defer src="dependencies/fontawesome/js/all.js"></script>
   <script defer src="dependencies/range-slider-element/index.js"></script>
+  <script defer src="dependencies/round-slider/round-slider.js" ></script>
   <script defer src="dependencies/pickr/pickr.min.js"></script>
 </head>
 
@@ -234,14 +235,6 @@
 
                       Farbe: <div id="settingsUndergroundColor"></div>
                       Transparenz: <range-slider id="settingsUndergroundTransparencySlider" value="100" class="opacitySlider"></range-slider>
-
-<!-- 
-                      <range-slider id="settingsGlobeNear" value="1000" min="0" max="6300000" class="opacitySlider"></range-slider>
-                      <range-slider id="settingsGlobeFar" value="6300000" min="0" max="6300000" class="opacitySlider"></range-slider>
-                      Transparenz Nah
-                      <range-slider id="settingsGlobeNearAlpha" value="0" class="opacitySlider"></range-slider>
-                      Transparenz Weit
-                      <range-slider id="settingsGlobeFarAlpha" value="100" class="opacitySlider"></range-slider> -->
                     </div>
                   </div>
                 </div>
@@ -281,10 +274,51 @@
             </tr>
           </table>
         </div>
-      </div>
 
-      <div>
-        <img id="north-arrow-overlay" src="static/images/north-arrow.png" width="80" height="80" alt="Nordpfeil" />
+        <div id="cameraControlOverlay">
+          <div class="container">
+            <div class="row">
+              <div class="col">
+                <span class="h4">Kamerasteuerung</span>
+              </div>
+            </div>
+            <hr>
+            <div class="row">
+              <div class="col">
+                <span class="h5">Richtung</span>
+                <round-slider id="cameraControlHeadingSlider" class="cameraControlSlider" value="0" arclength="360" startangle="270"></round-slider>
+                <input type="number" name="cameraControlHeadingInput" id="cameraControlHeadingInput">
+              </div>  
+            </div>
+            <hr>
+            <div class="row">
+              <div class="col-6">
+                  <span class="h5">Neigung</span>
+                  <range-slider id="cameraControlPitchSlider" class="cameraControlSlider verticalSlider" value="0" min="-90" max="90" ></range-slider>
+                  <input type="number" name="cameraControlPitchInput" id="cameraControlPitchInput">
+              </div>
+              <div class="col-6">
+                <span class="h5">Höhe</span>
+                <range-slider id="cameraControlHeightSlider" class="cameraControlSlider verticalSlider" value="0" min="-2500" max="2500" ></range-slider>
+                <input type="number" name="cameraControlHeightInput" id="cameraControlHeightInput">
+              </div>
+            </div>
+            <hr>
+            <div class="row">
+              <div class="col">
+                <span class="h5">Querneigung</span>
+                <range-slider id="cameraControlRollSlider" class="cameraControlSlider" value="0" min="-90" max="90" ></range-slider>
+                <input type="number" name="cameraControlRollInput" id="cameraControlRollInput">
+              </div>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div>
+          <img id="north-arrow-overlay" src="static/images/north-arrow.png" width="80" height="80" alt="Nordpfeil" />
+        </div>
       </div>
     </div>
     <div class="row">
