@@ -36,8 +36,8 @@ const initialCameraViewFormatted = {
         roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
     }
 }
-const defaultGlobeColor = "#9A13D5"; // magenta
-const defaultUndergroundColor = "#11C91F"; // lime-green
+const defaultGlobeColor = "#1e8fc3"; // water blue
+const defaultUndergroundColor = "#383F38"; // dark gray
 let viewer, camera, scene, globe;
 
 
@@ -48,6 +48,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     setHomeLocation(initialCameraViewFormatted);
     initializeSidebar();
     importData();
+    import3DModel();
 });
 
 /**
@@ -169,7 +170,7 @@ function initializeSidebar() {
    
     // underground settings
     let settingsUndergroundCameraSwitch = document.getElementById("settingsUndergroundCameraSwitch");
-    scene.screenSpaceCameraController.enableCollisionDetection = true;
+    scene.screenSpaceCameraController.enableCollisionDetection = !settingsUndergroundCameraSwitch.checked;
     settingsUndergroundCameraSwitch.addEventListener("change", function(event) {
         let chb = event.target;
         // allow camera to move underground
@@ -185,43 +186,13 @@ function initializeSidebar() {
         globe.undergroundColor  = newColor;
     });
     globe.undergroundColor = Util.convertColorToCesiumColor(defaultUndergroundColor);
- 
-    let settingsNearFarScalar = new Cesium.NearFarScalar(
-        1000,      // near
-        0.5,    // nearValue
-        3000000,    // far
-        0.5     // farValue
-    )
-    globe.undergroundColorAlphaByDistance = settingsNearFarScalar
 
-    let settingsGlobeNear = document.getElementById("settingsGlobeNear");
-    settingsGlobeNear.value = settingsNearFarScalar.near;
-    settingsGlobeNear.addEventListener("input", function(event) {
-        console.log("near");
-        globe.undergroundColorAlphaByDistance.near = event.target.value;
+    let settingsUndergroundTransparencySlider = document.getElementById("settingsUndergroundTransparencySlider");
+    settingsUndergroundTransparencySlider.addEventListener("input", function(event) {
+        let value = event.target.value;
+        globe.undergroundColor.alpha = value / 100;
     });
-
-    let settingsGlobeFar = document.getElementById("settingsGlobeFar");
-    settingsGlobeFar.value = settingsNearFarScalar.far;
-    settingsGlobeFar.addEventListener("input", function(event) {
-        console.log("far");
-        globe.undergroundColorAlphaByDistance.far = event.target.value;
-        
-    });
-
-    let settingsGlobeNearAlpha = document.getElementById("settingsGlobeNearAlpha");
-    settingsGlobeNearAlpha.value = settingsNearFarScalar.nearValue * 100;
-    settingsGlobeNearAlpha.addEventListener("input", function(event) {
-        console.log("NearAlpha");
-        globe.undergroundColorAlphaByDistance.nearValue = event.target.value / 100;
-    });
-
-    let settingsGlobeFarAlpha= document.getElementById("settingsGlobeFarAlpha");
-    settingsGlobeFarAlpha.value = settingsNearFarScalar.farValue * 100;
-    settingsGlobeFarAlpha.addEventListener("input", function(event) {
-        console.log("FarAlpha");
-        globe.undergroundColorAlphaByDistance.farValue = event.target.value / 100;
-    });
+    globe.undergroundColor.alpha = settingsUndergroundTransparencySlider.value / 100;
 }
 
 /**
