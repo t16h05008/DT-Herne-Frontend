@@ -60,6 +60,15 @@ module.exports = {
           { from: nodeModulePathConstant + '@fortawesome/fontawesome-free', to: 'dependencies/fontawesome'},
           { from: nodeModulePathConstant + 'range-slider-element/dist', to: 'dependencies/range-slider-element'},
           { from: nodeModulePathConstant + '@simonwep/pickr/dist', to: 'dependencies/pickr'},
+          // Renaming only one file here. First copy other files, then the file while renaming it.
+          { from: nodeModulePathConstant + '@thomasloven/round-slider',
+            to: 'dependencies/round-slider',
+            globOptions: {
+              ignore: ["**/round-slider.js", "**/round-slider.iife.js"]
+            }
+          },
+          { from: nodeModulePathConstant + '@thomasloven/round-slider/round-slider.iife.js', to: 'dependencies/round-slider/round-slider.js'},
+          
           { from: "src/libs/toggle-switchy/toggle-switchy.css", to: "dependencies/toggle-switchy/toggle-switchy.css"},
           // Copy images
           { from: 'src/images', to: 'static/images/'}

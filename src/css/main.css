@@ -44,6 +44,13 @@ body, html {
     background-color: rgba(255, 255, 255, 0.3)
 }
 
+#coordOverlay td:first-child {
+    text-align: right;
+}
+#coordOverlay td:last-child {
+    text-align: right;
+}
+
 #north-arrow-overlay {
     z-index: 2;
     position:absolute;
@@ -52,13 +59,92 @@ body, html {
     opacity: 0.8;
 }
 
+#cameraControlOverlay {
+    visibility: hidden;
+    z-index: 2;
+    position: absolute;
+    top: calc(var(--header-height) + var(--header-spacer-height) + 50px);
+    right:30px;
+    /* copy cesium widget style (more or less) */
+    border: 1px solid #444;
+    background-color: rgba(38,38,38,.75);
+    padding-bottom: 5px;
+    border-radius: 10px;
+    padding: 10px;
+    color: white;
+    width: 300px;
+}
 
-#coordOverlay td:first-child {
-    text-align: right;
+#cameraControlOverlay .container > .row:nth-child(5) {
+    height: 180px;
 }
-#coordOverlay td:last-child {
-    text-align: right;
+
+.cameraControlSlider:before {
+    background: lightgray !important;
 }
+
+.cameraControlSlider .thumb {
+    background-color: var(--herne-logo-blue)
+}
+
+#cameraControlHeadingSlider {
+    width: 50%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    --round-slider-bar-color: var(--herne-logo-blue);
+    --round-slider-handle-color: var(--herne-logo-blue);
+    /*transform: rotate(-90deg);*/
+}
+
+#cameraControlHeadingInput {
+    position: absolute;
+    top: 150px;
+    left: 120px;
+    width: 60px;
+    text-align: center;
+}
+
+#cameraControlPitchSlider {
+    /* rotated by 90 deg */
+    position: absolute;
+    top: 360px;
+    left: -20px;
+    width: 100px;
+}
+
+#cameraControlPitchInput {
+    position: absolute;
+    top: 360px;
+    left: 65px;
+    width: 60px;
+    text-align: center;
+}
+
+#cameraControlHeightSlider {
+    /* rotated by 90 deg */
+    position: absolute;
+    top: 360px;
+    right: 40px;
+    width: 100px;
+}
+
+#cameraControlHeightInput {
+    position: absolute;
+    top: 360px;
+    right: 30px;
+    width: 60px;
+    text-align: center;
+}
+
+#cameraControlRollInput {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 60px;
+    text-align: center;
+}
+
 
 #headerDiv {
     height: var(--header-height);
@@ -290,7 +376,7 @@ body, html {
 }
 
 .menu-item-level-1 .opacitySlider:before {
-    background: linear-gradient(90deg, var(--menu-background-color-level-1),var(--herne-logo-blue)) 0/var(--value-percent,0) 100% no-repeat lightgray !important; 
+    background: linear-gradient(90deg, var(--menu-background-color-level-1),var(--herne-logo-blue)) 0/var(--value-percent,0) 100% no-repeat lightgray !important;
 }
 
 .menu-item-level-1 .opacitySlider .thumb {
@@ -299,7 +385,7 @@ body, html {
 
 
 .menu-item-level-2 .opacitySlider:before {
-    background: linear-gradient(90deg, var(--menu-background-color-level-2),var(--herne-logo-green)) 0/var(--value-percent,0) 100% no-repeat lightgray !important; 
+    background: linear-gradient(90deg, var(--menu-background-color-level-2),var(--herne-logo-green)) 0/var(--value-percent,0) 100% no-repeat lightgray !important;
 }
 
 .menu-item-level-2 .opacitySlider .thumb {
@@ -314,3 +400,10 @@ body, html {
 #advancedTransluencyOptionsWrapper {
     padding-left: 20px;
 }
+
+/* make range-slider-elements vertically */
+.verticalSlider {
+    transform: rotate(90deg)
+}
+
+

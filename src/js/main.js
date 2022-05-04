@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     setHomeLocation(initialCameraViewFormatted);
     initializeSidebar();
     importData();
-    import3DModel();
+    //import3DModel(); // file is deleted
 });
 
 /**
@@ -82,6 +82,8 @@ function initializeViewer(initialCameraViewFormatted) {
     scene = viewer.scene;
     globe = scene.globe;
 
+    // Decrease the distance the camera has to change before the "changed" event is fired.
+    camera.percentageChanged = 0.1; 
     camera.setView(initialCameraViewFormatted); 
     viewer.baseLayerPicker.destroy(); // No longer needed, we manage base layers in the sidebar based on the stored references
 }
@@ -105,10 +107,10 @@ function createCustomOverlayComponents() {
         let coordOverlayRoll = document.getElementById("coordOverlayRoll")
         
         // Transform coords to radiants, then to degree (lon lat)
-        let cartographic = Cesium.Cartographic.fromCartesian(camera.position)
-        coordOverlayLat.innerHTML = Util.round(Cesium.Math.toDegrees(cartographic.latitude), 5)
-        coordOverlayLon.innerHTML =  Util.round(Cesium.Math.toDegrees(cartographic.longitude), 5);
-        coordOverlayHeight.innerHTML = Math.round(cartographic.height); // +- 1 meter should be accurate enough
+        let posCarto = camera.positionCartographic;
+        coordOverlayLat.innerHTML = Util.round(Cesium.Math.toDegrees(posCarto.latitude), 5)
+        coordOverlayLon.innerHTML =  Util.round(Cesium.Math.toDegrees(posCarto.longitude), 5);
+        coordOverlayHeight.innerHTML = Math.round(posCarto.height); // +- 1 meter should be accurate enough
         // Orientation
         coordOverlayHeading.innerHTML = newHeadingDeg;
         coordOverlayPitch.innerHTML = newPitchDeg == 360 ? 0 : newPitchDeg;
@@ -120,9 +122,152 @@ function createCustomOverlayComponents() {
         let northArrowImg = document.querySelector("#north-arrow-overlay")
         let newHeadingDeg = Util.round(Cesium.Math.toDegrees(camera.heading), 5);
         northArrowImg.style.transform = "rotate(" + (newHeadingDeg * -1) + "deg)";
-    })
+    });
 
     camera.changed.raiseEvent(); // trigger 'changed' event programmatically to call the listeners initially
+
+    // Add overlay to control the camera with sliders
+    let cesiumToolbar = document.querySelector(".cesium-viewer-toolbar"); // There should only be one toolbar
+    let cameraControlBtn = document.createElement("button");
+    let icon = document.createElement("i");
+    let cameraControlHeadingSlider = document.querySelector("#cameraControlHeadingSlider");
+    let cameraControlHeadingInput = document.querySelector("#cameraControlHeadingInput");
+    let cameraControlPitchSlider = document.querySelector("#cameraControlPitchSlider");
+    let cameraControlPitchInput = document.querySelector("#cameraControlPitchInput");
+    let cameraControlRollSlider = document.querySelector("#cameraControlRollSlider");
+    let cameraControlRollInput = document.querySelector("#cameraControlRollInput");
+    let cameraControlHeightSlider = document.querySelector("#cameraControlHeightSlider");
+    let cameraControlHeightInput = document.querySelector("#cameraControlHeightInput");
+
+    cesiumToolbar.insertBefore(cameraControlBtn, cesiumToolbar.firstChild);
+    cameraControlBtn.classList.add("cesium-button", "cesium-toolbar-button");
+    icon.classList.add("fa-solid", "fa-lg", "fa-camera");
+    cameraControlBtn.appendChild(icon);
+
+    cameraControlBtn.addEventListener("click", function(event) {
+        // Show or hide camera control overlay
+        let cameraControlOverlay = document.querySelector("#cameraControlOverlay");
+        let isVisible = (cameraControlOverlay.style.visibility === "visible");
+        if(isVisible) {
+            cameraControlOverlay.style.visibility = "hidden";
+        } else {
+            camera.changed.raiseEvent(); // trigger 'changed' event programmatically to update controls
+            cameraControlOverlay.style.visibility = "visible";
+        }
+    });
+    // Add listeners to sliders and text inputs
+    cameraControlHeadingSlider.addEventListener("value-changing", function(event) {
+        let value = event.target.value
+        value = value * 3.6; // slider is bugged if we set a max value other than 100 :(
+        camera.setView({
+            orientation: {
+                heading : Cesium.Math.toRadians(value),
+                pitch: camera.pitch,
+                roll: camera.roll
+            }
+        });
+    });
+    cameraControlHeadingInput.addEventListener("change", function(event) {
+        let value = event.target.value;
+        camera.setView({
+            orientation: {
+                heading : Cesium.Math.toRadians(value),
+                pitch: camera.pitch,
+                roll: camera.roll
+            }
+        });
+    });
+    cameraControlPitchSlider.addEventListener("input", function(event) {
+        let value = event.target.value;
+        value *= -1 // invert
+        camera.setView({
+            orientation: {
+                Heading : camera.heading,
+                pitch: Cesium.Math.toRadians(value),
+                roll: camera.roll
+            }
+        });
+    });
+    cameraControlPitchInput.addEventListener("change", function(event) {
+        let value = event.target.value;
+        value *= -1 // invert
+        camera.setView({
+            orientation: {
+                Heading : camera.heading,
+                pitch: Cesium.Math.toRadians(value),
+                roll: camera.roll
+            }
+        });
+    });
+    cameraControlHeightSlider.addEventListener("input", function(event) {
+        let value = event.target.value;
+        value *= -1 // invert
+        let posCarto = camera.positionCartographic;
+        let lon = Util.round(Cesium.Math.toDegrees(posCarto.longitude), 5);
+        let lat = Util.round(Cesium.Math.toDegrees(posCarto.latitude), 5);
+        camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(lon, lat, value),
+            orientation: { heading: camera.heading, pitch: camera.pitch, roll: camera.roll }
+        });
+    });
+    cameraControlHeightInput.addEventListener("change", function(event) {
+        let value = parseInt(event.target.value);
+        let posCarto = camera.positionCartographic;
+        let lon = Util.round(Cesium.Math.toDegrees(posCarto.longitude), 5);
+        let lat = Util.round(Cesium.Math.toDegrees(posCarto.latitude), 5);
+        camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(lon, lat, value),
+            orientation: { heading: camera.heading, pitch: camera.pitch, roll: camera.roll }
+        });
+    });
+    cameraControlRollSlider.addEventListener("input", function(event) {
+        let value = event.target.value;
+        camera.setView({
+            orientation: {
+                Heading : camera.heading,
+                pitch: camera.pitch,
+                roll: Cesium.Math.toRadians(value)
+            }
+        });
+        // For some reason the camera.changed event is only fired once.
+        // This might be a bug in Cesium, since there were some bugs related to this in the past.
+        // Fire event manually to update text input.
+        camera.changed.raiseEvent();
+    });
+    cameraControlRollInput.addEventListener("change", function(event) {
+        let value = event.target.value;
+        camera.setView({
+            orientation: {
+                Heading : camera.heading,
+                pitch: camera.pitch,
+                roll: Cesium.Math.toRadians(value)
+            }
+        });
+        // Fire event manually to update slider (same reason as above)
+        camera.changed.raiseEvent();
+    });
+    
+    // Update controls on camera change
+    camera.changed.addEventListener(function() {
+        let heading = Math.round(Cesium.Math.toDegrees(camera.heading));
+        let pitch = Math.round(Cesium.Math.toDegrees(camera.pitch));
+        let roll = Math.round(Cesium.Math.toDegrees(camera.roll));
+        roll = (270 <= roll && roll <= 360) ? roll -= 360 : roll; // map to slider interval is needed
+        let height = Math.round(camera.positionCartographic.height);
+        // update sliders
+        // TODO Make sure the sliders stay in their defined intervals, especially the height slider.
+        cameraControlHeadingSlider.value = heading / 3.6;
+        cameraControlPitchSlider.value = pitch * -1;
+        cameraControlHeightSlider.value = height * -1;
+        cameraControlRollSlider.value = roll;
+        // update text inputs
+        cameraControlHeadingInput.value = heading;
+        cameraControlPitchInput.value = pitch * -1;
+        cameraControlHeightInput.value = height;
+        cameraControlRollInput.value = roll;
+    });
+
+    cameraControlBtn.click();
 }
 
 /**
@@ -282,8 +427,7 @@ function populateBaseLayers(type) {
 
     for(const layer of viewModel) {
         let layerDiv = document.createElement("div");
-        layerDiv.classList.add("menu-base-layer-entry");
-        layerDiv.classList.add("menu-content-wrapper")
+        layerDiv.classList.add("menu-base-layer-entry", "menu-content-wrapper");
         
         let radioBtn = document.createElement("input");
         radioBtn.classList.add("form-check-input")
@@ -321,8 +465,7 @@ function populateBaseLayers(type) {
             // TODO opacity sliders are not really needed for base layers since they don't influence the globe opacity
             let opacitySlider = document.createElement("range-slider");
             opacitySlider.value = 100;
-            opacitySlider.classList.add("opacitySlider")
-            opacitySlider.classList.add("baseLayerOpacitySlider")
+            opacitySlider.classList.add("opacitySlider", "baseLayerOpacitySlider")
             if( !radioBtn.checked ) opacitySlider.disabled = true; // only visually disabled
             opacitySlider.dataset.layerName = layer.name;
             opacitySlider.addEventListener("input", function(event) {
@@ -519,34 +662,35 @@ function convertColorPickerResultToCesiumColor(color) {
 
 
 function import3DModel() {
-    // Import a 3D-Model
-    // console.log(Cesium.HeightReference.RELATIVE_TO_GROUND);
-    // let position = Cesium.Cartesian3.fromDegrees(7.2169987, 51.5451096, 0);
-    // let heading = Cesium.Math.toRadians(90);
-    // let pitch =  0
-    // let roll =  0
-    // console.log(heading, pitch, roll);
-    // let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
-    // let entity = viewer.entities.add({
-    //     position : position,
-    //     model : {
-    //         uri : '3D-Models/Bahnhofsplatz_16-18.gltf'
-    //     },
-    //     orientation: orientation
-    // });
-    let modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(7.2169987,51.5451096, 0));
-    console.log(modelMatrix);
-    const model = scene.primitives.add(Cesium.Model.fromGltf({
-        url : '3D-Models/Bahnhofsplatz_16-18.gltf',
-        modelMatrix : modelMatrix,
-        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
-        scene: scene,
-        globe: globe
-      }));
+    // as entity
+    let position = Cesium.Cartesian3.fromDegrees(7.2169987, 51.5451096, -500);
+    let heading = Cesium.Math.toRadians(0);
+    let pitch =  0
+    let roll =  0
+    let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
+    let entity = viewer.entities.add({
+        position : position,
+        model : {
+            uri : 'temp/ParcLeadMine.glb'
+        },
+        orientation: orientation
+    });
+
+
+    // as primitive 
+    // let modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(7.2169987,51.5451096, 0));
+    // console.log(modelMatrix);
+    // const model = scene.primitives.add(Cesium.Model.fromGltf({
+    //     url : '3D-Models/Bahnhofsplatz_16-18.gltf',
+    //     modelMatrix : modelMatrix,
+    //     heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+    //     scene: scene,
+    //     globe: globe
+    //   }));
       
-      model.readyPromise.then(function(model) {
-        // Play all animations when the model is ready to render
-        model.activeAnimations.addAll();
-      });
+    //   model.readyPromise.then(function(model) {
+    //     // Play all animations when the model is ready to render
+    //     model.activeAnimations.addAll();
+    //   });
 }
 
