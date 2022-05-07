@@ -1,19 +1,15 @@
 // A worker that manages which tiles should be loaded in the viewer
 
 importScripts("dependencies/txml/txml.min.js");
-// couldn't figure out how to import only part of turf
-import * as turf from "@turf/turf";
 
-let isReady = false;
-let maxNumberOfShownTiles = 200;
-let maxDistanceFromCamera = 200;
 
-let taskQueue = [];
-const maxQueueLength = 10;
-for(let i=0; i<maxQueueLength;i++) {
-    taskQueue.push(undefined);
+const workerState = {
+    isInitialized: false,
+    isBusy: false
 }
-Object.seal(taskQueue); // length is fixed to "maxQueueLength" now
+let subWorker;
+
+let cacheSize = 200;
 
 let tiles = [
 /*
@@ -52,34 +48,44 @@ let tiles = [
 
 onmessage = async function(e) {
     let data = e.data;
+    // initialize
     if(data.event === "start") {
         console.log('worker started');
         maxNumberOfShownTiles = data.maxNumberOfShownTiles;
-        maxDistanceFromCamera = data.maxDistanceFromCamera;
         tiles = await prepareTiles();
-        isReady = true;
+        workerState.isInitialized = true;
         console.log(tiles)
     }
 
     if(data.event === "povUpdated") {
         console.log('pov updated received');
-        if(!isReady) {
-            console.log("worker not ready");
-        } else {
-            console.log("worker ready");
-            let tileNames = calculateTilesToShow(data.viewRect);
-            console.log(tileNames)
-            let tilesToShow = tiles.filter( (tile) => {
-                return tileNames.includes(tile.name);
-            });
-            console.log(tilesToShow)
-            // The main thread only needs the entities
-            let workerResult = [];
-            for(let tile of tilesToShow) {
-                workerResult = workerResult.concat(tile.entities);
-            }
-            postMessage(workerResult)
+        if(!workerState.isInitialized) {
+            console.log("worker not ready yet.");
+            return;
         }
+
+        // If the sub-worker is still busy terminate it and spawn a new one
+        if(subWorker) {
+            console.log("Sub-worker is still busy. Aborting current processing and restarting.");
+            subWorker.terminate();
+        }
+
+        subWorker = undefined;
+        subWorker = new Worker(new URL("./tilesWebworker.js", import.meta.url));
+
+        subWorker.postMessage({
+            event: "startCalculation",
+            tiles: tiles,
+            viewRect: data.viewRect // the new view area
+        });
+
+        // Subworker is done. Pipe result to main thread
+        subWorker.onmessage = function(e) {
+            postMessage(e.data)
+            subWorker.terminate();
+            subWorker = undefined;
+        }
+
     }
 }
 
@@ -141,38 +147,7 @@ async function prepareTiles() {
     return tiles;
 }
 
-/**
- * Returns an array of string containing the intersecting tile names
- * @param {*} viewRect 
- */
-function calculateTilesToShow(viewRect) {
-    // Iterate tiles and check if they intersect with the view rectangle.
-    let result = [];
-    for(let tile of tiles) {
-        // Intersection check is done with turf, which needs two polygons.
-        // counter-clockwise
-        let viewRectAsPoly = turf.polygon([[
-            [viewRect.west, viewRect.south], // bot left
-            [viewRect.east, viewRect.south], // bot right
-            [viewRect.east, viewRect.north], // top right
-            [viewRect.west, viewRect.north], // top left
-            [viewRect.west, viewRect.south] // bot right again
-        ]]);
-        let tileExtentAsPoly = turf.polygon([[
-            [tile.extent.west, tile.extent.south],
-            [tile.extent.east, tile.extent.south],
-            [tile.extent.east, tile.extent.north],
-            [tile.extent.west, tile.extent.north],
-            [tile.extent.west, tile.extent.south]
-        ]]);
 
-        let intersects = turf.booleanIntersects(viewRectAsPoly, tileExtentAsPoly);
-        if(intersects) {
-            result.push(tile.name)
-        }
-    }
-    return result;
-}
 
 // The kml files might contain paths with .dae (collada) file extendsions.
 // This happens sometimes and I couldn't figure out why that is, yet.
