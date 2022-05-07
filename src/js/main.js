@@ -39,7 +39,7 @@ const initialCameraViewFormatted = {
 const defaultGlobeColor = "#1e8fc3"; // water blue
 const defaultUndergroundColor = "#383F38"; // dark gray
 let viewer, camera, scene, globe;
-const tilingManager = new Worker(new URL("./webworkers/tilingManagerWebworker.js", import.meta.url));
+const tilingManager = new Worker(new URL("./webworkers/tilesManagerWebworker.js", import.meta.url));
 
 
 
@@ -662,86 +662,83 @@ function convertColorPickerResultToCesiumColor(color) {
 
 function importKmlDataSource() {
 
-    let maxNumberOfShownTiles = document.getElementById("settings-number-of-shown-tiles").value;
-    let maxDistanceFromCamera = document.getElementById("settings-max-distance").value;
-    if (window.Worker) {
-        tilingManager.postMessage({
-            event: "start",
-            maxNumberOfShownTiles: maxNumberOfShownTiles,
-            maxDistanceFromCamera: maxDistanceFromCamera
-        });
+    let cacheSize = document.getElementById("settings-cache-size").value;
 
-        camera.moveEnd.addEventListener(function() {
-            // get visible area
-            // has properties east, north, south, west in radiants
-            let viewRect = camera.computeViewRectangle();
-            let viewRectDeg = {
-                east: Cesium.Math.toDegrees(viewRect.east),
-                west: Cesium.Math.toDegrees(viewRect.west),
-                north:  Cesium.Math.toDegrees(viewRect.north),
-                south:  Cesium.Math.toDegrees(viewRect.south)
-            }
+    tilingManager.postMessage({
+        event: "start",
+        cacheSize: cacheSize,
+    });
 
-            if(viewRect) {
-                tilingManager.postMessage({
-                    event: "povUpdated",
-                    viewRect: viewRectDeg,
-                    //loadedEntities: viewer.entities.values // TODO process in webworker
-                });
-            } 
-        });
-
-        tilingManager.onmessage = function(e) {
-            console.log("number of entities to show", e.data.length);
-            // The entities have different formats, but both have a name property that can be used for comparison
-            let entitiesToShow = e.data; 
-            let currentEntities = viewer.entities.values;
-            let entitiesToShowNames = entitiesToShow.map( entity => entity.name );
-            let currentEntitiesNames = currentEntities.map( entity => entity.name );
-
-            // get all entities that should be loaded
-            let entitiesToLoad =  entitiesToShow.filter( (entity) => {
-                return !currentEntitiesNames.includes(entity.name);
-            });
-
-            // and the ones to unload
-            let entitiesToUnload = currentEntities.filter( (entity) => {
-                return !entitiesToShowNames.includes(entity.name);
-            });
-
-            // unload
-            for(let entity of entitiesToUnload) {
-                viewer.entities.remove(entity);
-            }
-
-            // load
-            for(let entity of entitiesToLoad) {
-                let lon = parseFloat(entity.location.longitude);
-                let lat = parseFloat(entity.location.latitude);
-                let altitude = parseFloat(entity.location.altitude);
-                let position = Cesium.Cartesian3.fromDegrees(lon, lat, altitude);
-                // no idea why +90 is needed here, but it works. Maybe the heading get exported with a different reference from the db?
-                let heading = Cesium.Math.toRadians(parseFloat(entity.orientation.heading) + 90); 
-                let pitch =  0
-                let roll =  0
-                let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
-
-                let newEntity = new Cesium.Entity({
-                    name: entity.name,
-                    position : position,
-                    orientation: orientation,
-                    model : {
-                        uri : entity.pathToModelAbsolute
-                    },
-                });
-
-                viewer.entities.add(newEntity);
-            }
+    // moveEnd should be frequently enough but we can use "changed", too.
+    // However, that will spawn and terminate a lot more web workers, so there might be overhead.
+    camera.moveEnd.addEventListener(function() {
+        // get visible area
+        // has properties east, north, south, west in radiants
+        let viewRect = camera.computeViewRectangle();
+        let viewRectDeg = {
+            east: Cesium.Math.toDegrees(viewRect.east),
+            west: Cesium.Math.toDegrees(viewRect.west),
+            north:  Cesium.Math.toDegrees(viewRect.north),
+            south:  Cesium.Math.toDegrees(viewRect.south)
         }
 
+        if(viewRect) {
+            tilingManager.postMessage({
+                event: "povUpdated",
+                viewRect: viewRectDeg,
+                //loadedEntities: viewer.entities.values // TODO process in webworker
+            });
+        } 
+    });
 
-    } else {
-        console.log('Your browser doesn\'t support web workers.');
+    tilingManager.onmessage = function(e) {
+        console.log("number of entities to show", e.data.length);
+        // The code below could be done in the webworker if needed.
+        // The entities have different formats, but both have a name property that can be used for comparison
+        let entitiesToShow = e.data; 
+        let currentEntities = viewer.entities.values;
+        let entitiesToShowNames = entitiesToShow.map( entity => entity.name );
+        let currentEntitiesNames = currentEntities.map( entity => entity.name );
+
+        // get all entities that should be loaded
+        let entitiesToLoad =  entitiesToShow.filter( (entity) => {
+            return !currentEntitiesNames.includes(entity.name);
+        });
+
+        // and the ones to unload
+        let entitiesToUnload = currentEntities.filter( (entity) => {
+            return !entitiesToShowNames.includes(entity.name);
+        });
+
+        // unload
+        for(let entity of entitiesToUnload) {
+            viewer.entities.remove(entity);
+        }
+
+        // load
+        for(let entity of entitiesToLoad) {
+            let lon = parseFloat(entity.location.longitude);
+            let lat = parseFloat(entity.location.latitude);
+            let altitude = parseFloat(entity.location.altitude);
+            let position = Cesium.Cartesian3.fromDegrees(lon, lat, altitude);
+            // no idea why +90 is needed here, but it works. Maybe the heading get exported with a different reference from the db?
+            let heading = Cesium.Math.toRadians(parseFloat(entity.orientation.heading) + 90); 
+            let pitch =  0
+            let roll =  0
+            let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
+
+            let newEntity = new Cesium.Entity({
+                name: entity.name,
+                position : position,
+                orientation: orientation,
+                model : {
+                    uri : entity.pathToModelAbsolute,
+                    //distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 1000), // in meter
+                },
+            });
+
+            viewer.entities.add(newEntity);
+        }
     }
 }
 
