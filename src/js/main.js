@@ -13,9 +13,9 @@ import * as Util from "./util.mjs";
 Cesium.Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
 const initialCameraView = {
   position: {
-    lat: 51.54062,
-    lon: 7.22472,
-    height: 240 // meter
+    lat: 51.54005,
+    lon: 7.22795,
+    height: 120 // meter TODO set back to 240 
   },
   orientation: { // in degree
     heading: 295,
@@ -39,6 +39,7 @@ const initialCameraViewFormatted = {
 const defaultGlobeColor = "#1e8fc3"; // water blue
 const defaultUndergroundColor = "#383F38"; // dark gray
 let viewer, camera, scene, globe;
+const tilingManager = new Worker(new URL("./webworkers/tilingManagerWebworker.js", import.meta.url));
 
 
 
@@ -47,8 +48,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     createCustomOverlayComponents();
     setHomeLocation(initialCameraViewFormatted);
     initializeSidebar();
-    importData();
-    //import3DModel(); // file is deleted
+    importKmlDataSource();
 });
 
 /**
@@ -85,6 +85,7 @@ function initializeViewer(initialCameraViewFormatted) {
     // Decrease the distance the camera has to change before the "changed" event is fired.
     camera.percentageChanged = 0.1; 
     camera.setView(initialCameraViewFormatted); 
+    changeBaseLayer("terrain", viewer.baseLayerPicker.viewModel.terrainProviderViewModels[0]) // select WGS84 ellipsoid for testing
     viewer.baseLayerPicker.destroy(); // No longer needed, we manage base layers in the sidebar based on the stored references
 }
 
@@ -266,8 +267,6 @@ function createCustomOverlayComponents() {
         cameraControlHeightInput.value = height;
         cameraControlRollInput.value = roll;
     });
-
-    cameraControlBtn.click();
 }
 
 /**
@@ -661,36 +660,166 @@ function convertColorPickerResultToCesiumColor(color) {
 }
 
 
-function import3DModel() {
-    // as entity
-    let position = Cesium.Cartesian3.fromDegrees(7.2169987, 51.5451096, -500);
-    let heading = Cesium.Math.toRadians(0);
-    let pitch =  0
-    let roll =  0
-    let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
-    let entity = viewer.entities.add({
-        position : position,
-        model : {
-            uri : 'temp/ParcLeadMine.glb'
-        },
-        orientation: orientation
-    });
+function importKmlDataSource() {
+
+    let maxNumberOfShownTiles = document.getElementById("settings-number-of-shown-tiles").value;
+    let maxDistanceFromCamera = document.getElementById("settings-max-distance").value;
+    if (window.Worker) {
+        tilingManager.postMessage({
+            event: "start",
+            maxNumberOfShownTiles: maxNumberOfShownTiles,
+            maxDistanceFromCamera: maxDistanceFromCamera
+        });
+
+        camera.moveEnd.addEventListener(function() {
+            // get visible area
+            // has properties east, north, south, west in radiants
+            let viewRect = camera.computeViewRectangle();
+            let viewRectDeg = {
+                east: Cesium.Math.toDegrees(viewRect.east),
+                west: Cesium.Math.toDegrees(viewRect.west),
+                north:  Cesium.Math.toDegrees(viewRect.north),
+                south:  Cesium.Math.toDegrees(viewRect.south)
+            }
+
+            if(viewRect) {
+                tilingManager.postMessage({
+                    event: "povUpdated",
+                    viewRect: viewRectDeg,
+                    //loadedEntities: viewer.entities.values // TODO process in webworker
+                });
+            } 
+        });
+
+        tilingManager.onmessage = function(e) {
+            console.log("number of entities to show", e.data.length);
+            // The entities have different formats, but both have a name property that can be used for comparison
+            let entitiesToShow = e.data; 
+            let currentEntities = viewer.entities.values;
+            let entitiesToShowNames = entitiesToShow.map( entity => entity.name );
+            let currentEntitiesNames = currentEntities.map( entity => entity.name );
+
+            // get all entities that should be loaded
+            let entitiesToLoad =  entitiesToShow.filter( (entity) => {
+                return !currentEntitiesNames.includes(entity.name);
+            });
+
+            // and the ones to unload
+            let entitiesToUnload = currentEntities.filter( (entity) => {
+                return !entitiesToShowNames.includes(entity.name);
+            });
+
+            // unload
+            for(let entity of entitiesToUnload) {
+                viewer.entities.remove(entity);
+            }
+
+            // load
+            for(let entity of entitiesToLoad) {
+                let lon = parseFloat(entity.location.longitude);
+                let lat = parseFloat(entity.location.latitude);
+                let altitude = parseFloat(entity.location.altitude);
+                let position = Cesium.Cartesian3.fromDegrees(lon, lat, altitude);
+                // no idea why +90 is needed here, but it works. Maybe the heading get exported with a different reference from the db?
+                let heading = Cesium.Math.toRadians(parseFloat(entity.orientation.heading) + 90); 
+                let pitch =  0
+                let roll =  0
+                let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
+
+                let newEntity = new Cesium.Entity({
+                    name: entity.name,
+                    position : position,
+                    orientation: orientation,
+                    model : {
+                        uri : entity.pathToModelAbsolute
+                    },
+                });
+
+                viewer.entities.add(newEntity);
+            }
+        }
 
 
-    // as primitive 
-    // let modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(7.2169987,51.5451096, 0));
-    // console.log(modelMatrix);
-    // const model = scene.primitives.add(Cesium.Model.fromGltf({
-    //     url : '3D-Models/Bahnhofsplatz_16-18.gltf',
-    //     modelMatrix : modelMatrix,
-    //     heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
-    //     scene: scene,
-    //     globe: globe
-    //   }));
-      
-    //   model.readyPromise.then(function(model) {
-    //     // Play all animations when the model is ready to render
-    //     model.activeAnimations.addAll();
-    //   });
+    } else {
+        console.log('Your browser doesn\'t support web workers.');
+    }
 }
+
+// function import3DModels() {
+
+//     let objects = {
+//         "12305": {
+//             "lon": 7.226498,
+//             "lat": 51.5365064,
+//             "alt": 0,
+//             "heading": 358.6103405,
+//             "name": "_Bahnhofstrasse8Kreuzkirche_BD.zrrR4iTwPKbogAgaPmn9",
+//             "path": "glTF_Bahnhofstr/Tiles/0/6/12305/_Bahnhofstrasse8Kreuzkirche_BD.zrrR4iTwPKbogAgaPmn9.gltf"
+//         },
+//         "8204": {
+//             "lon": 7.2261117,
+//             "lat": 51.5365759,
+//             "alt": 0,
+//             "heading": 358.612792,
+//             "name": "_Bahnhofstrasse5_BD.j9NBE9WR0ECDNqEM2A1k",
+//             "path": "glTF_Bahnhofstr/Tiles/0/6/18699/_Bahnhofstrasse5_BD.j9NBE9WR0ECDNqEM2A1k.gltf",
+//         },
+//         "18699": {
+//             "lon": 7.226322,
+//             "lat": 51.5361598,
+//             "alt": 0,
+//             "heading": 358.6088835,
+//             "name": "U-Bahn_Eingang_BD.JJodstg64BAjNyOplUbx",
+//             "path": "glTF_Bahnhofstr/Tiles/0/6/8204/U-Bahn_Eingang_BD.JJodstg64BAjNyOplUbx.gltf",
+//         }
+//     }
+//     //     "glTF_Bahnhofstr/Tiles/0/6/8204/U-Bahn_Eingang_BD.JJodstg64BAjNyOplUbx.gltf",
+
+//     //     "glTF_Bahnhofstr/Tiles/1/5/19867/_Bahnhofstrasse12_BD.WW78THZwqrqu8kAn9lY6.gltf",
+
+//     //     "glTF_Bahnhofstr/Tiles/4/3/18558/_Bahnhofstrasse53_BD.GBeGmjaOvAM55M8M8hiD.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/4/3/18632/_Bahnhofstrasse53-1_BD.scwVaNciA9DrBK2a8BQg.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/4/3/18669/_Bahnhofstrasse51_BD.tjZs1CBEN3SmVEDsskhq.gltf",
+
+//     //     "glTF_Bahnhofstr/Tiles/4/4/18433/_Bahnhofstrasse60_BD.BZWvCpdSDAbzyNChgqpT.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/4/4/18316/_Bahnhofstrasse62_BD.kBZI5Sc46mzJr6kvvK1C.gltf",
+
+//     //     "glTF_Bahnhofstr/Tiles/5/3/16738/_Bahnhofstrasse68_BD.qEKblFlw1m7UEfy3Nkmj.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/5/3/16984/_Bahnhofstrasse67_BD.P6OC1Jbvq60SyRDmZXga.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/5/3/17185/_Bahnhofstrasse66_BD.Pc8ovbtUx75RyNocdBsP.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/5/3/17227/_Bahnhofstrasse64_BD.rJ39WNz4A9beuNWHuZQ9.gltf",
+        
+//     //     "glTF_Bahnhofstr/Tiles/8/0/37148/DENW05AL100009vy.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/8/0/37210/DENW05AL100008og.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/8/0/37349/DENW05AL100005Bw.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/8/0/37406/DENW05AL100009Du.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/8/0/37446/DENW05AL100007vZ.gltf",
+
+//     //     "glTF_Bahnhofstr/Tiles/8/1/20143/DENW05AL100009Z6.gltf",
+
+//     //     "glTF_Bahnhofstr/Tiles/8/2/20142/DENW05AL100008E2.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/8/2/36800/DENW05AL10000C6R.gltf",
+//     //     "glTF_Bahnhofstr/Tiles/8/2/37023/DENW05AL100005sh.gltf",
+//     // ]
+
+//     for(let obj in objects) {
+//         let position = Cesium.Cartesian3.fromDegrees(objects[obj].lon, objects[obj].lat, objects[obj].alt);
+//         // no idea why +90 is needed here, but it works. Maybe cesium defines heading different from most other viewers(?)
+//         let heading = Cesium.Math.toRadians(objects[obj].heading+90); 
+//         let pitch =  0
+//         let roll =  0
+//         let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
+
+//         let entity = new Cesium.Entity({
+//             position : position,
+//             model : {
+//                  uri : objects[obj].path
+//             },
+//             orientation: orientation,
+//             name: objects[obj].name
+//         });
+
+//         viewer.entities.add(entity);
+//     }
+// }
 

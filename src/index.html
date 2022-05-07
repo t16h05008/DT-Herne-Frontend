@@ -191,7 +191,7 @@
           <div class="offcanvas-body">
             <div class="accordion" id="menu-settings-main-accordion">
               <div class="accordion-item menu-item-level-1">
-                <span class="accordion-header h2" id="menu-settings-measuerments-heading">
+                <span class="accordion-header h2" id="menu-settings-globe-heading">
                   <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
                     data-bs-target="#menu-settings-globe" aria-expanded="false"
                     aria-controls="menu-settings-globe">
@@ -211,7 +211,7 @@
                 </div>
               </div>
               <div class="accordion-item menu-item-level-1">
-                <span class="accordion-header h2" id="menu-settings-measuerments-heading">
+                <span class="accordion-header h2" id="menu-settings-underground-heading">
                   <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
                     data-bs-target="#menu-settings-underground" aria-expanded="false"
                     aria-controls="menu-settings-underground">
@@ -235,6 +235,27 @@
 
                       Farbe: <div id="settingsUndergroundColor"></div>
                       Transparenz: <range-slider id="settingsUndergroundTransparencySlider" value="100" class="opacitySlider"></range-slider>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="accordion-item menu-item-level-1">
+                <span class="accordion-header h2" id="menu-settings-performance-heading">
+                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menu-settings-performance" aria-expanded="false"
+                    aria-controls="menu-settings-performance">
+                    Performanz
+                  </button>
+                </span>
+                <div id="menu-settings-performance" class="accordion-collapse collapse"
+                  aria-labelledby="menu-settings-performance">
+                  <div class="accordion-body">
+                    <div class="menu-content-wrapper">
+                      Anzahl Tiles: <input type="text" name="settings-number-of-shown-tiles" id="settings-number-of-shown-tiles" value="2"><br />
+                      Max. Abstand zur Kamera<input type="text" name="settings-max-distance" id="settings-max-distance" value="100"><br />
+                      Cache-Größe: TODO
+                        
+                      
                     </div>
                   </div>
                 </div>
