@@ -60,6 +60,8 @@ module.exports = {
           { from: nodeModulePathConstant + '@fortawesome/fontawesome-free', to: 'dependencies/fontawesome'},
           { from: nodeModulePathConstant + 'range-slider-element/dist', to: 'dependencies/range-slider-element'},
           { from: nodeModulePathConstant + '@simonwep/pickr/dist', to: 'dependencies/pickr'},
+          { from: nodeModulePathConstant + 'txml/dist/', to: 'dependencies/txml'},
+          { from: nodeModulePathConstant + '@turf/turf/dist/', to: 'dependencies/turf/'},
           // Renaming only one file here. First copy other files, then the file while renaming it.
           { from: nodeModulePathConstant + '@thomasloven/round-slider',
             to: 'dependencies/round-slider',
