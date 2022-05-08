@@ -7,6 +7,7 @@ const fs = require('fs')
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const WebpackPwaManifest = require('webpack-pwa-manifest')
 const Dotenv = require('dotenv-webpack');
 
 const nodeModulePathConstant = "node_modules/";
@@ -44,6 +45,13 @@ module.exports = {
     new HtmlWebpackPlugin({
         template: 'src/index.html'
     }),
+    new WebpackPwaManifest({
+      name: "Digitaler Zwilling Herne",
+      icons: [
+        { src: path.resolve('src/icon-192.png'), sizes: '192x192' },
+        { src: path.resolve('src/icon-512.png'), sizes: '512x512' }
+      ]
+    }),
     // Workaround since devServer.client.progress is bugged
     // https://github.com/webpack/webpack-dev-server/issues/201
     new webpack.ProgressPlugin(),
@@ -73,7 +81,9 @@ module.exports = {
           
           { from: "src/libs/toggle-switchy/toggle-switchy.css", to: "dependencies/toggle-switchy/toggle-switchy.css"},
           // Copy images
-          { from: 'src/images', to: 'static/images/'}
+          { from: 'src/images', to: 'static/images/'},
+          // Copy favicon
+          { from: 'src/favicon.ico', to: 'favicon.ico'}
       ]
     }),
     new webpack.DefinePlugin({
