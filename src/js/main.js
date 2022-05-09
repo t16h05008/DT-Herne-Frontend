@@ -40,6 +40,9 @@ const defaultGlobeColor = "#1e8fc3"; // water blue
 const defaultUndergroundColor = "#383F38"; // dark gray
 let viewer, camera, scene, globe;
 const tilingManager = new Worker(new URL("./webworkers/tilesManagerWebworker.js", import.meta.url));
+//let gltfModelStoreDB;
+let buildingTilesInfo;
+const backendBaseUri = "http://localhost:8000/";
 
 
 
@@ -48,7 +51,9 @@ document.addEventListener("DOMContentLoaded", function(event) {
     createCustomOverlayComponents();
     setHomeLocation(initialCameraViewFormatted);
     initializeSidebar();
-    importKmlDataSource();
+    //initializeIndexedDB();
+    initializeTilingManager();
+    importBuildings();
 });
 
 /**
@@ -660,15 +665,7 @@ function convertColorPickerResultToCesiumColor(color) {
 }
 
 
-function importKmlDataSource() {
-
-    let cacheSize = document.getElementById("settings-cache-size").value;
-
-    tilingManager.postMessage({
-        event: "start",
-        cacheSize: cacheSize,
-    });
-
+function importBuildings() {
     // moveEnd should be frequently enough but we can use "changed", too.
     // However, that will spawn and terminate a lot more web workers, so there might be overhead.
     camera.moveEnd.addEventListener(function() {
@@ -681,7 +678,7 @@ function importKmlDataSource() {
             north:  Cesium.Math.toDegrees(viewRect.north),
             south:  Cesium.Math.toDegrees(viewRect.south)
         }
-
+    
         if(viewRect) {
             tilingManager.postMessage({
                 event: "povUpdated",
@@ -690,133 +687,180 @@ function importKmlDataSource() {
             });
         } 
     });
+    camera.moveEnd.raiseEvent();
+}
 
-    tilingManager.onmessage = function(e) {
-        console.log("number of entities to show", e.data.length);
-        // The code below could be done in the webworker if needed.
-        // The entities have different formats, but both have a name property that can be used for comparison
-        let entitiesToShow = e.data; 
-        let currentEntities = viewer.entities.values;
-        let entitiesToShowNames = entitiesToShow.map( entity => entity.name );
-        let currentEntitiesNames = currentEntities.map( entity => entity.name );
+function initializeIndexedDB() {
+    
+    if (!window.indexedDB) {
+        console.log("Your browser doesn't support a stable version of IndexedDB. Caching 3D-Models will not be available, resulting in longer loading times.");
+        return;
+    } else {
+        // TODO for testing only
 
-        // get all entities that should be loaded
-        let entitiesToLoad =  entitiesToShow.filter( (entity) => {
-            return !currentEntitiesNames.includes(entity.name);
-        });
+        var dbDeletionRequest = indexedDB.deleteDatabase("gltfModelStoreDB");
+        dbDeletionRequest.onsuccess = function () {
+            console.log("Deleted database successfully");
 
-        // and the ones to unload
-        let entitiesToUnload = currentEntities.filter( (entity) => {
-            return !entitiesToShowNames.includes(entity.name);
-        });
+            // create new db
+            var dbCreationRequest = window.indexedDB.open("gltfModelStoreDB", 1);
+            dbCreationRequest.onerror = event => {
+                console.error("Error while opening 'gltfModelStoreDB': " + event.target.errorCode);
+            };
+            dbCreationRequest.onsuccess = event => {
+                gltfModelStoreDB = event.target.result;
 
-        // unload
-        for(let entity of entitiesToUnload) {
-            viewer.entities.remove(entity);
-        }
+                // add a generic error handler for all kinds of errors
+                gltfModelStoreDB.onerror = event => {
+                    console.error("IndexedDB error: " + event.target.errorCode);
+                }
+            };
 
-        // load
-        for(let entity of entitiesToLoad) {
-            let lon = parseFloat(entity.location.longitude);
-            let lat = parseFloat(entity.location.latitude);
-            let altitude = parseFloat(entity.location.altitude);
-            let position = Cesium.Cartesian3.fromDegrees(lon, lat, altitude);
-            // no idea why +90 is needed here, but it works. Maybe the heading get exported with a different reference from the db?
-            let heading = Cesium.Math.toRadians(parseFloat(entity.orientation.heading) + 90); 
-            let pitch =  0
-            let roll =  0
-            let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
+            // This should be called only once (and not every time the user opens the application)
+            // This is called when the version number of the database is updated due to changes in the schema.
+            dbCreationRequest.onupgradeneeded = event => {
+                gltfModelStoreDB = event.target.result;
+                var objectStore = gltfModelStoreDB.createObjectStore("gltfModels", { 
+                    keyPath: "id" // this is the "primary key"
+                });
+  
+                objectStore.createIndex("id", "id", { unique: true });
+                console.log("database object store created");
+            };
 
-            let newEntity = new Cesium.Entity({
-                name: entity.name,
-                position : position,
-                orientation: orientation,
-                model : {
-                    uri : entity.pathToModelAbsolute,
-                    //distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 1000), // in meter
-                },
-            });
+        };
 
-            viewer.entities.add(newEntity);
-        }
+        dbDeletionRequest.onerror = function () {
+            console.log("Couldn't delete database");
+        };
+        dbDeletionRequest.onblocked = function () {
+            console.log("Couldn't delete database due to the operation being blocked");
+        };
+
     }
 }
 
-// function import3DModels() {
+function initializeTilingManager() {
+    //let cacheSize = document.getElementById("settings-cache-size").value;
+    // get tilesInfo from server
+    console.log("getting tiles");
+    fetch(backendBaseUri + "3d-models/buildings/tilesInfo")
+        .then(response => response.json())
+        .then(data => {
+            console.log("got tiles info");
+            buildingTilesInfo = data;
+            console.log(buildingTilesInfo);
+            tilingManager.postMessage({
+                event: "start",
+                //cacheSize: cacheSize,
+                tiles: buildingTilesInfo
+            });
 
-//     let objects = {
-//         "12305": {
-//             "lon": 7.226498,
-//             "lat": 51.5365064,
-//             "alt": 0,
-//             "heading": 358.6103405,
-//             "name": "_Bahnhofstrasse8Kreuzkirche_BD.zrrR4iTwPKbogAgaPmn9",
-//             "path": "glTF_Bahnhofstr/Tiles/0/6/12305/_Bahnhofstrasse8Kreuzkirche_BD.zrrR4iTwPKbogAgaPmn9.gltf"
-//         },
-//         "8204": {
-//             "lon": 7.2261117,
-//             "lat": 51.5365759,
-//             "alt": 0,
-//             "heading": 358.612792,
-//             "name": "_Bahnhofstrasse5_BD.j9NBE9WR0ECDNqEM2A1k",
-//             "path": "glTF_Bahnhofstr/Tiles/0/6/18699/_Bahnhofstrasse5_BD.j9NBE9WR0ECDNqEM2A1k.gltf",
-//         },
-//         "18699": {
-//             "lon": 7.226322,
-//             "lat": 51.5361598,
-//             "alt": 0,
-//             "heading": 358.6088835,
-//             "name": "U-Bahn_Eingang_BD.JJodstg64BAjNyOplUbx",
-//             "path": "glTF_Bahnhofstr/Tiles/0/6/8204/U-Bahn_Eingang_BD.JJodstg64BAjNyOplUbx.gltf",
-//         }
-//     }
-//     //     "glTF_Bahnhofstr/Tiles/0/6/8204/U-Bahn_Eingang_BD.JJodstg64BAjNyOplUbx.gltf",
+            tilingManager.onmessage = function(event) {
+                onTillingManagerMessageReceived(event);
+            }
+        });
+}
 
-//     //     "glTF_Bahnhofstr/Tiles/1/5/19867/_Bahnhofstrasse12_BD.WW78THZwqrqu8kAn9lY6.gltf",
+function onTillingManagerMessageReceived(event) {
+    console.log("number of entities to show", event.data.length);
+    // The code below could be done in the webworker if needed.
+    // The entities have different formats, but both have an id property that can be used for comparison
+    let entitiesToShow = event.data; 
+    let currentEntities = viewer.entities.values;
+    let entitiesToShowIds = entitiesToShow.map( entity => entity.id );
+    let currentEntitiesIds = currentEntities.map( entity => entity.id );
 
-//     //     "glTF_Bahnhofstr/Tiles/4/3/18558/_Bahnhofstrasse53_BD.GBeGmjaOvAM55M8M8hiD.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/4/3/18632/_Bahnhofstrasse53-1_BD.scwVaNciA9DrBK2a8BQg.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/4/3/18669/_Bahnhofstrasse51_BD.tjZs1CBEN3SmVEDsskhq.gltf",
+    // get all entities that should be loaded
+    let entitiesToLoad =  entitiesToShow.filter( (entity) => {
+        return !currentEntitiesIds.includes(entity.id);
+    });
 
-//     //     "glTF_Bahnhofstr/Tiles/4/4/18433/_Bahnhofstrasse60_BD.BZWvCpdSDAbzyNChgqpT.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/4/4/18316/_Bahnhofstrasse62_BD.kBZI5Sc46mzJr6kvvK1C.gltf",
+    // and the ones to unload
+    let entitiesToUnload = currentEntities.filter( (entity) => {
+        return !entitiesToShowIds.includes(entity.id);
+    });
 
-//     //     "glTF_Bahnhofstr/Tiles/5/3/16738/_Bahnhofstrasse68_BD.qEKblFlw1m7UEfy3Nkmj.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/5/3/16984/_Bahnhofstrasse67_BD.P6OC1Jbvq60SyRDmZXga.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/5/3/17185/_Bahnhofstrasse66_BD.Pc8ovbtUx75RyNocdBsP.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/5/3/17227/_Bahnhofstrasse64_BD.rJ39WNz4A9beuNWHuZQ9.gltf",
+    // unload
+    for(let entity of entitiesToUnload) {
+        viewer.entities.remove(entity);
+    }
+
+    // load
+    for(let entity of entitiesToLoad) {
+        let lon = parseFloat(entity.location.lon);
+        let lat = parseFloat(entity.location.lat);
+        let altitude = parseFloat(entity.location.height);
+
+        let position = Cesium.Cartesian3.fromDegrees(lon, lat, altitude);
+        let heading = Cesium.Math.toRadians(parseFloat(entity.orientation.heading)); 
+        let pitch =  0
+        let roll =  0
+        let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
         
-//     //     "glTF_Bahnhofstr/Tiles/8/0/37148/DENW05AL100009vy.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/8/0/37210/DENW05AL100008og.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/8/0/37349/DENW05AL100005Bw.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/8/0/37406/DENW05AL100009Du.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/8/0/37446/DENW05AL100007vZ.gltf",
+        let newEntity = new Cesium.Entity({
+            id: entity.id,
+            position: position,
+            orientation: orientation
+            // model reference gets added later
+        });
 
-//     //     "glTF_Bahnhofstr/Tiles/8/1/20143/DENW05AL100009Z6.gltf",
 
-//     //     "glTF_Bahnhofstr/Tiles/8/2/20142/DENW05AL100008E2.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/8/2/36800/DENW05AL10000C6R.gltf",
-//     //     "glTF_Bahnhofstr/Tiles/8/2/37023/DENW05AL100005sh.gltf",
-//     // ]
+        let url = backendBaseUri + "3d-models/buildings/" + newEntity.id
+        newEntity.model = new Cesium.ModelGraphics({
+            uri: url
+        });
+        // Add a property with the current timestamp so we can implement FIFO
+        newEntity.addProperty("addedToViewerTimestamp");
+        newEntity.addedToViewerTimestamp = Date.now();
+        viewer.entities.add(newEntity);
 
-//     for(let obj in objects) {
-//         let position = Cesium.Cartesian3.fromDegrees(objects[obj].lon, objects[obj].lat, objects[obj].alt);
-//         // no idea why +90 is needed here, but it works. Maybe cesium defines heading different from most other viewers(?)
-//         let heading = Cesium.Math.toRadians(objects[obj].heading+90); 
-//         let pitch =  0
-//         let roll =  0
-//         let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
+        // Code below is for caching the model.
+        // It doesn't work since cesium doesn't have a way to create a model directly form the data instead of an url
+        //
+        // check if an entity with this id is already cached from a previous load
+        // if(gltfModelStoreDB) {
+        //     var transaction = gltfModelStoreDB.transaction(["gltfModels"]);
+        //     var objectStore = transaction.objectStore("gltfModels");
+        //     var getRequest = objectStore.get(newEntity.id);
+        //     console.log(getRequest);
+        //     getRequest.onsuccess = event => {
+        //         if(getRequest.result) {
+        //             // If found load model from cache
+        //             console.log("FOUND IN DATABASE");
+        //             console.log("typeof(getRequest.result.model): ", typeof(getRequest.result.model))
+        //             console.log("getRequest.result.model: ", getRequest.result.model)
+        //             newEntity.model = getRequest.result.model;
+        //             viewer.entities.add(newEntity);
+        //         } else {
+        //             // If not get it from server and cache it
+        //             // We can directly set the result as uri
+        //             console.log("NOT FOUND IN DATABASE");
+        //             let url = backendBaseUri + "3d-models/buildings/" + newEntity.id
+        //             newEntity.model = new Cesium.ModelGraphics({
+        //                 uri: url
+        //             });
+        //             // Add a property with the current timestamp so we can implement FIFO
+        //             newEntity.addProperty("addedToViewerTimestamp");
+        //             newEntity.addedToViewerTimestamp = Date.now();
+        //             viewer.entities.add(newEntity);
 
-//         let entity = new Cesium.Entity({
-//             position : position,
-//             model : {
-//                  uri : objects[obj].path
-//             },
-//             orientation: orientation,
-//             name: objects[obj].name
-//         });
+        //             fetch(url)
+        //                 .then(response => response.json())
+        //                 .then(data => {
+        //                     newEntity.addProperty("modelData")
+        //                     newEntity.modelData = data;
 
-//         viewer.entities.add(entity);
-//     }
-// }
+        //                     var transaction = gltfModelStoreDB.transaction(["gltfModels"], "readwrite");
+        //                     var objectStore = transaction.objectStore("gltfModels");
+        //                     // TODO remove old entities first if max cache size is reached
+        //                     // If max cache size is reached delete the oldest cached model (FIFO)
+        //                     objectStore.add(newEntity.modelData); // all entities must have a unique id property here
 
+        //                 });
+                    
+        //         }
+        //     };
+        // }
+    }
+}

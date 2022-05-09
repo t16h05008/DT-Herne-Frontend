@@ -4,9 +4,9 @@ import * as turf from "@turf/turf";
 onmessage = function(e) {
     let data = e.data;
     if(data.event === "startCalculation") {
-        let tileNames = calculateTilesToShow(data.viewRect, data.tiles);
+        let tileIds = calculateTilesToShow(data.viewRect, data.tiles);
         let tilesToShow = data.tiles.filter( (tile) => {
-            return tileNames.includes(tile.name);
+            return tileIds.includes(tile.id);
         });
         // The main thread only needs the entities
         let workerResult = [];
@@ -18,7 +18,7 @@ onmessage = function(e) {
 }
 
 /**
- * Returns an array of string containing the intersecting tile names
+ * Returns an array of string containing the intersecting tile ids
  * @param {*} viewRect 
  */
  function calculateTilesToShow(viewRect, tiles) {
@@ -44,7 +44,7 @@ onmessage = function(e) {
 
         let intersects = turf.booleanIntersects(viewRectAsPoly, tileExtentAsPoly);
         if(intersects) {
-            result.push(tile.name)
+            result.push(tile.id)
         }
     }
     return result;
