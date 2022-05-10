@@ -26,7 +26,6 @@ body, html {
     overflow: hidden;
 }
 
-
 #cesiumContainer {
     margin: 0;
     padding: 0;
@@ -335,12 +334,29 @@ body, html {
     background-color: var(--herne-logo-yellow);
 }
 
-.menu-base-layer-entry {
+.menu-layer-entry {
     display: flex;
     align-items: center;
+    padding: 10px;
 }
 
-.menu-base-layer-entry input:first-child {
+.menu-item-level-1 .menu-layer-entry input:first-child:checked[type="checkbox"] {
+    margin-right: 15px;
+    background-color: var(--herne-logo-blue) !important;
+    border-color: var(--herne-logo-blue) !important;
+    width: 1.25em;
+    height: 1.25em;
+}
+
+.menu-item-level-1 .menu-layer-entry input:first-child[type="checkbox"] {
+    margin-right: 15px;
+    background-color: gray !important;
+    border-color: gray !important;
+    width: 1.25em;
+    height: 1.25em;
+}
+
+.menu-item-level-2 .menu-layer-entry input:first-child {
     margin-right: 15px;
     background-color: var(--herne-logo-green) !important;
     border-color: var(--herne-logo-green) !important;
@@ -348,9 +364,20 @@ body, html {
     height: 1.25em;
 }
 
-.menu-base-layer-entry img,
-.menu-base-layer-entry canvas {
+.menu-layer-entry img {
     margin-right: 10px;
+}
+
+#imagery-empty-layer-canvas {
+    width: 64px;
+    height: 64px;
+    display: block;
+    border-radius: 6px;
+    margin-right: 10px;
+}
+
+.menu-layer-info-btn {
+    margin-left: auto;
 }
 
 .layerSpacer {
@@ -360,6 +387,7 @@ body, html {
     margin-left: auto;
     margin-right: auto;
     width: 90%;
+    height: 2px !important;
 }
 
 .opacitySlider {

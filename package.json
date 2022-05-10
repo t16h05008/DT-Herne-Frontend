@@ -15,6 +15,7 @@
     "cesium": "^1.91.0",
     "range-slider-element": "^1.0.0",
     "txml": "^5.1.1",
+    "uuidjs": "^4.2.11",
     "webpack-merge": "^5.8.0"
   },
   "devDependencies": {

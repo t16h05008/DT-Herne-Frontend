@@ -70,6 +70,7 @@ module.exports = {
           { from: nodeModulePathConstant + '@simonwep/pickr/dist', to: 'dependencies/pickr'},
           { from: nodeModulePathConstant + 'txml/dist/', to: 'dependencies/txml'},
           { from: nodeModulePathConstant + '@turf/turf/dist/', to: 'dependencies/turf/'},
+          { from: nodeModulePathConstant + 'uuidjs/dist', to: 'dependencies/uuidjs'},
           // Renaming only one file here. First copy other files, then the file while renaming it.
           { from: nodeModulePathConstant + '@thomasloven/round-slider',
             to: 'dependencies/round-slider',
