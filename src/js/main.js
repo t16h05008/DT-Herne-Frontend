@@ -4,6 +4,7 @@ import * as Cesium from 'cesium';
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import "../css/main.css"
 import * as Util from "./util.mjs";
+import {layerCategories } from "./layers.mjs";
 
 // dependencies could also be added like this, but they are added in the index file
 // import "bootstrap/dist/css/bootstrap.css"
@@ -15,7 +16,7 @@ const initialCameraView = {
   position: {
     lat: 51.54005,
     lon: 7.22795,
-    height: 120 // meter TODO set back to 240 
+    height: 240 // meter TODO set back to 240 
   },
   orientation: { // in degree
     heading: 295,
@@ -36,6 +37,7 @@ const initialCameraViewFormatted = {
         roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
     }
 }
+
 const defaultGlobeColor = "#1e8fc3"; // water blue
 const defaultUndergroundColor = "#383F38"; // dark gray
 let viewer, camera, scene, globe;
@@ -45,7 +47,6 @@ let buildingTilesInfo;
 const backendBaseUri = "http://localhost:8000/";
 
 
-
 document.addEventListener("DOMContentLoaded", function(event) {
     initializeViewer(initialCameraViewFormatted);
     createCustomOverlayComponents();
@@ -53,7 +54,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
     initializeSidebar();
     //initializeIndexedDB();
     initializeTilingManager();
-    importBuildings();
 });
 
 /**
@@ -64,21 +64,66 @@ function initializeViewer(initialCameraViewFormatted) {
     // Select Open­Street­Map layer on startup for reduced quota usage during development
     let defaultImageryViewModels = Cesium.createDefaultImageryProviderViewModels();
     let defaultTerrainViewModels = Cesium.createDefaultTerrainProviderViewModels();
-    let layerName = "Open­Street­Map";
+
+    let imageryToLoadName = "Open­Street­Map";
+    let terrainToLoadName = "WGS84 Ellipsoid";
     let filtered = defaultImageryViewModels.filter( viewModel => {
-        return viewModel.name === layerName;
+        return viewModel.name === imageryToLoadName;
     });
     let imageryToSelect = filtered.length === 1 ? filtered[0] : undefined;
-    if(imageryToSelect === undefined) throw new Error("Layer '" + layerName + "' could not be found.");
+    if(imageryToSelect === undefined) throw new Error("Layer '" + imageryToLoadName + "' could not be found.");
+
+    filtered = defaultTerrainViewModels.filter( viewModel => {
+        console.log(viewModel);
+        return viewModel.name === terrainToLoadName;
+    });
+    let terrainToSelect = filtered.length === 1 ? filtered[0] : undefined;
+    if(terrainToSelect === undefined) throw new Error("Terrain '" + terrainToLoadName + "' could not be found.");
+    
+    // Add to layer list
+    function filterRecursively(layerCategories, name, result) {
+        layerCategories.forEach(function iter(o) {
+            if(o.name === name) result.push(o);
+            (o.subCategories || []).forEach(iter);
+        });
+    };
+    let imageryCategory = [];
+    filterRecursively(layerCategories, "imagery", imageryCategory);
+    imageryCategory = imageryCategory[0];
+    let terrainCategory = []
+    filterRecursively(layerCategories, "terrain", terrainCategory);
+    terrainCategory = terrainCategory[0];
+    for(let layer of defaultImageryViewModels) {
+        imageryCategory.layers.push({
+            name: layer.name,
+            displayName:  layer.name,
+            thumbnailSrc: layer.iconUrl,
+            show: (layer.name === imageryToSelect.name),
+            opacity: 100,
+            tooltip: layer.tooltip,
+        })
+    }
+    for(let layer of defaultTerrainViewModels) {
+        terrainCategory.layers.push({
+            name: layer.name,
+            displayName:  layer.name,
+            thumbnailSrc: layer.iconUrl,
+            show: (layer.name === terrainToSelect.name),
+            opacity: 100,
+            tooltip: layer.tooltip,
+        })
+    }
+
+    generateUuids(layerCategories);
+
     // initialize cesium viewer
     viewer = new Cesium.Viewer('cesiumContainer', {
-        terrainProvider: Cesium.createWorldTerrain(),
         // has to be provided for some reason, even though the layers are the same
         imageryProviderViewModels: defaultImageryViewModels, 
         terrainProviderViewModels: defaultTerrainViewModels,
         baseLayerPicker: true,
         selectedImageryProviderViewModel: imageryToSelect,
-        selectedTerrainProviderViewModel: undefined,
+        selectedTerrainProviderViewModel: terrainToSelect,
         geocoder: false,
         fullscreenButton: false,
         sceneModePicker: false
@@ -90,7 +135,7 @@ function initializeViewer(initialCameraViewFormatted) {
     // Decrease the distance the camera has to change before the "changed" event is fired.
     camera.percentageChanged = 0.1; 
     camera.setView(initialCameraViewFormatted); 
-    changeBaseLayer("terrain", viewer.baseLayerPicker.viewModel.terrainProviderViewModels[0]) // select WGS84 ellipsoid for testing
+    // changeBaseLayer() // select WGS84 ellipsoid for testing
     viewer.baseLayerPicker.destroy(); // No longer needed, we manage base layers in the sidebar based on the stored references
 }
 
@@ -292,8 +337,7 @@ function initializeSidebar() {
     let sidebarBtns = document.querySelectorAll(".sidebarBtn");
     
     addSidebarButtonHighlighting(sidebarBtns);
-    populateBaseLayers('imagery');
-    populateBaseLayers('terrain');
+    createMenuLayerTree(layerCategories);
 
     // globe settings
     let settingsGlobeColor = document.getElementById("settingsGlobeColor");
@@ -399,210 +443,362 @@ function addSidebarButtonHighlighting(sidebarBtns) {
     }
 }
 
-function importData() {
-    // add osm buildings to scene
-    // const buildingsTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
+function addMenuLayer(category, layer, wrapper) {
+    let layerDiv = createMenuLayerHTML(category, layer);
+    wrapper.appendChild(layerDiv);
+    // Add a spacer below
+    let spacer = document.createElement("hr");
+    spacer.classList.add("layerSpacer");
+    wrapper.appendChild(spacer);
 }
 
-/**
- * Creates an sidebar-entry for each base layer.
- * Can be used for imagery and terrain. 
- * @param {string} type, either "imagery" or "terrain"
- */
-function populateBaseLayers(type) {
-    let baseLayersImageryContainer = document.querySelector("#base-layers-imagery .accordion-body");
-    let baseLayersTerrainContainer = document.querySelector("#base-layers-terrain .accordion-body");
-    let bLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
-    let viewModel;
-    let layerContainerDom;
 
-    if(type !== "imagery" && type !== "terrain")
-        throw new Error("Parameter 'type' was neither 'imagery' nor 'terrain'");
+function createMenuLayerHTML(category, layer) {
+
+    let layerDiv = document.createElement("div");
+    layerDiv.classList.add("menu-layer-entry");
     
-    if(type === "imagery") {
-        viewModel = bLayerPickerViewModel.imageryProviderViewModels;
-        layerContainerDom = baseLayersImageryContainer;
-    }
-
-    if(type === "terrain") {
-        viewModel = bLayerPickerViewModel.terrainProviderViewModels;
-        layerContainerDom = baseLayersTerrainContainer;
-    }
-
-    for(const layer of viewModel) {
-        let layerDiv = document.createElement("div");
-        layerDiv.classList.add("menu-base-layer-entry", "menu-content-wrapper");
-        
+    if(category.isBaseLayerCategory) {
         let radioBtn = document.createElement("input");
+        layerDiv.appendChild(radioBtn);
         radioBtn.classList.add("form-check-input")
         radioBtn.type = "radio";
-        radioBtn.name = (type === "imagery") ? "radioImagery" : "radioTerrain";
+        radioBtn.name = "radio" + category.name.charAt(0).toUpperCase() + category.name.slice(1); // capitalize
+        radioBtn.checked = layer.show;
         radioBtn.value = layer.name;
-        if(bLayerPickerViewModel.selectedImagery === layer) {
-            radioBtn.checked = true;
-        }
-        if(bLayerPickerViewModel.selectedTerrain === layer) {
-            radioBtn.checked = true;
-        }
-
+        
         radioBtn.addEventListener("click", function(event) {
-            changeBaseLayer(type, layer);
+            onMenuLayerRadioBtnClicked(category, layer);
         });
 
-        layerDiv.appendChild(radioBtn)
+    } else {
+        let chb = document.createElement("input");
+        layerDiv.appendChild(chb);
+        chb.classList.add("form-check-input")
+        chb.type = "checkbox";
+        chb.value = layer.name;
+        chb.checked = layer.show;
 
+        chb.addEventListener("click", function(event) {
+            onMenuLayerChbClicked(event, layer);
+        });
+        
+    }
+    
+
+    if(layer.thumbnailSrc && layer.thumbnailSrc.length) {
         let thumb = new Image(64, 64);
-        thumb.src = layer.iconUrl;
+        // Use layer.iconUrl, else thumb has to be set later
+        thumb.src = layer.thumbnailSrc;
         thumb.alt = "Layer Vorschaubild";
         thumb.style.borderRadius = "10%";
         layerDiv.appendChild(thumb);
+    }
 
-        if(type === "imagery") {
-            let innerDiv = document.createElement("div");
+    if(!category.isBaseLayerCategory) {
+        let innerDiv = document.createElement("div");
+        let layerNameSpan = document.createElement("span");
+        // Move layer name upwards to make room for the slider
+        layerNameSpan.style.display = "block";
+        layerNameSpan.style.width = "100%";
+        layerNameSpan.style.marginTop = "10px";
+        layerNameSpan.innerHTML = layer.name;
+        innerDiv.appendChild(layerNameSpan);
+        
+        let opacitySlider = document.createElement("range-slider");
+        opacitySlider.value = layer.opacity;
+        opacitySlider.classList.add("opacitySlider")
+        opacitySlider.dataset.layerName = layer.name;
 
-            let span = document.createElement("span");
-            span.style.display = "block";
-            span.style.width = "100%";
-            span.style.marginTop = "10px";
-            span.innerHTML = layer.name;
-            innerDiv.appendChild(span);
-            // TODO opacity sliders are not really needed for base layers since they don't influence the globe opacity
-            let opacitySlider = document.createElement("range-slider");
-            opacitySlider.value = 100;
-            opacitySlider.classList.add("opacitySlider", "baseLayerOpacitySlider")
-            if( !radioBtn.checked ) opacitySlider.disabled = true; // only visually disabled
-            opacitySlider.dataset.layerName = layer.name;
-            opacitySlider.addEventListener("input", function(event) {
-                let value = event.target.value;
-                for(let i=0; i<viewer.imageryLayers.length;i++) {
-                    let layer = viewer.imageryLayers.get(i);
-                    if(layer.isBaseLayer) {
-                        layer.alpha = value / 100;
-                    }
-                }
-            });
-            opacitySlider.dispatchEvent(new Event("input"))
-            // The easiest method to disable the slider is to wrap it inside a div and disable pointer events on that.
-            let opacitySliderWrapper = document.createElement("div");
-            opacitySliderWrapper.classList.add("opacitySliderWrapper");
-            if( !radioBtn.checked ) {
-                opacitySliderWrapper.classList.add("opacitySliderWrapperDisabled")
-            }
-            
-            opacitySliderWrapper.appendChild(opacitySlider)
-            innerDiv.appendChild(opacitySliderWrapper)
-    
-            layerDiv.appendChild(innerDiv)
-        } else {
-            // No opacity slider needed for terrain
-            let span = document.createElement("span");
-            span.innerHTML = layer.name;
-            layerDiv.appendChild(span);
+        opacitySlider.addEventListener("input", function(event) {
+            let value = event.target.value;
+            // TODO Handle opacity change differently, depending on layer type
+            // for(let i=0; i<viewer.imageryLayers.length;i++) {
+            //     let layer = viewer.imageryLayers.get(i);
+            //     if(layer.isBaseLayer) {
+            //         layer.alpha = value / 100;
+            //     }
+            // }
+        });
+        //opacitySlider.dispatchEvent(new Event("input"));
+
+        // The easiest method to disable the slider is to wrap it inside a div and disable pointer events on that.
+        let opacitySliderWrapper = document.createElement("div");
+        opacitySliderWrapper.classList.add("opacitySliderWrapper");
+        if( !layer.show ) {
+            opacitySlider.disabled; // only visually disabled
+            opacitySliderWrapper.classList.add("opacitySliderWrapperDisabled")
         }
+        opacitySliderWrapper.appendChild(opacitySlider)
+        innerDiv.appendChild(opacitySliderWrapper)
+        layerDiv.appendChild(innerDiv)
+    } else {
+        // Vertically centered by default
+        let layerNameSpan = document.createElement("span");
+        layerNameSpan.innerHTML = layer.name;
+        layerDiv.appendChild(layerNameSpan);
+    }
 
+    if(layer.tooltip && layer.tooltip.length) {
         let infoBtn = document.createElement("i");
-        infoBtn.classList.add("fa-solid", "fa-lg", "fa-circle-info");
-        infoBtn.style.marginLeft = "auto";
+        infoBtn.classList.add("fa-solid", "fa-lg", "fa-circle-info", "menu-layer-info-btn");
+        // Add tooltip on hover
+        // Use layer.tooltip if possible, else the tooltip has to be set later
         infoBtn.dataset.bsToggle = "tooltip";
         infoBtn.dataset.bsPlacement = "bottom";
         infoBtn.title = layer.tooltip;
         layerDiv.appendChild(infoBtn)
-
-        layerContainerDom.appendChild(layerDiv);
-
-        // Add a spacer below
-        let spacer = document.createElement("hr");
-        spacer.classList.add("layerSpacer");
-        layerContainerDom.appendChild(spacer);
     }
+    return layerDiv;
+}
 
-    // TODO only for imagery for now. Terrain leads to an error.
-    if(type === "imagery") {
-        // Add option to remove layer as last entry
-        let layerDiv = document.createElement("div");
-        layerDiv.classList.add("menu-base-layer-entry");
-            
-        let radioBtn = document.createElement("input");
-        radioBtn.classList.add("form-check-input")
-        radioBtn.type = "radio";
-        radioBtn.name = "radioImagery";
-        radioBtn.value = "";
-            
-        radioBtn.addEventListener("click", function(event) {
-            changeBaseLayer(type, undefined);
-        });
-        
-        layerDiv.appendChild(radioBtn)
-        
-        // Create the preview as a canvas so we don't have to load an image
-        let canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
-        canvas.style.display = "block";
-        canvas.style.borderRadius = "6px";
-        let ctx = canvas.getContext("2d");
-        ctx.strokeStyle = 'red';
-        ctx.moveTo(0,0);
-        ctx.lineTo(64,64);
-        ctx.moveTo(64,0);
-        ctx.lineTo(0,64);
-        ctx.stroke();
-        layerDiv.appendChild(canvas);
-        
-        let span = document.createElement("span");
-        span.innerHTML = "Kein Layer";
-        layerDiv.appendChild(span);
-        
-        layerContainerDom.appendChild(layerDiv);
+// Takes a category from the layer list and creates the html for it
+function createMenuCategoriesAndLayers(categories, wrapperDomElement) {
+
+    let accordionDiv = document.createElement("div");
+    accordionDiv.classList.add("accordion");
+    accordionDiv.id = wrapperDomElement.id.replace("-content-wrapper", "");
+    wrapperDomElement.appendChild(accordionDiv)
+ 
+    for(let category of categories) {
+        // Create the HTMl for this category first
+        createCategoryHtml(category, accordionDiv)
+
+        wrapperDomElement = accordionDiv.querySelector("#menu-data-" + category.name + "-content-wrapper");
+
+        // Check if there are subcategories
+        if(!category.hasOwnProperty("subCategories")) {
+            // Lowest level reached, create layer html
+            for(let layer of category.layers) {
+                addMenuLayer(category, layer, wrapperDomElement);
+            }
+            // Some conditional stuff for special cases
+            if(category.name === "imagery" && category.isBaseLayerCategory) {
+                addImageryEmptyLayer(category, wrapperDomElement);
+            }
+        } else {
+            // Create subcategory entries until lowest level is reached
+            createMenuCategoriesAndLayers(category.subCategories, wrapperDomElement);
+        }
     }
 }
 
+// This method is somewhat ugly. It creates a bunch of dom elements with attributes to create the html for a category.
+// This is done in js since it allows to extend layerCategories and have the html created dynamically,
+// which might come in handy when layer are added in the future. 
+function createCategoryHtml(category, wrapper) {
+    let div = document.createElement("div")
+    div.classList.add("accordion-item", "menu-item-level-" + category.depth)
+    div.dataset.category = category.name;
+    wrapper.appendChild(div);
 
-/**
- * Changes base imagery or terrain
- */
-function changeBaseLayer(type, layer) {
-    // Disable all opacity sliders except the one of the clicked layer
-    // If terrain layer was clicked do nothing
-    let sliderValue = 100;
-    let bLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
+    let span = document.createElement("span");
+    span.id = "menu-data-" + category.name + "-heading";
+    span.classList.add("accordion-header", "h2");
+    div.appendChild(span);
 
-    if(type == "imagery") {
-        let opacitySliderWrappers = document.querySelectorAll("#base-layers-imagery .opacitySliderWrapper")
+    let btn = document.createElement("button");
+    btn.classList.add("accordion-button", "collapsed", "menu-btn-level-" + category.depth);
+    btn.type = "button";
+    btn.dataset.bsToggle = "collapse";
+    btn.dataset.bsTarget = "#menu-data-" + category.name;
+    btn.ariaExpanded = "false";
+    btn.setAttribute("aria-controls", "menu-data-" + category.name);
+    btn.textContent = category.displayName;
+    span.appendChild(btn);
 
-        for(let wrapper of opacitySliderWrappers) {
-            let slider = wrapper.querySelector("range-slider");
+    let div2 = document.createElement("div");
+    div2.id = "menu-data-" + category.name;
+    div2.classList.add("accordion-collapse", "collapse");
+    div2.setAttribute("aria-labelledby", "menu-data-" + category.name);
+    div.appendChild(div2);
+
+    let div3 = document.createElement("div");
+    div3.id = "menu-data-" + category.name + "-content-wrapper";
+    div3.classList.add("accordion-body", "layer-entries-wrapper")
+    div2.appendChild(div3);
+}
+
+function addImageryEmptyLayer(category, wrapper) {
+    // Add option to remove layer as last entry
+    let layerDiv = document.createElement("div");
+    layerDiv.classList.add("menu-layer-entry");
+
+    let radioBtn = document.createElement("input");
+    radioBtn.classList.add("form-check-input")
+    radioBtn.type = "radio";
+    radioBtn.name = "radioImagery";
+    radioBtn.value = "";
+
+    radioBtn.addEventListener("click", function(event) {
+        onMenuLayerRadioBtnClicked(category, undefined);
+    });
+
+    layerDiv.appendChild(radioBtn)
+
+    let thumb = new Image(64, 64);
+    thumb.src = "static/images/red-x.svg";
+    thumb.alt = "Layer Vorschaubild";
+    thumb.style.borderRadius = "10%";
+    layerDiv.appendChild(thumb);
+
+    let nameSpan = document.createElement("span");
+    nameSpan.innerHTML = "Kein Layer";
+    layerDiv.appendChild(nameSpan);
     
-            if(layer && slider.dataset.layerName === layer.name) {
-                wrapper.classList.remove("opacitySliderWrapperDisabled");
-                slider.removeAttribute("disabled");
-                sliderValue = slider.value;
-            } else {
-                wrapper.classList.add("opacitySliderWrapperDisabled");
-                slider.disabled = true;
+    wrapper.appendChild(layerDiv);
+}
+
+function createMenuLayerTree(categories) {
+
+    function addDepth(arr, depth = 1) {
+        arr.forEach(obj => {
+          obj.depth = depth
+          if(obj.subCategories) {
+            addDepth(obj.subCategories, depth + 1)
+          }
+        });
+    }
+    addDepth(categories)
+
+    // Recursively create HTML for all categories
+    let wrapperDomElement = document.querySelector("#menu-data-catalog-content-wrapper");
+    createMenuCategoriesAndLayers(categories, wrapperDomElement);
+
+    
+    // For each layer create the layer HTML 
+
+}
+
+
+function sendCurrentPovToTilingManager() {
+    // get visible area
+    // has properties east, north, south, west in radiants
+    let viewRect = camera.computeViewRectangle();
+    let viewRectDeg = {
+        east: Cesium.Math.toDegrees(viewRect.east),
+        west: Cesium.Math.toDegrees(viewRect.west),
+        north:  Cesium.Math.toDegrees(viewRect.north),
+        south:  Cesium.Math.toDegrees(viewRect.south)
+    }
+
+    if(viewRect) {
+        tilingManager.postMessage({
+            event: "povUpdated",
+            viewRect: viewRectDeg,
+            //loadedEntities: viewer.entities.values
+        });
+    } 
+};
+
+function onMenuLayerChbClicked(event, layer) {
+    let chb = event.target;
+    if(chb.checked) {
+        layer.show = true;
+        // get from api
+        // for now we 
+        if(layer.name === "osmBuildings") {
+            // Load OSM buildings
+            // Can't use datasources with primitives
+            const buildingsTileset = viewer.scene.primitives.add( Cesium.createOsmBuildings() );
+            buildingsTileset.name = layer.name;
+        }
+        if(layer.name === "cityModel") {
+            /*
+             * This layer is managed by the tiling manager.
+             * We don't want to load all buildings, only the ones relevant for the current camera view.
+             * We add a listener to the moveEnd event and let the tiling manager load the relevant entities.
+             * See function onTillingManagerMessageReceived
+             */
+            let cityModelDataSource = new Cesium.CustomDataSource(layer.name);
+            viewer.dataSources.add(cityModelDataSource);
+
+            camera.moveEnd.addEventListener(sendCurrentPovToTilingManager);
+            camera.moveEnd.raiseEvent(); // Simulate the event to load the first models
+        }
+    } else {
+        layer.show = false;
+        // remove layer
+        for(let i=0; i<scene.primitives.length; i++) {
+            let primitive = scene.primitives.get(i);
+            if(primitive.name && primitive.name.length) {
+                if(primitive.name === layer.name) {
+                    console.log(primitive);
+                    viewer.scene.primitives.remove( primitive )
+                }
+            }
+        }
+        // All entities that don't belong to a data source
+        for(let i=0; i<viewer.entities.length; i++) {
+            let entity = viewer.entities.get(i);
+            if(entity.name && entity.name.length) {
+                console.log("entity: ", entity);
+            }
+        }
+
+        for(let i=0; i<viewer.dataSources.length; i++) {
+            let dataSource = viewer.dataSources.get(i);
+            if(dataSource.name && dataSource.name.length) {
+                console.log("dataSource: ", dataSource);
+                if(dataSource.name === layer.name) {
+                    console.log("removed");
+                    viewer.dataSources.remove(dataSource);
+                    console.log(viewer.dataSources);
+                    
+                    if(layer.name === "cityModel") {
+                        camera.moveEnd.removeEventListener(sendCurrentPovToTilingManager);
+                        camera.moveEnd.raiseEvent();
+                    }
+                }
+
+            
             }
         }
     }
+}
 
-    // Change layer
-    try {
-        if(type === "terrain") {
-            bLayerPickerViewModel.selectedTerrain = layer;
-        }
-        if(type === "imagery") {
-            bLayerPickerViewModel.selectedImagery = layer;
-            // Set opacity according to slider
-            for(let i=0; i<viewer.imageryLayers.length;i++) {
-                let layer = viewer.imageryLayers.get(i);
-                if(layer.isBaseLayer) {
-                    layer.alpha = sliderValue / 100;
-                }
-            };
-        }
-    } catch (e) {
-        console.error("Something went wrong while changing base layers.")
-        console.error(e); 
+function onMenuLayerRadioBtnClicked(category, layer) {
+
+    let baseLayerControl = viewer.baseLayerPicker;
+    let viewModel = baseLayerControl.viewModel;
+    let layers;
+    if(category.name === "imagery") {
+        layers = viewModel.imageryProviderViewModels;
     }
+
+    if(category.name === "terrain") {
+        layers = viewModel.terrainProviderViewModels;
+    }
+
+    if(typeof layer === "undefined" && category.name === "imagery") {
+        // Remove imagery layer
+        // The loop below will disable all layers if we do it like this
+        layer = {
+            name: ""
+        }
+        viewModel.selectedImagery = undefined;
+    }
+
+     // Can't use "layer" here
+     for(let entry of category.layers) {
+        if(entry.name !== layer.name) {
+            entry.show = false;
+        } else {
+            entry.show = true;
+            // change layer
+            let filtered = layers.filter( layer => {
+                return layer.name === entry.name;
+            });
+            if(filtered.length === 1) {
+                if(category.name === "imagery")
+                    viewModel.selectedImagery = filtered[0];
+                if(category.name === "terrain")
+                    viewModel.selectedTerrain = filtered[0];
+            }
+        }
+    }
+    
+    
 }
 
 function createNewColorPicker(wrapper, defaultColor) {
@@ -665,35 +861,10 @@ function convertColorPickerResultToCesiumColor(color) {
 }
 
 
-function importBuildings() {
-    // moveEnd should be frequently enough but we can use "changed", too.
-    // However, that will spawn and terminate a lot more web workers, so there might be overhead.
-    camera.moveEnd.addEventListener(function() {
-        // get visible area
-        // has properties east, north, south, west in radiants
-        let viewRect = camera.computeViewRectangle();
-        let viewRectDeg = {
-            east: Cesium.Math.toDegrees(viewRect.east),
-            west: Cesium.Math.toDegrees(viewRect.west),
-            north:  Cesium.Math.toDegrees(viewRect.north),
-            south:  Cesium.Math.toDegrees(viewRect.south)
-        }
-    
-        if(viewRect) {
-            tilingManager.postMessage({
-                event: "povUpdated",
-                viewRect: viewRectDeg,
-                //loadedEntities: viewer.entities.values // TODO process in webworker
-            });
-        } 
-    });
-    camera.moveEnd.raiseEvent();
-}
-
 function initializeIndexedDB() {
     
     if (!window.indexedDB) {
-        console.log("Your browser doesn't support a stable version of IndexedDB. Caching 3D-Models will not be available, resulting in longer loading times.");
+        dataSource("Your browser doesn't support a stable version of IndexedDB. Caching 3D-Models will not be available, resulting in longer loading times.");
         return;
     } else {
         // TODO for testing only
@@ -742,14 +913,11 @@ function initializeIndexedDB() {
 
 function initializeTilingManager() {
     //let cacheSize = document.getElementById("settings-cache-size").value;
-    // get tilesInfo from server
-    console.log("getting tiles");
+    // get tilesInfo from serve
     fetch(backendBaseUri + "3d-models/buildings/tilesInfo")
         .then(response => response.json())
         .then(data => {
-            console.log("got tiles info");
             buildingTilesInfo = data;
-            console.log(buildingTilesInfo);
             tilingManager.postMessage({
                 event: "start",
                 //cacheSize: cacheSize,
@@ -762,32 +930,37 @@ function initializeTilingManager() {
         });
 }
 
+/**
+ * Manages loading and unloading entities of the cityModel layer
+ * @param {*} event 
+ */
 function onTillingManagerMessageReceived(event) {
     console.log("number of entities to show", event.data.length);
     // The code below could be done in the webworker if needed.
     // The entities have different formats, but both have an id property that can be used for comparison
-    let entitiesToShow = event.data; 
-    let currentEntities = viewer.entities.values;
+    let entitiesToShow = event.data;
+    let currentEntities = viewer.dataSources.getByName("cityModel")[0].entities;
     let entitiesToShowIds = entitiesToShow.map( entity => entity.id );
-    let currentEntitiesIds = currentEntities.map( entity => entity.id );
+    let currentEntitiesIds = currentEntities.values.map( entity => entity.id );
 
-    // get all entities that should be loaded
+    // get all entities that should be loaded (some might be loaded already)
     let entitiesToLoad =  entitiesToShow.filter( (entity) => {
         return !currentEntitiesIds.includes(entity.id);
     });
 
     // and the ones to unload
-    let entitiesToUnload = currentEntities.filter( (entity) => {
+    let entitiesToUnload = currentEntities.values.filter( (entity) => {
         return !entitiesToShowIds.includes(entity.id);
     });
-
+    console.log("number of entities to unload", entitiesToUnload.length);
     // unload
     for(let entity of entitiesToUnload) {
-        viewer.entities.remove(entity);
+        currentEntities.remove(entity);
     }
 
     // load
     for(let entity of entitiesToLoad) {
+        console.log(entitiesToLoad);
         let lon = parseFloat(entity.location.lon);
         let lat = parseFloat(entity.location.lat);
         let altitude = parseFloat(entity.location.height);
@@ -800,11 +973,11 @@ function onTillingManagerMessageReceived(event) {
         
         let newEntity = new Cesium.Entity({
             id: entity.id,
+            name: entity.id,
             position: position,
             orientation: orientation
             // model reference gets added later
         });
-
 
         let url = backendBaseUri + "3d-models/buildings/" + newEntity.id
         newEntity.model = new Cesium.ModelGraphics({
@@ -813,7 +986,7 @@ function onTillingManagerMessageReceived(event) {
         // Add a property with the current timestamp so we can implement FIFO
         newEntity.addProperty("addedToViewerTimestamp");
         newEntity.addedToViewerTimestamp = Date.now();
-        viewer.entities.add(newEntity);
+        currentEntities.add(newEntity);
 
         // Code below is for caching the model.
         // It doesn't work since cesium doesn't have a way to create a model directly form the data instead of an url
@@ -863,4 +1036,16 @@ function onTillingManagerMessageReceived(event) {
         //     };
         // }
     }
+}
+
+
+
+    
+
+
+
+function generateUuids(layerCategories) {
+    Util.iterateRecursive(layerCategories, function(obj, params) {
+        obj.id = UUID.generate();
+    });
 }

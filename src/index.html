@@ -18,6 +18,7 @@
   <script defer src="dependencies/range-slider-element/index.js"></script>
   <script defer src="dependencies/round-slider/round-slider.js" ></script>
   <script defer src="dependencies/pickr/pickr.min.js"></script>
+  <script defer src="dependencies/uuidjs/uuid.core.js"></script>
 </head>
 
 <body>
@@ -73,82 +74,8 @@
             <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"
               aria-label="Close"></button>
           </div>
-          <div class="offcanvas-body">
-            <!-- data catalog start -->
-            <div class="accordion" id="menu-data-main-accordion">
-              <!--
-                            <div class="accordion-item">
-                              <h2 class="accordion-header" id="panelsStayOpen-headingOne">
-                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
-                                  Kategorie 1
-                                </button>
-                              </h2>
-                              <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse show" aria-labelledby="panelsStayOpen-headingOne">
-                                <div class="accordion-body">
-                                  Bla
-                                </div>
-                              </div>
-                            </div>
-                            <div class="accordion-item">
-                              <h2 class="accordion-header" id="panelsStayOpen-headingTwo">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo">
-                                  Kategorie 2
-                                </button>
-                              </h2>
-                              <div id="panelsStayOpen-collapseTwo" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingTwo">
-                                <div class="accordion-body">
-                                  Bla
-                                </div>
-                              </div>
-                            </div>
-                            -->
-              <div class="accordion-item menu-item-level-1">
-                <span class="accordion-header h2" id="menu-data-base-layers-heading">
-                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#menu-data-base-layers" aria-expanded="false" aria-controls="menu-data-base-layers">
-                    Basisdaten
-                  </button>
-                </span>
-                <div id="menu-data-base-layers" class="accordion-collapse collapse"
-                  aria-labelledby="menu-data-base-layers">
-                  <div class="accordion-body">
-                    <div class="accordion" id="base-layers-accordion">
-                      <div class="accordion-item menu-item-level-2">
-                        <span class="accordion-header h2" id="base-layers-imagery-heading">
-                          <button class="accordion-button collapsed menu-btn-level-2" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#base-layers-imagery" aria-expanded="false"
-                            aria-controls="base-layers-imagery">
-                            Bild-Daten
-                          </button>
-                        </span>
-                        <div id="base-layers-imagery" class="accordion-collapse collapse"
-                          aria-labelledby="base-layers-imagery">
-                          <div class="accordion-body">
-                            <!-- gets inserted dynamically -->
-                          </div>
-                        </div>
-                      </div>
-                      <div class="accordion-item menu-item-level-2">
-                        <span class="accordion-header h2" id="base-layers-terrain-heading">
-                          <button class="accordion-button collapsed menu-btn-level-2" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#base-layers-terrain" aria-expanded="false"
-                            aria-controls="base-layers-terrain">
-                            Terrain-Daten
-                          </button>
-                        </span>
-                        <div id="base-layers-terrain" class="accordion-collapse collapse"
-                          aria-labelledby="base-layers-terrain">
-                          <div class="accordion-body">
-                            <!-- gets inserted dynamically -->
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- data catalog end -->
+          <div class="offcanvas-body" id="menu-data-catalog-content-wrapper">
+            <!-- data catalog -->
           </div>
         </div>
 

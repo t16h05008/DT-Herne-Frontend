@@ -33,4 +33,26 @@ function round(num, places) {
     return Math.round(num * x) / x;
 }
 
-export { convertColorToCesiumColor, round };
+/*
+Iterates an array of objects or an object and all nested arrays of objects.
+Calls the given function on each object
+*/
+function iterateRecursive(arrOrObj, func, params) {
+    if(Array.isArray(arrOrObj)) {
+        let arr = arrOrObj
+        for(let obj of arr) {
+            func(obj, params);
+            for(let key in obj) {
+                iterateRecursive(obj[key], func, params)
+            }
+        }
+    } else if (typeof (arrOrObj) === "object") {
+        let obj = arrOrObj;
+        func(obj, params);
+        for(let key in obj) {
+            iterateRecursive(obj[key], func, params)
+        }
+    }
+}
+
+export { convertColorToCesiumColor, round, iterateRecursive };
