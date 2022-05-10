@@ -51,6 +51,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     initializeViewer(initialCameraViewFormatted);
     createCustomOverlayComponents();
     setHomeLocation(initialCameraViewFormatted);
+    loadBaseLayers(layerCategories);
     initializeSidebar();
     //initializeIndexedDB();
     initializeTilingManager();
@@ -502,7 +503,7 @@ function createMenuLayerHTML(category, layer) {
         layerNameSpan.style.display = "block";
         layerNameSpan.style.width = "100%";
         layerNameSpan.style.marginTop = "10px";
-        layerNameSpan.innerHTML = layer.name;
+        layerNameSpan.innerHTML = layer.displayName;
         innerDiv.appendChild(layerNameSpan);
         
         let opacitySlider = document.createElement("range-slider");
@@ -535,7 +536,7 @@ function createMenuLayerHTML(category, layer) {
     } else {
         // Vertically centered by default
         let layerNameSpan = document.createElement("span");
-        layerNameSpan.innerHTML = layer.name;
+        layerNameSpan.innerHTML = layer.displayName;
         layerDiv.appendChild(layerNameSpan);
     }
 
@@ -1038,11 +1039,33 @@ function onTillingManagerMessageReceived(event) {
     }
 }
 
+/**
+ * Creates dataSources for the base layers provided in layerCategories.
+ * For now we hard-code how to load each layer
+ * @param {*} layerCategories 
+ */
+function loadBaseLayers(layerCategories) {
 
+    Util.iterateRecursive(layerCategories, function(obj) {
+        if(obj.type === "WMS" && obj.name.startsWith("aerialImages")) {
+            let viewModelProvider = new Cesium.ProviderViewModel({
+                name: obj.name,
+                tooltip: obj.tooltip,
+                iconUrl: obj.thumbnailSrc,
+                category: "Other",
+                creationFunction: () => {
+                    return new Cesium.WebMapServiceImageryProvider({
+                        url : obj.url,
+                        layers : obj.layerName ? obj.layerName : "" // TODO
+                        //crs: "EPSG:25832",
+                    });
+                }
+            });
+            viewer.baseLayerPicker.viewModel.imageryProviderViewModels.push(viewModelProvider);
+        }
+    });
 
-    
-
-
+}
 
 function generateUuids(layerCategories) {
     Util.iterateRecursive(layerCategories, function(obj, params) {
