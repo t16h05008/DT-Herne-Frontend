@@ -221,8 +221,45 @@ const layerCategories = [
                 name: "terrain",
                 displayName: "Terrain",
                 isBaseLayerCategory: true,
-                layers: [] // default cesium terrain gets inserted here at runtime
-            }
+                layers: [
+                    {
+                        name: "dgm1m",
+                        displayName:  "DGM 1m",
+                        thumbnailSrc: "",
+                        show: false,
+                        opacity: 100,
+                        tooltip: "Das Digitale Geländemodell von Geobasis NRW in 1m Auflösung.",
+                        credit: ""
+                    },
+                    {
+                        name: "dgm10m",
+                        displayName:  "DGM 10m",
+                        thumbnailSrc: "",
+                        show: false,
+                        opacity: 100,
+                        tooltip: "Das Digitale Geländemodell von Geobasis NRW in 10m Auflösung.",
+                        credit: ""
+                    },
+                    {
+                        name: "dgm25m",
+                        displayName:  "DGM 25m",
+                        thumbnailSrc: "",
+                        show: false,
+                        opacity: 100,
+                        tooltip: "Das Digitale Geländemodell von Geobasis NRW in 25m Auflösung.",
+                        credit: ""
+                    },
+                    {
+                        name: "dgm50m",
+                        displayName:  "DGM 50m",
+                        thumbnailSrc: "",
+                        show: false,
+                        opacity: 100,
+                        tooltip: "Das Digitale Geländemodell von Geobasis NRW in 50m Auflösung.",
+                        credit: ""
+                    },
+                ] // default cesium terrain gets inserted here at runtime
+            },
         ]
     }
     
