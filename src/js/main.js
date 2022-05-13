@@ -697,7 +697,6 @@ function onMenuLayerChbClicked(event, layer) {
     if(chb.checked) {
         layer.show = true;
         // get from api
-        // for now we 
         if(layer.name === "osmBuildings") {
             // Load OSM buildings
             // Can't use datasources with primitives
@@ -1062,6 +1061,22 @@ function loadBaseLayers(layerCategories) {
                 }
             });
             viewer.baseLayerPicker.viewModel.imageryProviderViewModels.push(viewModelProvider);
+        }
+
+        if(obj.name.includes("dgm")) {
+            let resolution = obj.name.match(/\d/g).join("")
+            let viewModelProvider = new Cesium.ProviderViewModel({
+                name: obj.name,
+                tooltip: obj.tooltip,
+                iconUrl: obj.thumbnailSrc,
+                category: "Other",
+                creationFunction: () => {
+                    return new Cesium.CesiumTerrainProvider({
+                        url : "http://localhost:8000/terrain/dem" + resolution,
+                    });
+                }
+            });
+            viewer.baseLayerPicker.viewModel.terrainProviderViewModels.push(viewModelProvider);
         }
     });
 
