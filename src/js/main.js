@@ -46,6 +46,13 @@ const tilingManager = new Worker(new URL("./webworkers/tilesManagerWebworker.js"
 let buildingTilesInfo;
 const backendBaseUri = "http://localhost:8000/";
 
+// Needed to display data attribution correctly
+marked.Renderer.prototype.paragraph = (text) => {
+    if (text.includes("<a")) {
+      return text + "\n";
+    }
+    return "<p>" + text + "</p>";
+};
 
 document.addEventListener("DOMContentLoaded", function(event) {
     initializeViewer(initialCameraViewFormatted);
@@ -138,6 +145,9 @@ function initializeViewer(initialCameraViewFormatted) {
     camera.setView(initialCameraViewFormatted); 
     // changeBaseLayer() // select WGS84 ellipsoid for testing
     viewer.baseLayerPicker.destroy(); // No longer needed, we manage base layers in the sidebar based on the stored references
+
+    document.querySelector(".cesium-credit-expand-link").textContent = "Copyrightinformationen";
+    document.querySelector(".cesium-credit-lightbox-title").textContent = "Datenquellen-Attribution:"
 }
 
 /**
@@ -1046,7 +1056,7 @@ function onTillingManagerMessageReceived(event) {
 function loadBaseLayers(layerCategories) {
 
     Util.iterateRecursive(layerCategories, function(obj) {
-        if(obj.type === "WMS" && obj.name.startsWith("aerialImages")) {
+        if(obj.type === "WMS" && obj.name.startsWith("aerialImageRVR")) {
             let viewModelProvider = new Cesium.ProviderViewModel({
                 name: obj.name,
                 tooltip: obj.tooltip,
@@ -1055,8 +1065,8 @@ function loadBaseLayers(layerCategories) {
                 creationFunction: () => {
                     return new Cesium.WebMapServiceImageryProvider({
                         url : obj.url,
-                        layers : obj.layerName ? obj.layerName : "" // TODO
-                        //crs: "EPSG:25832",
+                        layers : obj.layerName ? obj.layerName : "", // TODO
+                        credit: new Cesium.Credit(DOMPurify.sanitize(marked.parse(obj.credit), true)) // showOnScreen option seems bugged
                     });
                 }
             });
