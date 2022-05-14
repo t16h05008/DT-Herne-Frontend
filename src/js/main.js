@@ -478,6 +478,16 @@ function createMenuLayerHTML(category, layer) {
         radioBtn.name = "radio" + category.name.charAt(0).toUpperCase() + category.name.slice(1); // capitalize
         radioBtn.checked = layer.show;
         radioBtn.value = layer.name;
+        // Style the inner circle according to menu depth
+        // This is done in js so we can use string concatenation and variables for the color
+        let color;
+        if(category.depth === 1) color = window.getComputedStyle(document.body).getPropertyValue('--primary-ui-color');
+        if(category.depth === 2) color = window.getComputedStyle(document.body).getPropertyValue('--secondary-ui-color');
+        if(category.depth === 3) color = window.getComputedStyle(document.body).getPropertyValue('--tertiary-ui-color');
+        color = color.replace("#", "%23")
+        let svg = "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='" + color + "'/%3e%3c/svg%3e\")";
+        //svg = "#ffff00"
+        document.documentElement.style.setProperty("--radio-btn-level-" + category.depth + "-background", svg)
         
         radioBtn.addEventListener("click", function(event) {
             onMenuLayerRadioBtnClicked(category, layer);
