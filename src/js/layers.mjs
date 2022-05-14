@@ -117,7 +117,7 @@ const layerCategories = [
     {
         type: "category",
         name: "baseLayers",
-        icon: "<i class='fa-solid fa-map'></i>",
+        icon: "<i class='fa-solid fa-database'></i>",
         displayName: "Basis-Daten",
         isBaseLayerCategory: true,
         show: true,
@@ -125,8 +125,8 @@ const layerCategories = [
             {
                 type: "category",
                 name: "imagery",
-                icon: "<i class='fa-solid fa-camera'></i>",
-                displayName: "Bild-Daten",
+                icon: "<i class='fa-solid fa-map'></i>",
+                displayName: "Karten & Luftbilder",
                 isBaseLayerCategory: true,
                 layers: [
                     // Default cesium imagery gets inserted here at runtime
