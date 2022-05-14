@@ -5,6 +5,7 @@ const layerCategories = [
     {
         type: "category",
         name: "climate",
+        icon: "<i class='fa-solid fa-tree'></i>",
         displayName: "Natur, Umwelt & Klima",
         isBaseLayerCategory: false,
         show: true,
@@ -51,6 +52,7 @@ const layerCategories = [
         type: "category",
         name: "buildings",
         displayName: "Gebäude",
+        icon: "<i class='fa-solid fa-house'></i>",
         isBaseLayerCategory: false,
         show: true,
         layers: [
