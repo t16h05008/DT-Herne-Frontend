@@ -13,6 +13,8 @@
     "@turf/turf": "^6.5.0",
     "bootstrap": "^5.1.3",
     "cesium": "^1.91.0",
+    "dompurify": "^2.3.8",
+    "marked": "^4.0.15",
     "range-slider-element": "^1.0.0",
     "txml": "^5.1.1",
     "uuidjs": "^4.2.11",

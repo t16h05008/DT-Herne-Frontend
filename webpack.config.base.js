@@ -71,6 +71,8 @@ module.exports = {
           { from: nodeModulePathConstant + 'txml/dist/', to: 'dependencies/txml'},
           { from: nodeModulePathConstant + '@turf/turf/dist/', to: 'dependencies/turf/'},
           { from: nodeModulePathConstant + 'uuidjs/dist', to: 'dependencies/uuidjs'},
+          { from: nodeModulePathConstant + 'marked', to: 'dependencies/marked'},
+          { from: nodeModulePathConstant + 'dompurify/dist', to: 'dependencies/dompurify'},
           // Renaming only one file here. First copy other files, then the file while renaming it.
           { from: nodeModulePathConstant + '@thomasloven/round-slider',
             to: 'dependencies/round-slider',
@@ -101,7 +103,7 @@ module.exports = {
         compiler.hooks.done.tap('myFileRemoverPlugin', () => {
             let filePath = distFolderPathConstant + "/2a0c2998445d1ea07470.png";
             fs.stat(filePath, function (err) {
-                if (err && err.message.includes("no such file or directory")) return // might happen and is fine, no error msg needed
+                if (err && err.message.includes("no such file or directory")) return // Might happen and is fine, no error msg needed
             
                 fs.unlink(filePath, function(err){
                      if(err) return console.error(err.message);
