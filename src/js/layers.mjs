@@ -296,7 +296,7 @@ const layerCategories = [
                     {
                         name: "dgm1m",
                         displayName:  "DGM 1m",
-                        thumbnailSrc: "",
+                        thumbnailSrc: "static/images/layerPreview/dem.webp",
                         show: false,
                         opacity: 100,
                         tooltip: "Das Digitale Geländemodell von Geobasis NRW in 1m Auflösung.",
@@ -305,7 +305,7 @@ const layerCategories = [
                     {
                         name: "dgm10m",
                         displayName:  "DGM 10m",
-                        thumbnailSrc: "",
+                        thumbnailSrc: "static/images/layerPreview/dem.webp",
                         show: false,
                         opacity: 100,
                         tooltip: "Das Digitale Geländemodell von Geobasis NRW in 10m Auflösung.",
@@ -314,7 +314,7 @@ const layerCategories = [
                     {
                         name: "dgm25m",
                         displayName:  "DGM 25m",
-                        thumbnailSrc: "",
+                        thumbnailSrc: "static/images/layerPreview/dem.webp",
                         show: false,
                         opacity: 100,
                         tooltip: "Das Digitale Geländemodell von Geobasis NRW in 25m Auflösung.",
@@ -323,7 +323,7 @@ const layerCategories = [
                     {
                         name: "dgm50m",
                         displayName:  "DGM 50m",
-                        thumbnailSrc: "",
+                        thumbnailSrc: "static/images/layerPreview/dem.webp",
                         show: false,
                         opacity: 100,
                         tooltip: "Das Digitale Geländemodell von Geobasis NRW in 50m Auflösung.",
