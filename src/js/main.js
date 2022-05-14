@@ -1116,18 +1116,36 @@ function showLayer(layer) {
         let credit = layer.displayName + ": © " + layer.credit
         credit = new Cesium.Credit(DOMPurify.sanitize(marked.parse(credit), false));
 
-        let provider = new Cesium.WebMapServiceImageryProvider({
-            url : layer.url,
-            layers : layer.layerName,
-            // enablePickFeatures: false,
-            credit: credit
-        });
-        provider.name = layer.name;
-        let currentLayers = viewer.scene.imageryLayers;
-        currentLayers.addImageryProvider(provider)
-        layer.cesiumReference = provider; //TODO
-        console.log("viewer: ", viewer.imageryLayers);
-        console.log("scene: ", viewer.scene.imageryLayers);
+        if(layer.name === "noisePollutionMap2017") {
+            let provider = new Cesium.WebMapServiceImageryProvider({
+                url : layer.url,
+                layers : layer.layerName,
+                parameters : {
+                    transparent : 'true',
+                    format : 'image/png' // TODO make more generic
+                },
+                proxy : new Cesium.DefaultProxy('/proxy/'),
+                // enablePickFeatures: false,
+                credit: credit
+            });
+            provider.name = layer.name;
+            let currentLayers = viewer.scene.imageryLayers;
+            currentLayers.addImageryProvider(provider)
+            layer.cesiumReference = provider;
+
+        } else {
+            console.log("nope");
+            let provider = new Cesium.WebMapServiceImageryProvider({
+                url : layer.url,
+                layers : layer.layerName,
+                // enablePickFeatures: false,
+                credit: credit
+            });
+            provider.name = layer.name;
+            let currentLayers = viewer.scene.imageryLayers;
+            currentLayers.addImageryProvider(provider)
+            layer.cesiumReference = provider;
+        }
     }
 }
 

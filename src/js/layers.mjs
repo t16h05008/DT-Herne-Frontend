@@ -45,8 +45,46 @@ const layerCategories = [
                 opacity: 100,
                 tooltip: "Die Karte zeigt in welchen Bereichen eine besondere Überflutungsgefährdung zu erwarten ist. Überflutungshöhe und -ausdehnung werden durch unterschiedliche Blautöne dargestellt. Die Berechnung erfolgte auf Grundlag eines 1-stündigen Niederschlagereignisses. Extremregen: statistisch >> 1000-jährliches Ereignis (90 l/m², Niederschlagsmengen in l/m² sind gleichbedeutend mit Angaben in mm).",
                 credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
-            }
-        ]  
+            },
+            {
+                type: "WMS",
+                name: "climateChangeAdaptionMap",
+                displayName: "Handlungskarte Klimafolgenanpassungskonzept (2019)",
+                url: "https://geodaten.herne.de/gisserver/qwc/klimaanpassung",
+                layerName: "klimaanpassung",
+                thumbnailSrc: "static/images/layerPreview/climate-change-adaption-map.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Mit dem Klimafolgenanpassungskonzept wird das Ziel verfolgt, sich vor Ort auf die unvermeidbaren Folgen des Klimawandels einzustellen. Im Ergebnis soll eine Verbesserung der Anpassungsfähigkeit und der Erhalt der Funktionsfähigkeit städtischer Infrastrukturen sowie der urbanen Lebensqualität erreicht werden. Das Klimafolgenanpassungskonzept Herne wurde im Rahmen der Nationalen Klimaschutzinitiative gefördert.",
+                credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
+            },
+            {
+                type: "WMS",
+                name: "greenSpaceDevelopmentProgram",
+                displayName: "Grünflächenentwicklungsprogramm",
+                url: "https://geodaten.herne.de/gisserver/qwc/klimaanpassung",
+                layerName: "Grünflächenentwicklungsprogramm",
+                thumbnailSrc: "static/images/layerPreview/green-space-development-program.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Das Grünflächenentwicklungsprogramm (GEP) stellt auf Basis des vorhandenen Grünbestandes Entwicklungsmöglichkeiten dar und zeigt Vernetzungsstrukturen auf.",
+                credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
+            },
+            // Has a couple more layers, but we choose only one for now.
+            // Probably broken because we get compressed images back
+            {
+                type: "WMS",
+                name: "noisePollutionMap2017",
+                displayName: "Umgebungslärmkartierung 2017 Runde 3",
+                url: "https://www.wms.nrw.de/umwelt/laerm_stufe3",
+                layerName: "STR_DEN",
+                thumbnailSrc: "static/images/layerPreview/noise-pollution-map.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Außerhalb der Ballungsräume sind Hauptverkehrsstraßen (Autobahnen, Bundes– und Landesstraßen) mit einem Verkehrsaufkommen von über 3 Millionen Kraftfahrzeugen pro Jahr zu kartieren. Zusätzlich sind in den Ballungsräumen sonstige lärmrelevanten Straßen wie kommunale Straßen oder Straßen mit geringerem Verkehrsaufkommen kartiert.",
+                credit: "[Land NRW](https://www.wms.nrw.de/rssfeeds/content/geoportal/html/1033.html), bereitgestellt durch das [Landesamt für Natur, Umwelt und Verbraucherschutz](https://www.lanuv.nrw.de/)"
+            },
+        ]
     },
     {
         type: "category",
@@ -59,7 +97,7 @@ const layerCategories = [
             {
                 name: "osmBuildings",
                 displayName: "OSM Gebäude",
-                thumbnailSrc: "",
+                thumbnailSrc: "static/images/layerPreview/osm-buildings.webp",
                 show: false,
                 opacity: 100,
                 tooltip: "Gebäude aus OpenStreetMap.",
@@ -68,7 +106,7 @@ const layerCategories = [
             {
                 name: "cityModel",
                 displayName:  "Stadtmodell",
-                thumbnailSrc: "",
+                thumbnailSrc: "static/images/layerPreview/city-model.webp",
                 show: false,
                 opacity: 100,
                 tooltip: "Das 3D-Stadtmodell der Stadt Herne.",
@@ -79,6 +117,7 @@ const layerCategories = [
     {
         type: "category",
         name: "baseLayers",
+        icon: "<i class='fa-solid fa-map'></i>",
         displayName: "Basis-Daten",
         isBaseLayerCategory: true,
         show: true,
@@ -86,6 +125,7 @@ const layerCategories = [
             {
                 type: "category",
                 name: "imagery",
+                icon: "<i class='fa-solid fa-camera'></i>",
                 displayName: "Bild-Daten",
                 isBaseLayerCategory: true,
                 layers: [
@@ -290,6 +330,7 @@ const layerCategories = [
             {
                 type: "category",
                 name: "terrain",
+                icon: "<i class='fa-solid fa-mountain'></i>",
                 displayName: "Terrain",
                 isBaseLayerCategory: true,
                 layers: [
