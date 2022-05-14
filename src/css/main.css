@@ -402,6 +402,10 @@ body, html {
     flex-shrink: 0;
 }
 
+.menu-category-icon {
+    font-size: 0.8em;
+    margin-right: 10px;
+}
 
 .opacitySliderWrapperDisabled {
     pointer-events: none;

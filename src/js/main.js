@@ -616,7 +616,12 @@ function createCategoryHtml(category, wrapper) {
     btn.dataset.bsTarget = "#menu-data-" + category.name;
     btn.ariaExpanded = "false";
     btn.setAttribute("aria-controls", "menu-data-" + category.name);
-    btn.textContent = category.displayName;
+    if(category.icon && category.icon.length) {
+        btn.innerHTML = DOMPurify.sanitize("<span class='menu-category-icon'>" + category.icon + "</span>" + category.displayName);
+    } else {
+        btn.textContent = category.displayName;
+    }
+    
     span.appendChild(btn);
 
     let div2 = document.createElement("div");
