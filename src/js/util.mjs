@@ -43,14 +43,21 @@ function iterateRecursive(arrOrObj, func, params) {
         for(let obj of arr) {
             func(obj, params);
             for(let key in obj) {
-                iterateRecursive(obj[key], func, params)
+                // Don't want to iterate over these, only our own structure
+                if(key !== "cesiumReference") {
+                    iterateRecursive(obj[key], func, params)
+                }
             }
         }
     } else if (typeof (arrOrObj) === "object") {
         let obj = arrOrObj;
         func(obj, params);
         for(let key in obj) {
-            iterateRecursive(obj[key], func, params)
+            
+            if(key !== "cesiumReference") {
+                iterateRecursive(obj[key], func, params)
+            }
+            
         }
     }
 }

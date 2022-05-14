@@ -398,6 +398,10 @@ body, html {
     margin-top: 12px;
 }
 
+.menu-layer-chb, .menu-layer-radio-btn {
+    flex-shrink: 0;
+}
+
 
 .opacitySliderWrapperDisabled {
     pointer-events: none;
