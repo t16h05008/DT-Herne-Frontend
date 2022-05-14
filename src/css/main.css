@@ -6,18 +6,22 @@
     --sidebar-bg-color: #111111;
     --header-spacer-height: 5px;
 
-    --herne-logo-blue: #00A4D7;
-    --herne-logo-green: #007C33;
-    --herne-logo-yellow: #FBBC23;
+    --primary-ui-color: #00A4D7;
+    --secondary-ui-color: #007C33;
+    --tertiary-ui-color: #FBBC23;
 
-    --sidebar-btn-highlight-color: var(--herne-logo-blue);
+    --sidebar-btn-highlight-color: var(--primary-ui-color);
 
     --menu-background-color: #191919;
     --menu-background-color-level-1: #282828;
     --menu-background-color-level-2: #414141;
     --menu-background-color-level-3: #505050;
 
-    --layer-opacity-slider-color: var(var(--herne-logo-green));
+    --layer-opacity-slider-color: var(var(--secondary-ui-color));
+
+    --radio-btn-level-1-background: #000;
+    --radio-btn-level-2-background: #000;
+    --radio-btn-level-3-background: #000;
 }
 
 body, html {
@@ -83,7 +87,7 @@ body, html {
 }
 
 .cameraControlSlider .thumb {
-    background-color: var(--herne-logo-blue)
+    background-color: var(--primary-ui-color)
 }
 
 #cameraControlHeadingSlider {
@@ -91,8 +95,8 @@ body, html {
     display: block;
     margin-left: auto;
     margin-right: auto;
-    --round-slider-bar-color: var(--herne-logo-blue);
-    --round-slider-handle-color: var(--herne-logo-blue);
+    --round-slider-bar-color: var(--primary-ui-color);
+    --round-slider-handle-color: var(--primary-ui-color);
     /*transform: rotate(-90deg);*/
 }
 
@@ -235,7 +239,7 @@ body, html {
 }
 
 .sidebarBtn:hover {
-    color: var(--herne-logo-blue) !important;
+    color: var(--primary-ui-color) !important;
 }
 
 .sidebarBtn * {
@@ -313,7 +317,7 @@ body, html {
 
 .menu-btn-level-1:not(.collapsed) {
     color: white;
-    background-color: var(--herne-logo-blue);
+    background-color: var(--primary-ui-color);
 }
 
 .menu-item-level-2, .menu-btn-level-2 {
@@ -322,7 +326,7 @@ body, html {
 
 .menu-btn-level-2:not(.collapsed) {
     color: white;
-    background-color: var(--herne-logo-green);
+    background-color: var(--secondary-ui-color);
 }
 
 .menu-item-level-3, .menu-btn-level-3 {
@@ -331,7 +335,7 @@ body, html {
 
 .menu-btn-level-3:not(.collapsed) {
     color: black;
-    background-color: var(--herne-logo-yellow);
+    background-color: var(--tertiary-ui-color);
 }
 
 .menu-layer-entry {
@@ -340,29 +344,36 @@ body, html {
     padding: 10px;
 }
 
+.menu-layer-entry input:first-child {
+    margin-right: 15px;
+    width: 1.25em;
+    height: 1.25em;
+    background-color: rgb(230, 230, 230)
+}
+
+
 .menu-item-level-1 .menu-layer-entry input:first-child:checked[type="checkbox"] {
-    margin-right: 15px;
-    background-color: var(--herne-logo-blue) !important;
-    border-color: var(--herne-logo-blue) !important;
-    width: 1.25em;
-    height: 1.25em;
+    background-color: var(--primary-ui-color);
+    border-color: var(--primary-ui-color);
 }
 
-.menu-item-level-1 .menu-layer-entry input:first-child[type="checkbox"] {
-    margin-right: 15px;
-    background-color: gray !important;
-    border-color: gray !important;
-    width: 1.25em;
-    height: 1.25em;
+.menu-item-level-2 .menu-layer-entry input:first-child:checked[type="checkbox"] {
+    background-color: var(--secondary-ui-color);
+    border-color: var(--secondary-ui-color);
 }
 
-.menu-item-level-2 .menu-layer-entry input:first-child {
-    margin-right: 15px;
-    background-color: var(--herne-logo-green) !important;
-    border-color: var(--herne-logo-green) !important;
-    width: 1.25em;
-    height: 1.25em;
+.menu-item-level-1 .menu-layer-entry input:first-child:checked[type="radio"]:checked {
+    background-image: var(--radio-btn-level-1-background)
 }
+
+.menu-item-level-2 .menu-layer-entry input:first-child:checked[type="radio"]:checked {
+    background-image: var(--radio-btn-level-2-background)
+}
+
+.menu-item-level-3 .menu-layer-entry input:first-child:checked[type="radio"]:checked {
+    background-image: var(--radio-btn-level-3-background)
+}
+
 
 .menu-layer-entry img {
     margin-right: 10px;
@@ -412,20 +423,20 @@ body, html {
 }
 
 .menu-item-level-1 .opacitySlider:before {
-    background: linear-gradient(90deg, var(--menu-background-color-level-1),var(--herne-logo-blue)) 0/var(--value-percent,0) 100% no-repeat lightgray !important;
+    background: linear-gradient(90deg, var(--menu-background-color-level-1),var(--primary-ui-color)) 0/var(--value-percent,0) 100% no-repeat lightgray !important;
 }
 
 .menu-item-level-1 .opacitySlider .thumb {
-    background-color: var(--herne-logo-blue)
+    background-color: var(--primary-ui-color)
 }
 
 
 .menu-item-level-2 .opacitySlider:before {
-    background: linear-gradient(90deg, var(--menu-background-color-level-2),var(--herne-logo-green)) 0/var(--value-percent,0) 100% no-repeat lightgray !important;
+    background: linear-gradient(90deg, var(--menu-background-color-level-2),var(--secondary-ui-color)) 0/var(--value-percent,0) 100% no-repeat lightgray !important;
 }
 
 .menu-item-level-2 .opacitySlider .thumb {
-    background-color: var(--herne-logo-green)
+    background-color: var(--secondary-ui-color)
 }
 
 
