@@ -47,6 +47,7 @@ let buildingTilesInfo;
 const backendBaseUri = "http://localhost:8000/";
 
 // Needed to display data attribution correctly
+// https://github.com/markedjs/marked/issues/395
 marked.Renderer.prototype.paragraph = (text) => {
     if (text.includes("<a")) {
       return text + "\n";
@@ -82,7 +83,6 @@ function initializeViewer(initialCameraViewFormatted) {
     if(imageryToSelect === undefined) throw new Error("Layer '" + imageryToLoadName + "' could not be found.");
 
     filtered = defaultTerrainViewModels.filter( viewModel => {
-        console.log(viewModel);
         return viewModel.name === terrainToLoadName;
     });
     let terrainToSelect = filtered.length === 1 ? filtered[0] : undefined;
@@ -96,10 +96,10 @@ function initializeViewer(initialCameraViewFormatted) {
         });
     };
     let imageryCategory = [];
+    let terrainCategory = [];
     filterRecursively(layerCategories, "imagery", imageryCategory);
-    imageryCategory = imageryCategory[0];
-    let terrainCategory = []
     filterRecursively(layerCategories, "terrain", terrainCategory);
+    imageryCategory = imageryCategory[0];
     terrainCategory = terrainCategory[0];
     for(let layer of defaultImageryViewModels) {
         imageryCategory.layers.push({
@@ -123,6 +123,7 @@ function initializeViewer(initialCameraViewFormatted) {
     }
 
     generateUuids(layerCategories);
+    addReferenceProp(layerCategories);
 
     // initialize cesium viewer
     viewer = new Cesium.Viewer('cesiumContainer', {
@@ -146,8 +147,8 @@ function initializeViewer(initialCameraViewFormatted) {
     // changeBaseLayer() // select WGS84 ellipsoid for testing
     viewer.baseLayerPicker.destroy(); // No longer needed, we manage base layers in the sidebar based on the stored references
 
-    document.querySelector(".cesium-credit-expand-link").textContent = "Copyrightinformationen";
-    document.querySelector(".cesium-credit-lightbox-title").textContent = "Datenquellen-Attribution:"
+    document.querySelector(".cesium-credit-expand-link").textContent = "Copyright Datenquellen";
+    document.querySelector(".cesium-credit-lightbox-title").textContent = "";
 }
 
 /**
@@ -472,7 +473,7 @@ function createMenuLayerHTML(category, layer) {
     if(category.isBaseLayerCategory) {
         let radioBtn = document.createElement("input");
         layerDiv.appendChild(radioBtn);
-        radioBtn.classList.add("form-check-input")
+        radioBtn.classList.add("form-check-input", "menu-layer-radio-btn")
         radioBtn.type = "radio";
         radioBtn.name = "radio" + category.name.charAt(0).toUpperCase() + category.name.slice(1); // capitalize
         radioBtn.checked = layer.show;
@@ -485,7 +486,7 @@ function createMenuLayerHTML(category, layer) {
     } else {
         let chb = document.createElement("input");
         layerDiv.appendChild(chb);
-        chb.classList.add("form-check-input")
+        chb.classList.add("form-check-input", "menu-layer-chb")
         chb.type = "checkbox";
         chb.value = layer.name;
         chb.checked = layer.show;
@@ -537,7 +538,7 @@ function createMenuLayerHTML(category, layer) {
         let opacitySliderWrapper = document.createElement("div");
         opacitySliderWrapper.classList.add("opacitySliderWrapper");
         if( !layer.show ) {
-            opacitySlider.disabled; // only visually disabled
+            opacitySlider.disabled = true; // only visually disabled
             opacitySliderWrapper.classList.add("opacitySliderWrapperDisabled")
         }
         opacitySliderWrapper.appendChild(opacitySlider)
@@ -636,7 +637,7 @@ function addImageryEmptyLayer(category, wrapper) {
     layerDiv.classList.add("menu-layer-entry");
 
     let radioBtn = document.createElement("input");
-    radioBtn.classList.add("form-check-input")
+    radioBtn.classList.add("form-check-input",  "menu-layer-radio-btn")
     radioBtn.type = "radio";
     radioBtn.name = "radioImagery";
     radioBtn.value = "";
@@ -704,68 +705,20 @@ function sendCurrentPovToTilingManager() {
 
 function onMenuLayerChbClicked(event, layer) {
     let chb = event.target;
+    let opacitySlider = document.querySelector("range-slider[data-layer-name=" + layer.name + "]")
+    let opacitySliderWrapper = opacitySlider.parentElement;
+
     if(chb.checked) {
-        layer.show = true;
-        // get from api
-        if(layer.name === "osmBuildings") {
-            // Load OSM buildings
-            // Can't use datasources with primitives
-            const buildingsTileset = viewer.scene.primitives.add( Cesium.createOsmBuildings() );
-            buildingsTileset.name = layer.name;
-        }
-        if(layer.name === "cityModel") {
-            /*
-             * This layer is managed by the tiling manager.
-             * We don't want to load all buildings, only the ones relevant for the current camera view.
-             * We add a listener to the moveEnd event and let the tiling manager load the relevant entities.
-             * See function onTillingManagerMessageReceived
-             */
-            let cityModelDataSource = new Cesium.CustomDataSource(layer.name);
-            viewer.dataSources.add(cityModelDataSource);
-
-            camera.moveEnd.addEventListener(sendCurrentPovToTilingManager);
-            camera.moveEnd.raiseEvent(); // Simulate the event to load the first models
-        }
+        opacitySlider.removeAttribute("disabled") // Setting to false doesn't work
+        opacitySliderWrapper.classList.remove("opacitySliderWrapperDisabled");
+        showLayer(layer);
     } else {
-        layer.show = false;
-        // remove layer
-        for(let i=0; i<scene.primitives.length; i++) {
-            let primitive = scene.primitives.get(i);
-            if(primitive.name && primitive.name.length) {
-                if(primitive.name === layer.name) {
-                    console.log(primitive);
-                    viewer.scene.primitives.remove( primitive )
-                }
-            }
-        }
-        // All entities that don't belong to a data source
-        for(let i=0; i<viewer.entities.length; i++) {
-            let entity = viewer.entities.get(i);
-            if(entity.name && entity.name.length) {
-                console.log("entity: ", entity);
-            }
-        }
-
-        for(let i=0; i<viewer.dataSources.length; i++) {
-            let dataSource = viewer.dataSources.get(i);
-            if(dataSource.name && dataSource.name.length) {
-                console.log("dataSource: ", dataSource);
-                if(dataSource.name === layer.name) {
-                    console.log("removed");
-                    viewer.dataSources.remove(dataSource);
-                    console.log(viewer.dataSources);
-                    
-                    if(layer.name === "cityModel") {
-                        camera.moveEnd.removeEventListener(sendCurrentPovToTilingManager);
-                        camera.moveEnd.raiseEvent();
-                    }
-                }
-
-            
-            }
-        }
+        opacitySlider.disabled = true;
+        opacitySliderWrapper.classList.add("opacitySliderWrapperDisabled");
+        removeLayer(layer);
     }
 }
+
 
 function onMenuLayerRadioBtnClicked(category, layer) {
 
@@ -877,8 +830,6 @@ function initializeIndexedDB() {
         dataSource("Your browser doesn't support a stable version of IndexedDB. Caching 3D-Models will not be available, resulting in longer loading times.");
         return;
     } else {
-        // TODO for testing only
-
         var dbDeletionRequest = indexedDB.deleteDatabase("gltfModelStoreDB");
         dbDeletionRequest.onsuccess = function () {
             console.log("Deleted database successfully");
@@ -1055,45 +1006,154 @@ function onTillingManagerMessageReceived(event) {
  */
 function loadBaseLayers(layerCategories) {
 
-    Util.iterateRecursive(layerCategories, function(obj) {
-        if(obj.type === "WMS" && obj.name.startsWith("aerialImageRVR")) {
+    Util.iterateRecursive(layerCategories, function(layer) {
+        // Aerial Images RVR
+        if(layer.type === "WMS" && layer.name.startsWith("aerialImageRVR")) {
+            let credit = layer.displayName + ": © " + layer.credit
+            credit = new Cesium.Credit(DOMPurify.sanitize(marked.parse(credit), false));
+            
+            let provider = new Cesium.WebMapServiceImageryProvider({
+                url : layer.url,
+                layers : layer.layerName,
+                // enablePickFeatures: false,
+                credit: credit
+            });
+            // ProviderViewModel is not shown since the baseLayerPicker is hidden
+            // But this is an easy way to add a new base layer
             let viewModelProvider = new Cesium.ProviderViewModel({
-                name: obj.name,
-                tooltip: obj.tooltip,
-                iconUrl: obj.thumbnailSrc,
+                name: layer.name,
+                tooltip: layer.tooltip,
+                iconUrl: layer.thumbnailSrc,
                 category: "Other",
                 creationFunction: () => {
-                    return new Cesium.WebMapServiceImageryProvider({
-                        url : obj.url,
-                        layers : obj.layerName ? obj.layerName : "", // TODO
-                        credit: new Cesium.Credit(DOMPurify.sanitize(marked.parse(obj.credit), true)) // showOnScreen option seems bugged
-                    });
+                    return provider;
                 }
             });
             viewer.baseLayerPicker.viewModel.imageryProviderViewModels.push(viewModelProvider);
+            layer.cesiumReference = provider;
         }
 
-        if(obj.name.includes("dgm")) {
-            let resolution = obj.name.match(/\d/g).join("")
+        // Terrain GeobasisNRW
+        if(layer.name.includes("dgm")) {
+            let resolution = layer.name.match(/\d/g).join("")
+            let provider = new Cesium.CesiumTerrainProvider({
+                url : "http://localhost:8000/terrain/dem" + resolution,
+                // No attribution required, http://www.govdata.de/dl-de/zero-2-0
+            });
+
             let viewModelProvider = new Cesium.ProviderViewModel({
-                name: obj.name,
-                tooltip: obj.tooltip,
-                iconUrl: obj.thumbnailSrc,
+                name: layer.name,
+                tooltip: layer.tooltip,
+                iconUrl: layer.thumbnailSrc,
                 category: "Other",
                 creationFunction: () => {
-                    return new Cesium.CesiumTerrainProvider({
-                        url : "http://localhost:8000/terrain/dem" + resolution,
-                    });
+                    return provider;
                 }
             });
             viewer.baseLayerPicker.viewModel.terrainProviderViewModels.push(viewModelProvider);
+            layer.cesiumReference = provider;
         }
     });
-
 }
+
 
 function generateUuids(layerCategories) {
     Util.iterateRecursive(layerCategories, function(obj, params) {
         obj.id = UUID.generate();
     });
+}
+
+// Adds a property where the reference to the cesium layer object can be stored later.
+// This can then be used as a shortcut to access the layer object, which is needed sometimes.
+// This method is actually redundant (props could be created when needed), but kept in for readability.
+function addReferenceProp(layerCategories) {
+    Util.iterateRecursive(layerCategories, function(obj, name) {
+        if(obj.type !== "category") {
+            obj.cesiumReference = "";
+        }
+    })
+}
+
+function showLayer(layer) {
+    layer.show = true;
+    if(layer.name === "osmBuildings") {
+        // Load OSM buildings
+        // Can't use datasources with primitives
+        const buildingsTileset = viewer.scene.primitives.add( Cesium.createOsmBuildings() );
+        buildingsTileset.name = layer.name;
+        layer.cesiumReference = buildingsTileset;
+    }
+    if(layer.name === "cityModel") {
+        /*
+         * This layer is managed by the tiling manager.
+         * We don't want to load all buildings, only the ones relevant for the current camera view.
+         * We add a listener to the moveEnd event and let the tiling manager load the relevant entities.
+         * See function onTillingManagerMessageReceived
+         */
+        let cityModelDataSource = new Cesium.CustomDataSource(layer.name);
+        viewer.dataSources.add(cityModelDataSource);
+        layer.cesiumReference = cityModelDataSource;
+
+        camera.moveEnd.addEventListener(sendCurrentPovToTilingManager);
+        camera.moveEnd.raiseEvent(); // Simulate the event to load the first models
+    }
+    if(layer.type === "WMS") {
+        let credit = layer.displayName + ": © " + layer.credit
+        credit = new Cesium.Credit(DOMPurify.sanitize(marked.parse(credit), false));
+
+        let provider = new Cesium.WebMapServiceImageryProvider({
+            url : layer.url,
+            layers : layer.layerName,
+            // enablePickFeatures: false,
+            credit: credit
+        });
+        provider.name = layer.name;
+        let currentLayers = viewer.scene.imageryLayers;
+        currentLayers.addImageryProvider(provider)
+        layer.cesiumReference = provider; //TODO
+        console.log("viewer: ", viewer.imageryLayers);
+        console.log("scene: ", viewer.scene.imageryLayers);
+    }
+}
+
+// Hides a layer in different ways, depending on what type of layer it is.
+// Base layers are handled through the baseLayerPicker Widget instead.
+function removeLayer(layer) {
+    layer.show = false;
+
+    // Imagery
+    // layer.cesiumReference is the imageryProvider.
+    let currentImageryLayers= viewer.scene.imageryLayers;
+    for(let i=0; i<currentImageryLayers.length; i++) {
+        let l = currentImageryLayers.get(i);
+        if(l.imageryProvider === layer.cesiumReference) {
+            currentImageryLayers.remove(l);
+            layer.cesiumReference = undefined;
+            return;
+        }
+    }
+
+    // Primitives
+    let removed = scene.primitives.remove(layer.cesiumReference)
+    if(removed) {
+        layer.cesiumReference = undefined;
+        return;
+    }
+
+    // Datasources
+    removed = viewer.dataSources.remove(layer.cesiumReference)
+    if(removed) {
+        layer.cesiumReference = undefined;
+        if(layer.name === "cityModel") {
+            camera.moveEnd.removeEventListener(sendCurrentPovToTilingManager);
+        }
+        return;
+    }
+
+    // All entities that don't belong to a data source
+    removed = viewer.entities.remove(layer.cesiumReference);
+    if(removed) {
+        layer.cesiumReference = undefined;
+        return;
+    }
 }
