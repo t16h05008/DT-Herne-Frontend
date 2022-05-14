@@ -7,13 +7,14 @@ const fs = require('fs')
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const WebpackPwaManifest = require('webpack-pwa-manifest')
+const WebpackPwaManifest = require('webpack-pwa-manifest');
 const Dotenv = require('dotenv-webpack');
+const WebpackLicensePlugin = require('webpack-license-plugin');
 
 const nodeModulePathConstant = "node_modules/";
 const cesiumSourcePathConstant = 'node_modules/cesium/Source';
-const cesiumStaticFilesPathConstant = 'static/cesiumJS/'
-const distFolderPathConstant = path.resolve(__dirname, 'dist')
+const cesiumStaticFilesPathConstant = 'static/cesiumJS/';
+const distFolderPathConstant = path.resolve(__dirname, 'dist');
 
 
 module.exports = {
@@ -52,6 +53,15 @@ module.exports = {
         { src: path.resolve('src/icon-512.png'), sizes: '512x512' }
       ]
     }),
+    new WebpackLicensePlugin({
+      outputFilename: "licenses.json",
+      unacceptableLicenseTest: (licenseIdentifier) => {
+        return ['GPL', 'AGPL', 'LGPL', 'NGPL'].includes(licenseIdentifier)
+      },
+      licenseOverrides: {
+        'turf-jsts@1.2.3': 'EPL-1.0' // Has (EDL-1.0 OR EPL-1.0) in package.json
+      },
+    }),
     // Workaround since devServer.client.progress is bugged
     // https://github.com/webpack/webpack-dev-server/issues/201
     new webpack.ProgressPlugin(),
@@ -63,7 +73,7 @@ module.exports = {
           { from: path.join(cesiumSourcePathConstant, 'Widgets'), to: path.join(cesiumStaticFilesPathConstant, "Widgets") },
           { from: path.join(cesiumSourcePathConstant, 'ThirdParty'), to: path.join(cesiumStaticFilesPathConstant, "ThirdParty") },
           // Copy dist folders of dependencies
-          // TODO specify files to copy to reduce size of dist folder
+          // TODO specify files to copy to reduce size of dist folder. Licenses are copied by a plugin anyway.
           { from: nodeModulePathConstant + 'bootstrap/dist', to: 'dependencies/bootstrap/' },
           { from: nodeModulePathConstant + '@fortawesome/fontawesome-free', to: 'dependencies/fontawesome'},
           { from: nodeModulePathConstant + 'range-slider-element/dist', to: 'dependencies/range-slider-element'},
