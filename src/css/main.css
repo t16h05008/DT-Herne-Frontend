@@ -274,7 +274,7 @@ body, html {
 
 .menu-resize-handle {
     --width: 8px;
-    
+
     width:var(--width);
     height:100%;
     position:absolute;
@@ -426,8 +426,15 @@ body, html {
     flex-shrink: 0;
 }
 
-.menu-category-icon {
+span.menu-category-icon {
     font-size: 0.8em;
+    margin-right: 10px;
+}
+
+img.menu-category-icon {
+    width: 0.8em;
+    height: 0.8em;
+    filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(84deg) brightness(106%) contrast(103%); /* white */
     margin-right: 10px;
 }
 
