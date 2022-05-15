@@ -349,6 +349,8 @@ function initializeSidebar() {
     let sidebarBtns = document.querySelectorAll(".sidebarBtn");
     
     addSidebarButtonHighlighting(sidebarBtns);
+    enableMenuToggle(sidebarBtns);
+    enableMenuResize(sidebarBtns);
     createMenuLayerTree(layerCategories);
 
     // globe settings
@@ -411,22 +413,6 @@ function addSidebarButtonHighlighting(sidebarBtns) {
         let menu = document.querySelector(menuId);
         let closeBtn = menu.querySelector(".btn-close"); // only one close btn exists
 
-        // Listeners for toggling the menu
-        // On menu opened
-        menu.addEventListener('show.bs.offcanvas', function () {
-            let menuWidth = getComputedStyle(document.documentElement,null).getPropertyValue('--menu-width');
-            // Move the scene to the right when menu opens
-            // No need to add the sidebar width since it is not in this div
-            document.getElementById("cesiumContainer").style.marginLeft = menuWidth;
-        });
-        
-        // On menu closed
-        menu.addEventListener('hide.bs.offcanvas', function () {
-            // Move scene back to the left edge
-            document.getElementById("cesiumContainer").style.marginLeft = "0";
-            
-        });
-
         // Remove highlight color from all sidebar buttons
         closeBtn.addEventListener("click", function() {
             for(let btn of sidebarBtns) {
@@ -452,6 +438,76 @@ function addSidebarButtonHighlighting(sidebarBtns) {
                 clickedBtn.style.setProperty("color", highlightColor, "important")
             }
         });
+    }
+}
+
+
+function enableMenuToggle(sidebarBtns) {
+    for(let btn of sidebarBtns) {
+        let menuId = btn.dataset.bsTarget;
+        let menu = document.querySelector(menuId);
+        // Listeners for toggling the menu
+        // On menu opened
+        menu.addEventListener('show.bs.offcanvas', function () {
+            let menuWidth = getComputedStyle(document.documentElement,null).getPropertyValue('--menu-width');
+            // Move the scene to the right when menu opens
+            // No need to add the sidebar width since it is not in this div
+            document.getElementById("cesiumContainer").style.marginLeft = menuWidth;
+            // Add pointer events to resize div
+            let handle = menu.querySelector(".menu-resize-handle");
+            handle.style.pointerEvents = "auto";
+            handle.style.cursor = "ew-resize";
+        });
+
+        // On menu closed
+        menu.addEventListener('hide.bs.offcanvas', function () {
+            // Move scene back to the left edge
+            document.getElementById("cesiumContainer").style.marginLeft = "0";
+            // Remove pointer events from resize div
+            let handle = menu.querySelector(".menu-resize-handle");
+            handle.style.pointerEvents = "none";
+            handle.style.cursor = "default";
+        });
+    }
+}
+
+
+function enableMenuResize(sidebarBtns) {
+    let handles = [];
+    for(let btn of sidebarBtns) {
+        let menuId = btn.dataset.bsTarget;
+        let menu = document.querySelector(menuId);
+        // Add listener to resize div
+        let handle = menu.querySelector(".menu-resize-handle");
+        handles.push(handle);
+    }
+    
+    for(let i=0; i<handles.length; i++) {
+        handles[i].addEventListener("mousedown", function(e) {
+            initDrag(e, handles[i])
+        })
+    }
+
+    let startX, startWidth;
+    async function initDrag(e, handle) {
+        startX = e.clientX;
+        startWidth = window.getComputedStyle(document.body).getPropertyValue('--menu-width');
+        startWidth = parseInt(startWidth, 10);
+        // Add listeners to body instead of handle to account for fast mouse movements
+        document.body.addEventListener('mousemove', doDrag);
+        document.body.addEventListener('mouseup', stopDrag);
+    }
+
+    async function doDrag(e) {
+        let newWidth = (startWidth + e.clientX - startX) + "px"
+        document.body.style.setProperty('--menu-width', newWidth);
+        // Also resize cesium container
+        document.getElementById("cesiumContainer").style.marginLeft = newWidth;
+    }
+
+    async function stopDrag(e,) {
+        document.body.removeEventListener('mousemove', doDrag, false);
+        document.body.removeEventListener('mouseup', stopDrag, false);
     }
 }
 

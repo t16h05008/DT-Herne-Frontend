@@ -269,8 +269,21 @@ body, html {
 .offcanvas-body {
     padding-left: 0;
     padding-right: 0;
+    overflow-x: hidden; /* Menu is resizable instead */
 }
 
+.menu-resize-handle {
+    --width: 8px;
+    
+    width:var(--width);
+    height:100%;
+    position:absolute;
+    top:0;
+    right:0;
+    margin-right: var(--width) / 2;
+    visibility: visible;
+    pointer-events: none;
+}
 
 .accordion-body {
     padding-left: 0;
