@@ -1,30 +1,3 @@
-// works with hex colors for now
-function convertColorToCesiumColor(color) {
-    let newColor =  {
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 1
-    }
-
-    let rgb = hexToRgb(color);
-    newColor.red = rgb.r / 256;
-    newColor.green = rgb.g / 256;
-    newColor.blue = rgb.b / 256;
-    
-    return newColor;
-}
-
-// https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
-function hexToRgb(hex) {
-    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : null;
-}
-
 // A simple rounding method for utility.
 // Not accurate in some edge cases
 // e.g. round(1.005, 2) should be 1.01 but result is 1
@@ -62,4 +35,4 @@ function iterateRecursive(arrOrObj, func, params) {
     }
 }
 
-export { convertColorToCesiumColor, round, iterateRecursive };
+export { round, iterateRecursive };

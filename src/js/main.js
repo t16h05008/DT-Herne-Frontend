@@ -137,6 +137,7 @@ function initializeViewer(initialCameraViewFormatted) {
         fullscreenButton: false,
         sceneModePicker: false
     });
+    viewer.extend(Cesium.viewerCesiumInspectorMixin);
     camera = viewer.camera;
     scene = viewer.scene;
     globe = scene.globe;
@@ -361,7 +362,7 @@ function initializeSidebar() {
         const newColor = convertColorPickerResultToCesiumColor(color);
         globe.baseColor  = newColor;
     });
-    globe.baseColor = Util.convertColorToCesiumColor(defaultGlobeColor);
+    globe.baseColor = Cesium.Color.fromCssColorString(defaultGlobeColor);
 
     let settingsGlobeTransparencySlider = document.getElementById("settingsGlobeTransparencySlider");
     settingsGlobeTransparencySlider.addEventListener("input", function(event) {
@@ -392,7 +393,7 @@ function initializeSidebar() {
         const newColor = convertColorPickerResultToCesiumColor(color);
         globe.undergroundColor  = newColor;
     });
-    globe.undergroundColor = Util.convertColorToCesiumColor(defaultUndergroundColor);
+    globe.undergroundColor = Cesium.Color.fromCssColorString(defaultUndergroundColor);
 
     let settingsUndergroundTransparencySlider = document.getElementById("settingsUndergroundTransparencySlider");
     settingsUndergroundTransparencySlider.addEventListener("input", function(event) {
@@ -1108,7 +1109,7 @@ function loadBaseLayers(layerCategories) {
         if(layer.name.includes("dgm")) {
             let resolution = layer.name.match(/\d/g).join("")
             let provider = new Cesium.CesiumTerrainProvider({
-                url : "http://localhost:8000/terrain/dem" + resolution,
+                url : backendBaseUri + "terrain/dem" + resolution,
                 // No attribution required, http://www.govdata.de/dl-de/zero-2-0
             });
 
@@ -1167,6 +1168,42 @@ function showLayer(layer) {
 
         camera.moveEnd.addEventListener(sendCurrentPovToTilingManager);
         camera.moveEnd.raiseEvent(); // Simulate the event to load the first models
+    }
+    if(layer.name.includes("sewer")) {
+        // Query endpoint depending on layer name
+        // Don't use the GeoJsonDataSource here for performance reasons.
+        // Also, we don't want to show points as billboards anyway
+        let uri =  backendBaseUri + "sewers"
+        if(layer.name === "sewerShaftsPoints") uri += "/shafts/points";
+        if(layer.name === "sewerShaftsLines") uri += "/shafts/lines";
+        if(layer.name === "sewerPipes") uri += "/pipes";
+
+        (async () => {
+            const datasource = new Cesium.CustomDataSource(layer.name);
+            datasource.show = true;
+            const response = await fetch(uri);
+            const json = await response.json();
+            for(let feature of json.features) {
+                let propertyBag = new Cesium.PropertyBag();
+                for(let [key, value] of Object.entries(feature.properties)) {
+                    propertyBag.addProperty(key, value)
+                }
+                let lon = feature.geometry.coordinates[0];
+                let lat = feature.geometry.coordinates[1];
+                let height = feature.geometry.coordinates[2];
+                let position = new Cesium.Cartesian3.fromDegrees(lon, lat, height);
+                console.log(position);
+                let entity = new Cesium.Entity({
+                    id: feature.properties.id,
+                    position: position,
+                    properties: propertyBag
+                });
+                entity = styleSewerEntity(entity, layer.name);
+                datasource.entities.add(entity);
+            }
+            viewer.dataSources.add(datasource);
+            layer.cesiumReference = datasource;
+        })();
     }
     if(layer.type === "WMS") {
         let credit = layer.displayName + ": © " + layer.credit
@@ -1245,4 +1282,42 @@ function removeLayer(layer) {
         layer.cesiumReference = undefined;
         return;
     }
+}
+
+
+function styleSewerEntity(entity, type) {
+    let color = entity.properties.Color.getValue();
+    let colorSplit = color.split(",");
+    colorSplit = colorSplit.map(entry => parseInt(entry));
+
+    if(type === "sewerShaftsPoints") {
+        entity.ellipsoid = new Cesium.EllipsoidGraphics({
+            radii: new Cesium.Cartesian3(2, 2, 2),
+            material: new Cesium.ColorMaterialProperty(Cesium.Color.fromBytes(colorSplit[0], colorSplit[1], colorSplit[2])),
+        });
+    }
+
+    if(type === "sewerShaftsLines" || type === "sewerPipes") {
+        entity.polylineVolume = new Cesium.PolylineVolumeGraphics({
+            shape: computeCircle(5.0),
+            material: new Cesium.ColorMaterialProperty(Cesium.Color.fromBytes(colorSplit[0], colorSplit[1], colorSplit[2])),
+        });
+    }
+
+    // Computes the circle, that will be extruded to form the pipe
+    function computeCircle(radius) {
+        const positions = [];
+        for (let i = 0; i < 360; i++) {
+          const radians = Cesium.Math.toRadians(i);
+          positions.push(
+            new Cesium.Cartesian2(
+              radius * Math.cos(radians),
+              radius * Math.sin(radians)
+            )
+          );
+        }
+        return positions;
+    }
+
+    return entity;
 }
