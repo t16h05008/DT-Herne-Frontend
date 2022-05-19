@@ -4,6 +4,43 @@ const layerCategories = [
     // categories
     {
         type: "category",
+        name: "sewerage",
+        icon: "<i class='fa-solid fa-droplet'></i>",
+        displayName: "Kanalisation",
+        isBaseLayerCategory: false,
+        show: true,
+        layers: [
+            {
+                name: "sewerShaftsPoints",
+                displayName: "Schächte (Punkte)",
+                thumbnailSrc: "static/images/layerPreview/sewer-shaft.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Die Kanalschächte der Stadtentwässerung Herne als Punkt-Objekte.",
+                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)"
+            },
+            {
+                name: "sewerShaftsLines",
+                displayName: "Schächte (Linien)",
+                thumbnailSrc: "static/images/layerPreview/sewer-shaft.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Die Kanalschächte der Stadtentwässerung Herne als vertikale Linien.",
+                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)"
+            },
+            {
+                name: "sewerPipes",
+                displayName: "Leitungen",
+                thumbnailSrc: "static/images/layerPreview/sewer-pipe.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Die unterirdischen Leitungen der Stadtentwässerung Herne.",
+                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)"
+            },
+        ]
+    },
+    {
+        type: "category",
         name: "climate",
         icon: "<i class='fa-solid fa-tree'></i>",
         displayName: "Natur, Umwelt & Klima",
