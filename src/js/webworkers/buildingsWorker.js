@@ -3,16 +3,18 @@ import * as turf from "@turf/turf";
 
 onmessage = function(e) {
     let data = e.data;
-    if(data.event === "startCalculation") {
+    if(data.event === "calculateTilesToShow") {
         let tileIds = calculateTilesToShow(data.viewRect, data.tiles);
         let tilesToShow = data.tiles.filter( (tile) => {
             return tileIds.includes(tile.id);
         });
         // The main thread only needs the entities
-        let workerResult = [];
+        let workerResult = {};
+        workerResult[data.layersToUpdate[0]] = [];
         for(let tile of tilesToShow) {
-            workerResult = workerResult.concat(tile.entities);
+            workerResult[data.layersToUpdate[0]] = workerResult[data.layersToUpdate[0]].concat(tile.entities);
         }
+        
         postMessage(workerResult);
     }
 }
@@ -21,7 +23,7 @@ onmessage = function(e) {
  * Returns an array of string containing the intersecting tile ids
  * @param {*} viewRect 
  */
- function calculateTilesToShow(viewRect, tiles) {
+function calculateTilesToShow(viewRect, tiles) {
     // Iterate tiles and check if they intersect with the view rectangle.
     let result = [];
     for(let tile of tiles) {

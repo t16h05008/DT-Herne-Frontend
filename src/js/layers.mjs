@@ -17,7 +17,8 @@ const layerCategories = [
                 show: false,
                 opacity: 100,
                 tooltip: "Die Kanalschächte der Stadtentwässerung Herne als Punkt-Objekte.",
-                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)"
+                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)",
+                apiEndpoint: "sewers/shafts/points/"
             },
             {
                 name: "sewerShaftsLines",
@@ -26,7 +27,8 @@ const layerCategories = [
                 show: false,
                 opacity: 100,
                 tooltip: "Die Kanalschächte der Stadtentwässerung Herne als vertikale Linien.",
-                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)"
+                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)",
+                apiEndpoint: "sewers/shafts/lines/"
             },
             {
                 name: "sewerPipes",
@@ -35,7 +37,8 @@ const layerCategories = [
                 show: false,
                 opacity: 100,
                 tooltip: "Die unterirdischen Leitungen der Stadtentwässerung Herne.",
-                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)"
+                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)",
+                apiEndpoint: "sewers/pipes/"
             },
         ]
     },
@@ -147,7 +150,8 @@ const layerCategories = [
                 show: false,
                 opacity: 100,
                 tooltip: "Das 3D-Stadtmodell der Stadt Herne.",
-                credit: ""
+                credit: "",
+                apiEndpoint: "3d-models/buildings/"
             }
         ]
     },
@@ -378,7 +382,8 @@ const layerCategories = [
                         show: false,
                         opacity: 100,
                         tooltip: "Das Digitale Geländemodell von Geobasis NRW in 1m Auflösung.",
-                        credit: ""
+                        credit: "",
+                        apiEndpoint: "terrain/dem/1"
                     },
                     {
                         name: "dgm10m",
@@ -387,7 +392,8 @@ const layerCategories = [
                         show: false,
                         opacity: 100,
                         tooltip: "Das Digitale Geländemodell von Geobasis NRW in 10m Auflösung.",
-                        credit: ""
+                        credit: "",
+                        apiEndpoint: "terrain/dem/10"
                     },
                     {
                         name: "dgm25m",
@@ -396,7 +402,8 @@ const layerCategories = [
                         show: false,
                         opacity: 100,
                         tooltip: "Das Digitale Geländemodell von Geobasis NRW in 25m Auflösung.",
-                        credit: ""
+                        credit: "",
+                        apiEndpoint: "terrain/dem/25"
                     },
                     {
                         name: "dgm50m",
@@ -405,7 +412,8 @@ const layerCategories = [
                         show: false,
                         opacity: 100,
                         tooltip: "Das Digitale Geländemodell von Geobasis NRW in 50m Auflösung.",
-                        credit: ""
+                        credit: "",
+                        apiEndpoint: "terrain/dem/50"
                     },
                 ] // default cesium terrain gets inserted here at runtime
             },
