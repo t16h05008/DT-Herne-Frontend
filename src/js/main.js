@@ -1003,35 +1003,56 @@ function onDataLoadingManagerMessageReceived(event) {
             currentEntities.remove(entity);
         }
 
-        // load
-        for(let entity of entitiesToLoad) {
-            console.log(entitiesToLoad);
-            let lon = parseFloat(entity.location.lon);
-            let lat = parseFloat(entity.location.lat);
-            let altitude = parseFloat(entity.location.height);
+        // Query terrain heights for the building's coordinates
+        (async () => {
 
-            let position = Cesium.Cartesian3.fromDegrees(lon, lat, altitude);
-            let heading = Cesium.Math.toRadians(parseFloat(entity.orientation.heading)); 
-            let pitch =  0
-            let roll =  0
-            let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
+            let terrainProvider = dgm1Layer.cesiumReference;
+            var positions = [];
+            for(let entity of entitiesToLoad) {
+                let lon = parseFloat(entity.location.lon);
+                let lat = parseFloat(entity.location.lat);
+                positions.push(Cesium.Cartographic.fromDegrees(lon, lat));
+            }
+            positions = await Cesium.sampleTerrainMostDetailed(terrainProvider, positions);
+            // positions[...].height has been updated
+            for(let [idx, entity] of Object.entries(entitiesToLoad)) {
+                let lon = parseFloat(entity.location.lon);
+                let lat = parseFloat(entity.location.lat);
+                let altitude = parseFloat(entity.location.height + positions[idx].height);
+                let position = Cesium.Cartesian3.fromDegrees(lon, lat, altitude);
+                let heading = Cesium.Math.toRadians(parseFloat(entity.orientation.heading)); 
+                let pitch =  0
+                let roll =  0
+                let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
 
-            let newEntity = new Cesium.Entity({
-                id: entity.id,
-                name: entity.id,
-                position: position,
-                orientation: orientation
-                // model reference gets added later
-            });
+                let newEntity = new Cesium.Entity({
+                    id: entity.id,
+                    name: entity.id,
+                    position: position,
+                    orientation: orientation
+                    // model reference gets added later
+                });
+    
+                let url = backendBaseUrl + layer.apiEndpoint + newEntity.id
+                newEntity.model = new Cesium.ModelGraphics({
+                    uri: url,
+                    // needed for opacity but doesn't change appearance
+                    color: Cesium.Color.fromAlpha(Cesium.Color.WHITE, 1),
+                    colorBlendMode: Cesium.ColorBlendMode["MIX"],
+                    colorBlendAmount: 0.0,
+                });
+                // Add a property with the current timestamp so we can implement FIFO
+                newEntity.addProperty("addedToViewerTimestamp");
+                newEntity.addedToViewerTimestamp = Date.now();
+                currentEntities.add(newEntity);
+            }
 
-            let url = backendBaseUrl + layer.apiEndpoint + newEntity.id
-            newEntity.model = new Cesium.ModelGraphics({
-                uri: url
-            });
-            // Add a property with the current timestamp so we can implement FIFO
-            newEntity.addProperty("addedToViewerTimestamp");
-            newEntity.addedToViewerTimestamp = Date.now();
-            currentEntities.add(newEntity);
+            // Apply current slider value
+            let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
+            handleLayerOpacityChange(opacitySlider);
+
+            
+        })();
 
             // Code below is for caching the model.
             // It doesn't work since cesium doesn't have a way to create a model directly form the data instead of an url
@@ -1080,7 +1101,6 @@ function onDataLoadingManagerMessageReceived(event) {
             //         }
             //     };
             // }
-        }
     }
 
     if(layers.includes("sewerShaftsPoints")) {
