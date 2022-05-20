@@ -590,18 +590,11 @@ function createMenuLayerHTML(category, layer) {
         opacitySlider.value = layer.opacity;
         opacitySlider.classList.add("opacitySlider")
         opacitySlider.dataset.layerName = layer.name;
-
-        opacitySlider.addEventListener("input", function(event) {
-            let value = event.target.value;
-            // TODO Handle opacity change differently, depending on layer type
-            // for(let i=0; i<viewer.imageryLayers.length;i++) {
-            //     let layer = viewer.imageryLayers.get(i);
-            //     if(layer.isBaseLayer) {
-            //         layer.alpha = value / 100;
-            //     }
-            // }
+        // "input" for cooler effect but slower performance
+        opacitySlider.addEventListener("change", function(event) {
+            handleLayerOpacityChange(event.target)
         });
-        //opacitySlider.dispatchEvent(new Event("input"));
+        opacitySlider.dispatchEvent(new Event("input"));
 
         // The easiest method to disable the slider is to wrap it inside a div and disable pointer events on that.
         let opacitySliderWrapper = document.createElement("div");
@@ -761,7 +754,7 @@ function onMenuLayerChbClicked(event, layer) {
     if(chb.checked) {
         opacitySlider.removeAttribute("disabled") // Setting to false doesn't work
         opacitySliderWrapper.classList.remove("opacitySliderWrapperDisabled");
-        showLayer(layer);
+        addLayer(layer);
     } else {
         opacitySlider.disabled = true;
         opacitySliderWrapper.classList.add("opacitySliderWrapperDisabled");
@@ -976,10 +969,10 @@ function onDataLoadingManagerMessageReceived(event) {
     
     if(layers.includes("cityModel")) {
         let layer;
+        let dgm1Layer;
         Util.iterateRecursive(layerCategories, function(obj) {
-            if(obj.name === "cityModel") {
-                layer = obj;
-            }
+            if(obj.name === "cityModel") layer = obj;
+            if(obj.name === "dgm1m") dgm1Layer = obj;
         });
         // The entities have different formats, but both have an id property that can be used for comparison
         let entitiesToShow = data[layer.name];
@@ -1158,6 +1151,9 @@ function handleLoadingAndUnloadingSewerEntities(layerName, entityIdsToShow) {
                 let entity = createSewerEntityFromFeature(feature);
                 datasource.entities.add(entity);
             }
+            // Apply current slider value
+            let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
+            handleLayerOpacityChange(opacitySlider);
         });
         
     }
@@ -1194,7 +1190,11 @@ function loadBaseLayers(layerCategories) {
                 }
             });
             viewer.baseLayerPicker.viewModel.imageryProviderViewModels.push(viewModelProvider);
-            layer.cesiumReference = provider;
+            // Get most recently added layer and give it a name
+            let newLayer = scene.imageryLayers.get(scene.imageryLayers.length-1)
+            newLayer.name = layer.name;
+            // Store a reference to the added layer, not the provider
+            layer.cesiumReference = newLayer;
         }
 
         // Terrain GeobasisNRW
@@ -1238,14 +1238,23 @@ function addReferenceProp(layerCategories) {
     })
 }
 
-function showLayer(layer) {
+function addLayer(layer) {
     layer.show = true;
     if(layer.name === "osmBuildings") {
         // Load OSM buildings
         // Can't use datasources with primitives
-        const buildingsTileset = viewer.scene.primitives.add( Cesium.createOsmBuildings() );
-        buildingsTileset.name = layer.name;
+        const buildingsTileset = viewer.scene.primitives.add( Cesium.createOsmBuildings({
+            style: new Cesium.Cesium3DTileStyle({
+                color : "color('#FFFFFF', 1)",
+                show : true
+            })
+        }));
         layer.cesiumReference = buildingsTileset;
+        buildingsTileset.readyPromise.then( () => {
+            // Apply current slider value
+            let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
+            handleLayerOpacityChange(opacitySlider);
+        });
     }
 
     if(layer.name === "cityModel") {
@@ -1288,10 +1297,16 @@ function showLayer(layer) {
             provider.name = layer.name;
             let currentLayers = viewer.scene.imageryLayers;
             currentLayers.addImageryProvider(provider)
-            layer.cesiumReference = provider;
+            // Get most recently added layer and give it a name
+            let newLayer = scene.imageryLayers.get(scene.imageryLayers.length-1)
+            newLayer.name = layer.name;
+            // Store a reference to the added layer, not the provider
+            layer.cesiumReference = newLayer;
+            // Apply current slider value
+            let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
+            handleLayerOpacityChange(opacitySlider);
 
         } else {
-            console.log("nope");
             let provider = new Cesium.WebMapServiceImageryProvider({
                 url : layer.url,
                 layers : layer.layerName,
@@ -1301,7 +1316,15 @@ function showLayer(layer) {
             provider.name = layer.name;
             let currentLayers = viewer.scene.imageryLayers;
             currentLayers.addImageryProvider(provider)
-            layer.cesiumReference = provider;
+            // Get most recently added layer and give it a name
+            let newLayer = scene.imageryLayers.get(scene.imageryLayers.length-1)
+            newLayer.name = layer.name;
+            // Store a reference to the added layer, not the provider
+            console.log(newLayer);
+            layer.cesiumReference = newLayer;
+            // Apply current slider value
+            let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
+            handleLayerOpacityChange(opacitySlider);
         }
     }
 }
@@ -1320,10 +1343,10 @@ function removeLayer(layer) {
 
     // Imagery
     // layer.cesiumReference is the imageryProvider.
-    let currentImageryLayers= viewer.scene.imageryLayers;
+    let currentImageryLayers = viewer.scene.imageryLayers;
     for(let i=0; i<currentImageryLayers.length; i++) {
         let l = currentImageryLayers.get(i);
-        if(l.imageryProvider === layer.cesiumReference) {
+        if(l.name === layer.name) {
             currentImageryLayers.remove(l);
             layer.cesiumReference = undefined;
             return;
@@ -1422,4 +1445,76 @@ function createSewerEntityFromFeature(feature) {
     
 
     return entity;
+}
+
+
+/**
+ * 
+ * @param {*} input | The slider element that was changed.
+ */
+function handleLayerOpacityChange(input) {
+    let value = input.value;
+    let layerName = input.dataset.layerName;
+    let layer;
+    Util.iterateRecursive(layerCategories, function(obj) {
+        if(obj.name === layerName) {
+            layer = obj;
+        }
+    });
+    layer.opacity = value;
+    let reference = layer.cesiumReference;
+
+    if(reference.entities && reference.entities.values.length) {
+        let entities = reference.entities.values;
+        for(let i=0;i<entities.length;i++) {
+            let entity = entities[i];
+
+            if(entity.ellipsoid) {
+                let color = entity.ellipsoid.material.color.getValue();
+                color.alpha = value / 100;
+                entity.ellipsoid.material = color;
+            }
+
+            if(entity.polylineVolume) {
+                let color = entity.polylineVolume.material.color.getValue();
+                color.alpha = value / 100;
+                entity.polylineVolume.material = color;
+            }
+
+            if(entity.model) {
+                console.log(entity.model);
+                let color = entity.model.color.getValue();
+                color.alpha = value / 100;
+                entity.model.color = color;
+            }
+        }
+    }
+
+    if(layer.type === "WMS") {
+        let currentLayers = viewer.scene.imageryLayers;
+        for(let i=0;i<currentLayers.length;i++) {
+            let l = currentLayers.get(i)
+            if(l.name === layer.name) {
+                l.alpha = value / 100;
+                l.dayAlpha = value / 100;
+                l.nightAlpha = value / 100;
+            }
+        }
+    }
+
+    // TODO generalize
+    if(layer.name === "osmBuildings") {
+        let style = reference.style;
+        let colorExpr = style.color.expression
+        let color = colorExpr.substring(
+            colorExpr.indexOf("#"), 
+            colorExpr.lastIndexOf(",")-1
+        );
+        let newColorExpr = "color('" + color + "', " + value / 100 + ")"
+        let newStyle = new Cesium.Cesium3DTileStyle({
+            color: newColorExpr,
+            show: true
+        })
+        reference.style = newStyle;
+    }
 }
