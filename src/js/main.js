@@ -16,7 +16,7 @@ const initialCameraView = {
   position: {
     lat: 51.54005,
     lon: 7.22795,
-    height: 240 // meter TODO set back to 240 
+    height: 350 // meter
   },
   orientation: { // in degree
     heading: 295,
@@ -63,6 +63,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
     initializeSidebar();
     //initializeIndexedDB();
     initializeDataLoadingManager();
+    // Switch terrain to dgm10
+    document.querySelector("input[value='dgm10m']").click();
 });
 
 /**
