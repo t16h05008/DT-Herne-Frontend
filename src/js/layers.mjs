@@ -18,7 +18,7 @@ const layerCategories = [
                 opacity: 100,
                 tooltip: "Die Kanalschächte der Stadtentwässerung Herne als Punkt-Objekte.",
                 credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)",
-                apiEndpoint: "sewers/shafts/points/"
+                apiEndpoint: "sewers/shafts/points"
             },
             {
                 name: "sewerShaftsLines",
@@ -28,7 +28,7 @@ const layerCategories = [
                 opacity: 100,
                 tooltip: "Die Kanalschächte der Stadtentwässerung Herne als vertikale Linien.",
                 credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)",
-                apiEndpoint: "sewers/shafts/lines/"
+                apiEndpoint: "sewers/shafts/lines"
             },
             {
                 name: "sewerPipes",
@@ -38,7 +38,7 @@ const layerCategories = [
                 opacity: 100,
                 tooltip: "Die unterirdischen Leitungen der Stadtentwässerung Herne.",
                 credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)",
-                apiEndpoint: "sewers/pipes/"
+                apiEndpoint: "sewers/pipes"
             },
         ]
     },
@@ -151,7 +151,7 @@ const layerCategories = [
                 opacity: 100,
                 tooltip: "Das 3D-Stadtmodell der Stadt Herne.",
                 credit: "",
-                apiEndpoint: "3d-models/buildings/"
+                apiEndpoint: "buildings/"
             }
         ]
     },

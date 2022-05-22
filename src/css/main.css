@@ -1,5 +1,5 @@
 :root {
-    --header-height: 0px;
+    --header-height: 120px;
     --footer-height: 0px;
     --sidebar-width: 100px; /* width of the sidebar menu (always visible) */
     --menu-width: 400px; /* width of the menu ( opens on btn click) */
