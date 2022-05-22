@@ -16,7 +16,7 @@ onmessage = async function(e) {
         backendBaseUrl = data.backendBaseUrl
         let buildingsReadyPromise = new Promise( (resolve, reject) => {
             // send requests
-            let buildingsPromise = fetch(backendBaseUrl + "3d-models/buildings/tilesInfo");
+            let buildingsPromise = fetch(backendBaseUrl + "buildings/tilesInfo");
             buildingsPromise.then(response => response.json()).then(data => {
                 buildingsTiles = data;
                 resolve();
@@ -49,7 +49,7 @@ onmessage = async function(e) {
 
     if(data.event === "povUpdated") {
         console.log('pov updated received');
-
+        console.log(sewerBboxes);
         if(!buildingsTiles || !sewerBboxes) {
             console.log("WorkerManager not ready yet");
             return;

@@ -139,7 +139,7 @@ function initializeViewer(initialCameraViewFormatted) {
         fullscreenButton: false,
         sceneModePicker: false
     });
-    viewer.extend(Cesium.viewerCesiumInspectorMixin);
+    //viewer.extend(Cesium.viewerCesiumInspectorMixin);
     camera = viewer.camera;
     scene = viewer.scene;
     globe = scene.globe;
@@ -962,7 +962,6 @@ function initializeDataLoadingManager() {
  * @param {*} event 
  */
 function onDataLoadingManagerMessageReceived(event) {
-
     let data = event.data;
     // "data" has the layer names to update as properties
     let layers = Object.keys(data);
@@ -998,7 +997,6 @@ function onDataLoadingManagerMessageReceived(event) {
 
         // Query terrain heights for the building's coordinates
         (async () => {
-
             let terrainProvider = dgm1Layer.cesiumReference;
             var positions = [];
             for(let entity of entitiesToLoad) {
@@ -1025,8 +1023,8 @@ function onDataLoadingManagerMessageReceived(event) {
                     orientation: orientation
                     // model reference gets added later
                 });
-    
-                let url = backendBaseUrl + layer.apiEndpoint + newEntity.id
+
+                let url = backendBaseUrl + layer.apiEndpoint + "?ids=" + newEntity.id;
                 newEntity.model = new Cesium.ModelGraphics({
                     uri: url,
                     // needed for opacity but doesn't change appearance
@@ -1068,7 +1066,7 @@ function onDataLoadingManagerMessageReceived(event) {
             //             // If not get it from server and cache it
             //             // We can directly set the result as uri
             //             console.log("NOT FOUND IN DATABASE");
-            //             let url = backendBaseUrl + "3d-models/buildings/" + newEntity.id
+            //             let url = backendBaseUrl + "buildings/" + newEntity.id
             //             newEntity.model = new Cesium.ModelGraphics({
             //                 uri: url
             //             });
@@ -1201,7 +1199,7 @@ function loadBaseLayers(layerCategories) {
         if(layer.name.includes("dgm")) {
             let resolution = layer.name.match(/\d/g).join("")
             let provider = new Cesium.CesiumTerrainProvider({
-                url : backendBaseUrl + "terrain/dem" + resolution,
+                url : backendBaseUrl + "terrain/dem/" + resolution,
                 // No attribution required, http://www.govdata.de/dl-de/zero-2-0
             });
 
@@ -1320,7 +1318,6 @@ function addLayer(layer) {
             let newLayer = scene.imageryLayers.get(scene.imageryLayers.length-1)
             newLayer.name = layer.name;
             // Store a reference to the added layer, not the provider
-            console.log(newLayer);
             layer.cesiumReference = newLayer;
             // Apply current slider value
             let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
@@ -1482,7 +1479,6 @@ function handleLayerOpacityChange(input) {
             }
 
             if(entity.model) {
-                console.log(entity.model);
                 let color = entity.model.color.getValue();
                 color.alpha = value / 100;
                 entity.model.color = color;

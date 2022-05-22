@@ -3,8 +3,8 @@ import * as turf from "@turf/turf";
 
 // maps the layer names to the corresponding collections
 const layerCollectionMap = {
-    sewerShaftsPoints: "sewers.shafts",
-    sewerShaftsLines: "sewers.shaftsAsLines",
+    sewerShaftsPoints: "sewers.shafts.points",
+    sewerShaftsLines: "sewers.shafts.lines",
     sewerPipes: "sewers.pipes"
 }
 
