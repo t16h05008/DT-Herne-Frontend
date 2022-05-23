@@ -65,6 +65,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
     initializeDataLoadingManager();
     // Switch terrain to dgm10
     document.querySelector("input[value='dgm10m']").click();
+    // load cityModels for development
+    // document.querySelector("input[value='cityModel']").click();
 });
 
 /**
@@ -152,6 +154,10 @@ function initializeViewer(initialCameraViewFormatted) {
 
     document.querySelector(".cesium-credit-expand-link").textContent = "Copyright Datenquellen";
     document.querySelector(".cesium-credit-lightbox-title").textContent = "";
+
+    viewer.selectedEntityChanged.addEventListener( (entity) => {
+        handleSelectedEntityChanged(entity);
+    });
 }
 
 /**
@@ -975,7 +981,7 @@ function onDataLoadingManagerMessageReceived(event) {
         });
         // The entities have different formats, but both have an id property that can be used for comparison
         let entitiesToShow = data[layer.name];
-        console.log("number of entities to show", entitiesToShow.length);
+        //console.log("number of entities to show", entitiesToShow.length);
         let currentEntities = viewer.dataSources.getByName(layer.name)[0].entities;
         let entitiesToShowIds = entitiesToShow.map( entity => entity.id );
         let currentEntitiesIds = currentEntities.values.map( entity => entity.id );
@@ -989,7 +995,7 @@ function onDataLoadingManagerMessageReceived(event) {
         let entitiesToUnload = currentEntities.values.filter( (entity) => {
             return !entitiesToShowIds.includes(entity.id);
         });
-        console.log("number of entities to unload", entitiesToUnload.length);
+        //console.log("number of entities to unload", entitiesToUnload.length);
         // unload
         for(let entity of entitiesToUnload) {
             currentEntities.remove(entity);
@@ -1020,7 +1026,8 @@ function onDataLoadingManagerMessageReceived(event) {
                     id: entity.id,
                     name: entity.id,
                     position: position,
-                    orientation: orientation
+                    orientation: orientation,
+                    description: ""
                     // model reference gets added later
                 });
 
@@ -1126,10 +1133,10 @@ function handleLoadingAndUnloadingSewerEntities(layerName, entityIdsToShow) {
         return !entityIdsToShow.includes(entity.properties.id.getValue());
     });
 
-    console.log("number of currently loaded entities: ", currentEntitiesIds.length);
-    console.log("number of entities to show", entityIdsToShow.length);
-    console.log("number of entities to load", entityIdsToLoad.length);
-    console.log("number of entities to unload", entitiesToUnload.length);
+    // console.log("number of currently loaded entities: ", currentEntitiesIds.length);
+    // console.log("number of entities to show", entityIdsToShow.length);
+    // console.log("number of entities to load", entityIdsToLoad.length);
+    // console.log("number of entities to unload", entitiesToUnload.length);
     
     // Unload
     for(let entity of entitiesToUnload) {
@@ -1512,5 +1519,46 @@ function handleLayerOpacityChange(input) {
             show: true
         })
         reference.style = newStyle;
+    }
+}
+
+
+async function handleSelectedEntityChanged(entity) {
+    if(entity) {
+        // Cesium automatically shows the info box.
+        entity.description = "Frage Attribut-Informationen vom Server ab...";
+        let queriedId = entity.id;
+        let layerName = entity.entityCollection.owner.name;
+        let apiEndpoint;
+        Util.iterateRecursive(layerCategories, (obj) => {
+            if(obj.name === layerName) {
+                apiEndpoint =  obj.apiEndpoint;
+                return;
+            }
+        });
+        let url = backendBaseUrl + apiEndpoint + "/attributes?ids=" + queriedId;
+        let promise = fetch(url);
+        let json = await promise.then(response => response.json());
+        let attributes = json[0];
+        // Create a table structure, containing the entity properties
+        let table = document.createElement("table");
+        table.classList.add("cesium-infoBox-defaultTable");
+        let tbody = document.createElement("tbody");
+        table.appendChild(tbody)
+        for(let [key, value] of Object.entries(attributes)) {
+            console.log(key, value);
+            if(attributes.hasOwnProperty(key)) {
+                let row = document.createElement("tr");
+                let keyCell = document.createElement("td");
+                let valueCell = document.createElement("td");
+                keyCell.innerHTML = key;
+                valueCell.innerHTML = value;
+                row.appendChild(keyCell);
+                row.appendChild(valueCell);
+                tbody.appendChild(row);
+            }
+        };
+
+        entity.description = table.outerHTML;
     }
 }

@@ -151,7 +151,7 @@ const layerCategories = [
                 opacity: 100,
                 tooltip: "Das 3D-Stadtmodell der Stadt Herne.",
                 credit: "",
-                apiEndpoint: "buildings/"
+                apiEndpoint: "buildings"
             }
         ]
     },
