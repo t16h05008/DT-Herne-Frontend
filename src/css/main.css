@@ -5,6 +5,7 @@
     --menu-width: 400px; /* width of the menu ( opens on btn click) */
     --sidebar-bg-color: #111111;
     --header-spacer-height: 5px;
+    --cesium-container-height: calc(100vh - var(--header-height) - var(--header-spacer-height) - var(--footer-height));
 
     --primary-ui-color: #00A4D7;
     --secondary-ui-color: #007C33;
@@ -33,7 +34,7 @@ body, html {
 #cesiumContainer {
     margin: 0;
     padding: 0;
-    height: calc(100vh - var(--header-height) - var(--header-spacer-height) - var(--footer-height));
+    height: var(--cesium-container-height);
     overflow: hidden;
     transition: margin .3s ease-in-out;
 }
@@ -60,6 +61,14 @@ body, html {
     bottom:200px;
     right:15px;
     opacity: 0.8;
+}
+
+.cesium-infoBox {
+    right: 10px;
+}
+
+.cesium-infoBox-iframe {
+    max-height: calc( var(--cesium-container-height) - 50px - 200px);
 }
 
 #cameraControlOverlay {

@@ -49,7 +49,7 @@ onmessage = async function(e) {
 
     if(data.event === "povUpdated") {
         console.log('pov updated received');
-        console.log(sewerBboxes);
+
         if(!buildingsTiles || !sewerBboxes) {
             console.log("WorkerManager not ready yet");
             return;
