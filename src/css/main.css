@@ -68,7 +68,7 @@ body, html {
 }
 
 .cesium-infoBox-iframe {
-    max-height: calc( var(--cesium-container-height) - 50px - 200px);
+    max-height: calc( var(--cesium-container-height) - 50px - 200);
 }
 
 #cameraControlOverlay {
