@@ -142,6 +142,7 @@ function initializeViewer(initialCameraViewFormatted) {
         sceneModePicker: false
     });
     //viewer.extend(Cesium.viewerCesiumInspectorMixin);
+    viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);
     camera = viewer.camera;
     scene = viewer.scene;
     globe = scene.globe;
