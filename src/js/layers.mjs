@@ -157,6 +157,29 @@ const layerCategories = [
     },
     {
         type: "category",
+        name: "publicTransport",
+        displayName: "ÖPNV",
+        icon: "<i class='fa-solid fa-house'></i>",
+        isBaseLayerCategory: false,
+        show: true,
+        layers: [
+            {
+                name: "metrostationPointcloud",
+                displayName: "U-Bahn Station (Punktwolke)",
+                thumbnailSrc: "static/images/layerPreview/osm-buildings.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Terrestrisch erzeugte Laserscandaten.",
+                credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
+            }
+        ]
+    },
+    /* ========================================
+       ============= BASE LAYERS ==============
+       ========================================
+    */
+    {
+        type: "category",
         name: "baseLayers",
         icon: "<i class='fa-solid fa-database'></i>",
         displayName: "Basis-Daten",

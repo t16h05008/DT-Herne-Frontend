@@ -1283,6 +1283,21 @@ function addLayer(layer) {
         camera.moveEnd.raiseEvent(); // Simulate the event to load the first features
     }
 
+    if(layer.name === "metrostationPointcloud") {
+        let url = backendBaseUrl + "metrostation/pointcloud/"; // The last slash is important here!
+        console.log(url);
+        let tileset = new Cesium.Cesium3DTileset({
+            url: url,
+            dynamicScreenSpaceError: true,
+            dynamicScreenSpaceErrorDensity: 0.00278,
+            dynamicScreenSpaceErrorFactor: 4.0,
+            dynamicScreenSpaceErrorHeightFalloff: 0.25
+        })
+
+        scene.primitives.add(tileset);
+        layer.cesiumReference = tileset;
+    }
+
     if(layer.type === "WMS") {
         let credit = layer.displayName + ": © " + layer.credit
         credit = new Cesium.Credit(DOMPurify.sanitize(marked.parse(credit), false));
