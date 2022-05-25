@@ -487,4 +487,5 @@ img.menu-category-icon {
 .cesium-viewer-cesiumInspectorContainer {
     top: calc(var(--header-height) + 10px) !important;
     left: calc(var(--sidebar-width) + 10px) !important;
+    right:auto;
 }
