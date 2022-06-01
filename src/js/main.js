@@ -1413,6 +1413,7 @@ function createSewerEntityFromFeature(feature) {
         let shaftHeight = entityProps["Deckelhöhe [m]"] - entityProps["Sohlhöhe [m]"]
         let position = new Cesium.Cartesian3.fromDegrees(coords[0], coords[1], coords[2] - shaftHeight) // lon, lat, height
         entity = new Cesium.Entity({
+            id: props.id,
             name: props.id,
             position: position,
             show: true,
@@ -1437,6 +1438,7 @@ function createSewerEntityFromFeature(feature) {
         }
         let positions = new Cesium.Cartesian3.fromDegreesArrayHeights(coordArr)
         entity = new Cesium.Entity({
+            id: props.id,
             name: props.id,
             show: true,
             properties: entityProps
@@ -1552,16 +1554,27 @@ async function handleSelectedEntityChanged(entity) {
             }
         });
         let url = backendBaseUrl + apiEndpoint + "/attributes?ids=" + queriedId;
-        let promise = fetch(url);
-        let json = await promise.then(response => response.json());
+        let json;
+        try {
+            let resp = await fetchWithTimeout(url, {timeout: 5000});
+            json = await resp.json();
+        } catch (error) {
+            // Timeout if the request takes longer than 5 seconds
+            console.log(error.name === 'AbortError');
+            if(error.name === 'AbortError') {
+                entity.description = "Keine Informationen verfügbar";
+            }
+        }
         let attributes = json[0];
+        if(attributes.hasOwnProperty("properties")) {
+            attributes = attributes.properties; // for geojson
+        }
         // Create a table structure, containing the entity properties
         let table = document.createElement("table");
         table.classList.add("cesium-infoBox-defaultTable");
         let tbody = document.createElement("tbody");
         table.appendChild(tbody)
         for(let [key, value] of Object.entries(attributes)) {
-            console.log(key, value);
             if(attributes.hasOwnProperty(key)) {
                 let row = document.createElement("tr");
                 let keyCell = document.createElement("td");
@@ -1576,4 +1589,18 @@ async function handleSelectedEntityChanged(entity) {
 
         entity.description = table.outerHTML;
     }
+}
+
+
+async function fetchWithTimeout(resource, options = {}) {
+    const { timeout = 5000 } = options;
+    
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    const response = await fetch(resource, {
+      ...options,
+      signal: controller.signal  
+    });
+    clearTimeout(id);
+    return response;
 }
