@@ -1405,7 +1405,7 @@ function createSewerEntityFromFeature(feature) {
     for(let [key, value] of Object.entries(props)) {
         entityProps.addProperty(key, value);
     }
-    let color = props.Farbe;
+    let color = props["Farbe"];
     let colorSplit = color.split(",");
     colorSplit = colorSplit.map(entry => parseInt(entry));
     // Sewer shaft
@@ -1442,10 +1442,10 @@ function createSewerEntityFromFeature(feature) {
             name: props.id,
             show: true,
             properties: entityProps
-        })
+        });
         entity.polylineVolume = new Cesium.PolylineVolumeGraphics({
             positions: positions,
-            shape: computeCircle(1),
+            shape: computeCircle(props["Durchmesser [mm]"] / 1000.0),
             material: new Cesium.ColorMaterialProperty(Cesium.Color.fromBytes(colorSplit[0], colorSplit[1], colorSplit[2])),
             cornerType: Cesium.CornerType.MITERED
         });
