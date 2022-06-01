@@ -1411,7 +1411,7 @@ function createSewerEntityFromFeature(feature) {
     // Sewer shaft
     if(geomType === "Point") {
         let shaftHeight = entityProps["Deckelhöhe [m]"] - entityProps["Sohlhöhe [m]"]
-        let position = new Cesium.Cartesian3.fromDegrees(coords[0], coords[1], coords[2] - shaftHeight) // lon, lat, height
+        let position = new Cesium.Cartesian3.fromDegrees(coords[0], coords[1], coords[2] - shaftHeight / 2) // lon, lat, height
         entity = new Cesium.Entity({
             id: props.id,
             name: props.id,
