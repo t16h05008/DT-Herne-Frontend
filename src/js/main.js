@@ -1560,10 +1560,7 @@ async function handleSelectedEntityChanged(entity) {
             json = await resp.json();
         } catch (error) {
             // Timeout if the request takes longer than 5 seconds
-            console.log(error.name === 'AbortError');
-            if(error.name === 'AbortError') {
-                entity.description = "Keine Informationen verfügbar";
-            }
+            entity.description = "Keine Informationen verfügbar";
         }
         let attributes = json[0];
         if(attributes.hasOwnProperty("properties")) {
