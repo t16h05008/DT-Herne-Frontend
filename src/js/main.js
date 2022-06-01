@@ -972,145 +972,144 @@ function onDataLoadingManagerMessageReceived(event) {
     let data = event.data;
     // "data" has the layer names to update as properties
     let layers = Object.keys(data);
-    
+
     if(layers.includes("cityModel")) {
-        let layer;
-        let dgm1Layer;
-        Util.iterateRecursive(layerCategories, function(obj) {
-            if(obj.name === "cityModel") layer = obj;
-            if(obj.name === "dgm1m") dgm1Layer = obj;
-        });
-        // The entities have different formats, but both have an id property that can be used for comparison
-        let entitiesToShow = data[layer.name];
-        //console.log("number of entities to show", entitiesToShow.length);
-        let currentEntities = viewer.dataSources.getByName(layer.name)[0].entities;
-        let entitiesToShowIds = entitiesToShow.map( entity => entity.id );
-        let currentEntitiesIds = currentEntities.values.map( entity => entity.id );
-
-        // get all entities that should be loaded (some might be loaded already)
-        let entitiesToLoad =  entitiesToShow.filter( (entity) => {
-            return !currentEntitiesIds.includes(entity.id);
-        });
-
-        // and the ones to unload
-        let entitiesToUnload = currentEntities.values.filter( (entity) => {
-            return !entitiesToShowIds.includes(entity.id);
-        });
-        //console.log("number of entities to unload", entitiesToUnload.length);
-        // unload
-        for(let entity of entitiesToUnload) {
-            currentEntities.remove(entity);
-        }
-
-        // Query terrain heights for the building's coordinates
-        (async () => {
-            let terrainProvider = dgm1Layer.cesiumReference;
-            var positions = [];
-            for(let entity of entitiesToLoad) {
-                let lon = parseFloat(entity.location.lon);
-                let lat = parseFloat(entity.location.lat);
-                positions.push(Cesium.Cartographic.fromDegrees(lon, lat));
-            }
-            positions = await Cesium.sampleTerrainMostDetailed(terrainProvider, positions);
-            // positions[...].height has been updated
-            for(let [idx, entity] of Object.entries(entitiesToLoad)) {
-                let lon = parseFloat(entity.location.lon);
-                let lat = parseFloat(entity.location.lat);
-                let altitude = parseFloat(entity.location.height + positions[idx].height);
-                let position = Cesium.Cartesian3.fromDegrees(lon, lat, altitude);
-                let heading = Cesium.Math.toRadians(parseFloat(entity.orientation.heading)); 
-                let pitch =  0
-                let roll =  0
-                let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
-
-                let newEntity = new Cesium.Entity({
-                    id: entity.id,
-                    name: entity.id,
-                    position: position,
-                    orientation: orientation,
-                    description: ""
-                    // model reference gets added later
-                });
-
-                let url = backendBaseUrl + layer.apiEndpoint + "?ids=" + newEntity.id;
-                newEntity.model = new Cesium.ModelGraphics({
-                    uri: url,
-                    // needed for opacity but doesn't change appearance
-                    color: Cesium.Color.fromAlpha(Cesium.Color.WHITE, 1),
-                    colorBlendMode: Cesium.ColorBlendMode["MIX"],
-                    colorBlendAmount: 0.0,
-                });
-                // Add a property with the current timestamp so we can implement FIFO
-                newEntity.addProperty("addedToViewerTimestamp");
-                newEntity.addedToViewerTimestamp = Date.now();
-                currentEntities.add(newEntity);
-            }
-
-            // Apply current slider value
-            let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
-            handleLayerOpacityChange(opacitySlider);
-
-            
-        })();
-
-            // Code below is for caching the model.
-            // It doesn't work since cesium doesn't have a way to create a model directly form the data instead of an url
-            //
-            // check if an entity with this id is already cached from a previous load
-            // if(gltfModelStoreDB) {
-            //     var transaction = gltfModelStoreDB.transaction(["gltfModels"]);
-            //     var objectStore = transaction.objectStore("gltfModels");
-            //     var getRequest = objectStore.get(newEntity.id);
-            //     console.log(getRequest);
-            //     getRequest.onsuccess = event => {
-            //         if(getRequest.result) {
-            //             // If found load model from cache
-            //             console.log("FOUND IN DATABASE");
-            //             console.log("typeof(getRequest.result.model): ", typeof(getRequest.result.model))
-            //             console.log("getRequest.result.model: ", getRequest.result.model)
-            //             newEntity.model = getRequest.result.model;
-            //             viewer.entities.add(newEntity);
-            //         } else {
-            //             // If not get it from server and cache it
-            //             // We can directly set the result as uri
-            //             console.log("NOT FOUND IN DATABASE");
-            //             let url = backendBaseUrl + "buildings/" + newEntity.id
-            //             newEntity.model = new Cesium.ModelGraphics({
-            //                 uri: url
-            //             });
-            //             // Add a property with the current timestamp so we can implement FIFO
-            //             newEntity.addProperty("addedToViewerTimestamp");
-            //             newEntity.addedToViewerTimestamp = Date.now();
-            //             viewer.entities.add(newEntity);
-
-            //             fetch(url)
-            //                 .then(response => response.json())
-            //                 .then(data => {
-            //                     newEntity.addProperty("modelData")
-            //                     newEntity.modelData = data;
-
-            //                     var transaction = gltfModelStoreDB.transaction(["gltfModels"], "readwrite");
-            //                     var objectStore = transaction.objectStore("gltfModels");
-            //                     // TODO remove old entities first if max cache size is reached
-            //                     // If max cache size is reached delete the oldest cached model (FIFO)
-            //                     objectStore.add(newEntity.modelData); // all entities must have a unique id property here
-
-            //                 });
-
-            //         }
-            //     };
-            // }
+        handleLoadingAndUnloadingCityModelEntities(data["cityModel"]);
     }
-
-    if(layers.includes("sewerShaftsPoints")) {
-        handleLoadingAndUnloadingSewerEntities("sewerShaftsPoints", data["sewerShaftsPoints"]);
-    }
-    if(layers.includes("sewerShaftsLines")) {
-        handleLoadingAndUnloadingSewerEntities("sewerShaftsLines", data["sewerShaftsLines"]);
+    if(layers.includes("sewerShafts")) {
+        handleLoadingAndUnloadingSewerEntities("sewerShafts", data["sewerShafts"]);
     }
     if(layers.includes("sewerPipes")) {
         handleLoadingAndUnloadingSewerEntities("sewerPipes", data["sewerPipes"]);
     }
+}
+
+function handleLoadingAndUnloadingCityModelEntities(entitiesToShow) {
+    let layer;
+    let dgm1Layer;
+    Util.iterateRecursive(layerCategories, function(obj) {
+        if(obj.name === "cityModel") layer = obj;
+        if(obj.name === "dgm1m") dgm1Layer = obj;
+    });
+    // The entities have different formats, but both have an id property that can be used for comparison
+    //console.log("number of entities to show", entitiesToShow.length);
+    let currentEntities = viewer.dataSources.getByName(layer.name)[0].entities;
+    let entitiesToShowIds = entitiesToShow.map( entity => entity.id );
+    let currentEntitiesIds = currentEntities.values.map( entity => entity.id );
+
+    // get all entities that should be loaded (some might be loaded already)
+    let entitiesToLoad =  entitiesToShow.filter( (entity) => {
+        return !currentEntitiesIds.includes(entity.id);
+    });
+
+    // and the ones to unload
+    let entitiesToUnload = currentEntities.values.filter( (entity) => {
+        return !entitiesToShowIds.includes(entity.id);
+    });
+    //console.log("number of entities to unload", entitiesToUnload.length);
+    // unload
+    for(let entity of entitiesToUnload) {
+        currentEntities.remove(entity);
+    }
+
+    // Query terrain heights for the building's coordinates
+    (async () => {
+        let terrainProvider = dgm1Layer.cesiumReference;
+        var positions = [];
+        for(let entity of entitiesToLoad) {
+            let lon = parseFloat(entity.location.lon);
+            let lat = parseFloat(entity.location.lat);
+            positions.push(Cesium.Cartographic.fromDegrees(lon, lat));
+        }
+        positions = await Cesium.sampleTerrainMostDetailed(terrainProvider, positions);
+        // positions[...].height has been updated
+        for(let [idx, entity] of Object.entries(entitiesToLoad)) {
+            let lon = parseFloat(entity.location.lon);
+            let lat = parseFloat(entity.location.lat);
+            let altitude = parseFloat(entity.location.height + positions[idx].height);
+            let position = Cesium.Cartesian3.fromDegrees(lon, lat, altitude);
+            let heading = Cesium.Math.toRadians(parseFloat(entity.orientation.heading)); 
+            let pitch =  0
+            let roll =  0
+            let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, new Cesium.HeadingPitchRoll(heading, pitch, roll));
+
+            let newEntity = new Cesium.Entity({
+                id: entity.id,
+                name: entity.id,
+                position: position,
+                orientation: orientation,
+                description: ""
+                // model reference gets added later
+            });
+
+            let url = backendBaseUrl + layer.apiEndpoint + "?ids=" + newEntity.id;
+            newEntity.model = new Cesium.ModelGraphics({
+                uri: url,
+                // needed for opacity but doesn't change appearance
+                color: Cesium.Color.fromAlpha(Cesium.Color.WHITE, 1),
+                colorBlendMode: Cesium.ColorBlendMode["MIX"],
+                colorBlendAmount: 0.0,
+            });
+            // Add a property with the current timestamp so we can implement FIFO
+            newEntity.addProperty("addedToViewerTimestamp");
+            newEntity.addedToViewerTimestamp = Date.now();
+            currentEntities.add(newEntity);
+        }
+
+        // Apply current slider value
+        let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
+        handleLayerOpacityChange(opacitySlider);
+
+        
+    })();
+
+        // Code below is for caching the model.
+        // It doesn't work since cesium doesn't have a way to create a model directly form the data instead of an url
+        //
+        // check if an entity with this id is already cached from a previous load
+        // if(gltfModelStoreDB) {
+        //     var transaction = gltfModelStoreDB.transaction(["gltfModels"]);
+        //     var objectStore = transaction.objectStore("gltfModels");
+        //     var getRequest = objectStore.get(newEntity.id);
+        //     console.log(getRequest);
+        //     getRequest.onsuccess = event => {
+        //         if(getRequest.result) {
+        //             // If found load model from cache
+        //             console.log("FOUND IN DATABASE");
+        //             console.log("typeof(getRequest.result.model): ", typeof(getRequest.result.model))
+        //             console.log("getRequest.result.model: ", getRequest.result.model)
+        //             newEntity.model = getRequest.result.model;
+        //             viewer.entities.add(newEntity);
+        //         } else {
+        //             // If not get it from server and cache it
+        //             // We can directly set the result as uri
+        //             console.log("NOT FOUND IN DATABASE");
+        //             let url = backendBaseUrl + "buildings/" + newEntity.id
+        //             newEntity.model = new Cesium.ModelGraphics({
+        //                 uri: url
+        //             });
+        //             // Add a property with the current timestamp so we can implement FIFO
+        //             newEntity.addProperty("addedToViewerTimestamp");
+        //             newEntity.addedToViewerTimestamp = Date.now();
+        //             viewer.entities.add(newEntity);
+
+        //             fetch(url)
+        //                 .then(response => response.json())
+        //                 .then(data => {
+        //                     newEntity.addProperty("modelData")
+        //                     newEntity.modelData = data;
+
+        //                     var transaction = gltfModelStoreDB.transaction(["gltfModels"], "readwrite");
+        //                     var objectStore = transaction.objectStore("gltfModels");
+        //                     // TODO remove old entities first if max cache size is reached
+        //                     // If max cache size is reached delete the oldest cached model (FIFO)
+        //                     objectStore.add(newEntity.modelData); // all entities must have a unique id property here
+
+        //                 });
+
+        //         }
+        //     };
+        // }
 }
 
 function handleLoadingAndUnloadingSewerEntities(layerName, entityIdsToShow) {
@@ -1406,27 +1405,29 @@ function createSewerEntityFromFeature(feature) {
     for(let [key, value] of Object.entries(props)) {
         entityProps.addProperty(key, value);
     }
-    let color = props.Color;
+    let color = props.Farbe;
     let colorSplit = color.split(",");
     colorSplit = colorSplit.map(entry => parseInt(entry));
-    // sewer shaft
+    // Sewer shaft
     if(geomType === "Point") {
-        let position = new Cesium.Cartesian3.fromDegrees(coords[0], coords[1], coords[2]) // lon, lat, height
-
+        let shaftHeight = entityProps["Deckelhöhe [m]"] - entityProps["Sohlhöhe [m]"]
+        let position = new Cesium.Cartesian3.fromDegrees(coords[0], coords[1], coords[2] - shaftHeight) // lon, lat, height
         entity = new Cesium.Entity({
             name: props.id,
             position: position,
             show: true,
             billboard: new Cesium.BillboardGraphics(),
-            ellipsoid: new Cesium.EllipsoidGraphics({
-                radii: new Cesium.Cartesian3(1, 1, 1),
-                material: new Cesium.ColorMaterialProperty(Cesium.Color.fromBytes(colorSplit[0], colorSplit[1], colorSplit[2])),
-            }),
+            cylinder: {
+                length: shaftHeight,
+                topRadius: 1,
+                bottomRadius: 1,
+                material: new Cesium.ColorMaterialProperty(Cesium.Color.fromBytes(colorSplit[0], colorSplit[1], colorSplit[2]))
+            },
             properties: entityProps
         })
     }
 
-    // sewer shaft line or pipe
+    // Sewer pipe
     if(geomType === "LineString") {
         let coordArr = [];
         for(let point of coords) {
@@ -1462,8 +1463,6 @@ function createSewerEntityFromFeature(feature) {
             return positions;
         }
     }
-    
-
     return entity;
 }
 

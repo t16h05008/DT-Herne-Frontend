@@ -11,24 +11,14 @@ const layerCategories = [
         show: true,
         layers: [
             {
-                name: "sewerShaftsPoints",
-                displayName: "Schächte (Punkte)",
+                name: "sewerShafts",
+                displayName: "Schächte",
                 thumbnailSrc: "static/images/layerPreview/sewer-shaft.webp",
                 show: false,
                 opacity: 100,
-                tooltip: "Die Kanalschächte der Stadtentwässerung Herne als Punkt-Objekte.",
+                tooltip: "Die Kanalschächte der Stadtentwässerung Herne.",
                 credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)",
-                apiEndpoint: "sewers/shafts/points"
-            },
-            {
-                name: "sewerShaftsLines",
-                displayName: "Schächte (Linien)",
-                thumbnailSrc: "static/images/layerPreview/sewer-shaft.webp",
-                show: false,
-                opacity: 100,
-                tooltip: "Die Kanalschächte der Stadtentwässerung Herne als vertikale Linien.",
-                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)",
-                apiEndpoint: "sewers/shafts/lines"
+                apiEndpoint: "sewers/shafts"
             },
             {
                 name: "sewerPipes",

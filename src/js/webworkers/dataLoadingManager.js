@@ -6,10 +6,13 @@ let buildingsWorker;
 let sewersWorker
 
 let buildingsTiles;
-let sewerBboxes = {};
+let sewersBboxes = {
+    shafts: [],
+    pipes: []
+};
 
+onmessage = function(e) {
 
-onmessage = async function(e) {
     let data = e.data;
     // initialize
     if(data.event === "initialize") {
@@ -22,27 +25,30 @@ onmessage = async function(e) {
                 resolve();
             });
         });
-    
-        let sewersReadyPromise = new Promise( (resolve, reject) => {
-            let sewersPromise = Promise.all([
-                fetch(backendBaseUrl + "sewers/shafts/points/bboxInfo"),
-                fetch(backendBaseUrl + "sewers/shafts/lines/bboxInfo"),
-                fetch(backendBaseUrl + "sewers/pipes/bboxInfo"),
-            ]);
-            sewersPromise.then(values => {
-                let counter = 0;
-                for(let resp of values) {
-                    resp.json().then(data => {
-                        sewerBboxes[data.collectionName] = data.bboxReferences;
-                        counter ++;
-                        if(counter === values.length)
-                            resolve();
-                    });
+
+        let sewerShaftsReadyPromise = new Promise( (resolve, reject) => {
+            let sewersPromise = fetch(backendBaseUrl + "sewers/shafts");
+            sewersPromise.then(response => response.json()).then(data => {
+                let features = data.features;
+                for(let feature of features) {
+                    sewersBboxes.shafts.push(calculateSewerShaftBBox(feature));
                 }
+                resolve();
+            });
+        });
+    
+        let sewerPipesReadyPromise = new Promise( (resolve, reject) => {
+            let sewersPromise = fetch(backendBaseUrl + "sewers/pipes");
+            sewersPromise.then(response => response.json()).then(data => {
+                let features = data.features;
+                for(let feature of features) {
+                    sewersBboxes.pipes.push(calculateSewerPipeBBox(feature));
+                }
+                resolve();
             });
         })
     
-        Promise.all([buildingsReadyPromise, sewersReadyPromise]).then(values => {
+        Promise.all([buildingsReadyPromise, sewerShaftsReadyPromise, sewerPipesReadyPromise]).then(values => {
             console.log("dataLoadingManager initialized")
         });
     }
@@ -50,7 +56,7 @@ onmessage = async function(e) {
     if(data.event === "povUpdated") {
         console.log('pov updated received');
 
-        if(!buildingsTiles || !sewerBboxes) {
+        if(!buildingsTiles || !sewersBboxes) {
             console.log("WorkerManager not ready yet");
             return;
         }
@@ -80,9 +86,8 @@ onmessage = async function(e) {
             }
         }
 
-        if(data.layersToUpdate.includes("sewerShaftsPoints") ||
-            data.layersToUpdate.includes("sewerShaftsLines") ||
-            data.layersToUpdate.includes("sewerPipes")) {
+        if(data.layersToUpdate.includes("sewerShafts") ||
+                data.layersToUpdate.includes("sewerPipes")) {
 
             // If the sub-worker is still busy terminate it and spawn a new one
             if(sewersWorker) {
@@ -91,16 +96,16 @@ onmessage = async function(e) {
             }
 
             let layersToUpdate = [];
-            if(data.layersToUpdate.includes("sewerShaftsPoints")) layersToUpdate.push("sewerShaftsPoints");
-            if(data.layersToUpdate.includes("sewerShaftsLines")) layersToUpdate.push("sewerShaftsLines");
+            if(data.layersToUpdate.includes("sewerShafts")) layersToUpdate.push("sewerShafts");
             if(data.layersToUpdate.includes("sewerPipes")) layersToUpdate.push("sewerPipes");
 
             sewersWorker = undefined;
             sewersWorker = new Worker(new URL("./sewersWorker.js", import.meta.url));
 
+
             sewersWorker.postMessage({
                 event: "calculateEntitiesToShow",
-                bboxes: sewerBboxes,
+                sewersBboxes: sewersBboxes,
                 layersToUpdate: layersToUpdate,
                 viewRect: data.viewRect
             });
@@ -113,4 +118,62 @@ onmessage = async function(e) {
             }
         }
     }
+}
+
+
+function calculateSewerShaftBBox(feature) {
+    lon = feature.geometry.coordinates[0];
+    lat = feature.geometry.coordinates[1];
+    z = feature.geometry.coordinates[2];
+    id = feature.properties["id"];
+    heightTop = feature.properties["Deckelhöhe"];
+    heightBottom = feature.properties["Sohlhöhe"];
+    let heightDiff = heightTop - heightBottom;
+    // A vertical line representing the shaft height. First point is bottom, second is top.
+    return {
+        id: id,
+        pMin: {
+            lon: lon,
+            lat: lat,
+            z: z - heightDiff 
+        },
+        pMax: {
+            lon: lon,
+            lat: lat,
+            z: z
+        }
+    };
+}
+
+function calculateSewerPipeBBox(feature) {
+    let id = feature.properties["id"];
+    let pMin = {
+        lon: feature.geometry.coordinates[0][0],
+        lat: feature.geometry.coordinates[0][1],
+        z:feature.geometry.coordinates[0][2]
+    }
+    let pMax = {
+        lon: feature.geometry.coordinates[0][0],
+        lat: feature.geometry.coordinates[0][1],
+        z:feature.geometry.coordinates[0][2]
+    }
+
+    for(let coord of feature.geometry.coordinates) {
+        let lon = coord[0];
+        let lat = coord[1];
+        let z = coord[2];
+
+        pMin.lon = (lon < pMin.lon) && lon;
+        pMin.lat = (lon < pMin.lat) && lat;
+        pMin.z = (lon < pMin.z) && z;
+        pMax.lon = (lon > pMax.lon) && lon;
+        pMax.lat = (lon > pMax.lat) && lat;
+        pMax.z = (lon > pMax.z) && z;
+    }
+    
+    return {
+        id: id,
+        pMin: pMin,
+        pMax: pMax
+    };
 }

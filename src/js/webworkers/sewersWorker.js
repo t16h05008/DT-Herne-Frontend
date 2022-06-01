@@ -1,23 +1,15 @@
 // Couldn't figure out how to import only part of turf
 import * as turf from "@turf/turf";
 
-// maps the layer names to the corresponding collections
-const layerCollectionMap = {
-    sewerShaftsPoints: "sewers.shafts.points",
-    sewerShaftsLines: "sewers.shafts.lines",
-    sewerPipes: "sewers.pipes"
-}
-
 onmessage = function(e) {
     let data = e.data;
     if(data.event === "calculateEntitiesToShow") {
         let workerResult = {};
         for(let layer of data.layersToUpdate) {
             workerResult[layer] = [];
-            // get collection name
-            let collection = layerCollectionMap[layer]
-            let bboxesToCheck = data.bboxes[collection];
-            let ids = calculateEntitiesToShow(data.viewRect, bboxesToCheck)
+            let type = layer.replace("sewer", "")
+            type = type.toLowerCase()
+            let ids = calculateEntitiesToShow(data.viewRect, data.sewersBboxes[type])
             workerResult[layer] = ids;
         }
         postMessage(workerResult);
@@ -31,7 +23,7 @@ onmessage = function(e) {
  function calculateEntitiesToShow(viewRect, bboxes) {
     // Iterate tiles and check if they intersect with the view rectangle.
     let result = [];
-    for(let [key, bbox] of Object.entries(bboxes)) {
+    for(let bbox of bboxes) {
         // Intersection check is done with turf, which needs two polygons.
         // counter-clockwise
         let viewRectAsPoly = turf.polygon([[
@@ -42,18 +34,17 @@ onmessage = function(e) {
             [viewRect.west, viewRect.south] // bot right again
         ]]);
         // bbox is in 3d and has two 3d-points (pMin and pMax)
-
         let bboxExtentAsPoly = turf.polygon([[
-            [bbox.pMin[0], bbox.pMin[1]],
-            [bbox.pMax[0], bbox.pMin[1]],
-            [bbox.pMax[0], bbox.pMax[1]],
-            [bbox.pMin[0], bbox.pMax[1]],
-            [bbox.pMin[0], bbox.pMin[1]]
+            [bbox.pMin.lon, bbox.pMin.lat],
+            [bbox.pMax.lon, bbox.pMin.lat],
+            [bbox.pMax.lon, bbox.pMax.lat],
+            [bbox.pMin.lon, bbox.pMax.lat],
+            [bbox.pMin.lon, bbox.pMin.lat]
         ]]);
 
         let intersects = turf.booleanIntersects(viewRectAsPoly, bboxExtentAsPoly);
         if(intersects) {
-            result.push(parseInt(key));
+            result.push(parseInt(bbox.id));
         }
     }
     return result;
