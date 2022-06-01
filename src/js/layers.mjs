@@ -140,7 +140,7 @@ const layerCategories = [
                 show: false,
                 opacity: 100,
                 tooltip: "Das 3D-Stadtmodell der Stadt Herne.",
-                credit: "",
+                credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)",
                 apiEndpoint: "buildings"
             }
         ]
