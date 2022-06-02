@@ -170,7 +170,7 @@ function createCustomOverlayComponents() {
     camera.changed.addEventListener(function() { 
         // We round to one decimal place since we don't need to show it that accurate.
         let newHeadingDeg = Util.round(Cesium.Math.toDegrees(camera.heading), 1);
-        let newPitchDeg = Util.round(Cesium.Math.toDegrees(camera.roll), 1);
+        let newPitchDeg = Util.round(Cesium.Math.toDegrees(camera.pitch), 1);
         let newRollDeg = Util.round(Cesium.Math.toDegrees(camera.roll), 1);
         let coordOverlayLat = document.getElementById("coordOverlayLat")
         let coordOverlayLon = document.getElementById("coordOverlayLon")
