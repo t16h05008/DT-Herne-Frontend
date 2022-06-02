@@ -1,6 +1,3 @@
-// Couldn't figure out how to import only part of turf
-import * as turf from "@turf/turf";
-
 onmessage = function(e) {
     let data = e.data;
     if(data.event === "calculateEntitiesToShow") {
@@ -9,7 +6,7 @@ onmessage = function(e) {
             workerResult[layer] = [];
             let type = layer.replace("sewer", "")
             type = type.toLowerCase()
-            let ids = calculateEntitiesToShow(data.viewRect, data.sewersBboxes[type])
+            let ids = calculateEntitiesToShow(data.frustumPlanes, data.sewersBboxes[type])
             workerResult[layer] = ids;
         }
         postMessage(workerResult);
@@ -20,32 +17,41 @@ onmessage = function(e) {
  * Returns an array of string containing the intersecting entities ids
  * @param {*} viewRect 
  */
- function calculateEntitiesToShow(viewRect, bboxes) {
+ function calculateEntitiesToShow(planes, bboxes) {
     // Iterate tiles and check if they intersect with the view rectangle.
     let result = [];
+    console.log(planes);
     for(let bbox of bboxes) {
-        // Intersection check is done with turf, which needs two polygons.
-        // counter-clockwise
-        let viewRectAsPoly = turf.polygon([[
-            [viewRect.west, viewRect.south], // bot left
-            [viewRect.east, viewRect.south], // bot right
-            [viewRect.east, viewRect.north], // top right
-            [viewRect.west, viewRect.north], // top left
-            [viewRect.west, viewRect.south] // bot right again
-        ]]);
-        // bbox is in 3d and has two 3d-points (pMin and pMax)
-        let bboxExtentAsPoly = turf.polygon([[
-            [bbox.pMin.lon, bbox.pMin.lat],
-            [bbox.pMax.lon, bbox.pMin.lat],
-            [bbox.pMax.lon, bbox.pMax.lat],
-            [bbox.pMin.lon, bbox.pMax.lat],
-            [bbox.pMin.lon, bbox.pMin.lat]
-        ]]);
+        let insideOrIntersectingFrustum = false;
+        for(let [idx, plane] of planes.entries()) {
+            // TODO create all 8 bbox points from pMin and pMax and check them. Checking pMin and pMax is not enough in some cases
+            let distanceP1; // pMin
+            let distanceP2; // pMax
+            distanceP1 =  calcDotProduct(plane.normal, bbox.epsg4978.pMin) + plane.distance;
+            distanceP2 = calcDotProduct(plane.normal, bbox.epsg4978.pMax) + plane.distance;
+            if(distanceP1 > 0 || distanceP2 > 0) {
+                // Both on same side as normal vector or intersecting plane
+                // Do nothing unless it is the last plane
+                if(idx === planes.length-1) {
+                    // Only true if all planes are okay, otherwise the loop ends early.
+                    insideOrIntersectingFrustum = true;
+                }
+            } else {
+                // Both points outside one frustum plane --> outside frustum
+                insideOrIntersectingFrustum = false;
+                break;
+            }
+        }
 
-        let intersects = turf.booleanIntersects(viewRectAsPoly, bboxExtentAsPoly);
-        if(intersects) {
-            result.push(parseInt(bbox.id));
+        if(insideOrIntersectingFrustum) {
+            result.push(parseInt(bbox.id))
         }
     }
+    console.log(result);
     return result;
+}
+
+
+function calcDotProduct(a, b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z 
 }

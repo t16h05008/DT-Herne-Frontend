@@ -1,6 +1,8 @@
 // A worker that manages which features / 3D-Models etc. should be loaded in the viewer.
 // It administrates a couple of subworkers, which do the real processing.
 
+import proj4 from "proj4";
+
 // subworkers
 let buildingsWorker;
 let sewersWorker
@@ -16,12 +18,14 @@ onmessage = function(e) {
     let data = e.data;
     // initialize
     if(data.event === "initialize") {
-        backendBaseUrl = data.backendBaseUrl
+        proj4.defs("EPSG:4978","+proj=geocent +datum=WGS84 +units=m +no_defs");
+        let backendBaseUrl = data.backendBaseUrl
         let buildingsReadyPromise = new Promise( (resolve, reject) => {
             // send requests
             let buildingsPromise = fetch(backendBaseUrl + "buildings/tilesInfo");
             buildingsPromise.then(response => response.json()).then(data => {
                 buildingsTiles = data;
+                // TODO Add bboxes in ECEF (ESPG:4978)
                 resolve();
             });
         });
@@ -106,6 +110,7 @@ onmessage = function(e) {
             sewersWorker.postMessage({
                 event: "calculateEntitiesToShow",
                 sewersBboxes: sewersBboxes,
+                frustumPlanes: data.frustumPlanes,
                 layersToUpdate: layersToUpdate,
                 viewRect: data.viewRect
             });
@@ -122,31 +127,49 @@ onmessage = function(e) {
 
 
 function calculateSewerShaftBBox(feature) {
-    lon = feature.geometry.coordinates[0];
-    lat = feature.geometry.coordinates[1];
-    z = feature.geometry.coordinates[2];
-    id = feature.properties["id"];
-    heightTop = feature.properties["Deckelhöhe"];
-    heightBottom = feature.properties["Sohlhöhe"];
+    let lon = feature.geometry.coordinates[0];
+    let lat = feature.geometry.coordinates[1];
+    let z = feature.geometry.coordinates[2];
+    let id = feature.properties["id"];
+    let heightTop = feature.properties["Deckelhöhe [m]"];
+    let heightBottom = feature.properties["Sohlhöhe [m]"];
     let heightDiff = heightTop - heightBottom;
+    let pXyzMin = proj4("EPSG:4326", "EPSG:4978", [lon, lat, z-heightDiff]);
+    let pXyzMax = proj4("EPSG:4326", "EPSG:4978", [lon, lat, z]);
     // A vertical line representing the shaft height. First point is bottom, second is top.
+    // Bbox is added in WGS84 (lon, lat, alt) and ECEF (x,y,z)
     return {
         id: id,
-        pMin: {
-            lon: lon,
-            lat: lat,
-            z: z - heightDiff 
+        epsg4326: {
+            pMin: {
+                lon: lon,
+                lat: lat,
+                z: z - heightDiff 
+            },
+            pMax: {
+                lon: lon,
+                lat: lat,
+                z: z
+            }
         },
-        pMax: {
-            lon: lon,
-            lat: lat,
-            z: z
+        epsg4978: {
+            pMin: {
+                x: pXyzMin[0],
+                y: pXyzMin[1],
+                z: pXyzMin[2]
+            },
+            pMax: {
+                x: pXyzMax[0],
+                y: pXyzMax[1],
+                z: pXyzMax[2]
+            }
         }
     };
 }
 
 function calculateSewerPipeBBox(feature) {
     let id = feature.properties["id"];
+    // Set min and max to first point initially
     let pMin = {
         lon: feature.geometry.coordinates[0][0],
         lat: feature.geometry.coordinates[0][1],
@@ -157,23 +180,49 @@ function calculateSewerPipeBBox(feature) {
         lat: feature.geometry.coordinates[0][1],
         z:feature.geometry.coordinates[0][2]
     }
+    let xyzMin = proj4("EPSG:4326", "EPSG:4978", [feature.geometry.coordinates[0][0], feature.geometry.coordinates[0][1], feature.geometry.coordinates[0][2]]);
+    let xyzMax = proj4("EPSG:4326", "EPSG:4978", [feature.geometry.coordinates[0][0], feature.geometry.coordinates[0][1], feature.geometry.coordinates[0][2]]);
+    let pMinXyz = {
+        x: xyzMin[0],
+        y: xyzMin[1],
+        z: xyzMin[2],
+    }
+    let pMaxXyz = {
+        x: xyzMax[0],
+        y: xyzMax[1],
+        z: xyzMax[2],
+    }
 
     for(let coord of feature.geometry.coordinates) {
         let lon = coord[0];
         let lat = coord[1];
         let z = coord[2];
+        let xyz = proj4("EPSG:4326", "EPSG:4978", [lon, lat, z]);
 
-        pMin.lon = (lon < pMin.lon) && lon;
-        pMin.lat = (lon < pMin.lat) && lat;
-        pMin.z = (lon < pMin.z) && z;
-        pMax.lon = (lon > pMax.lon) && lon;
-        pMax.lat = (lon > pMax.lat) && lat;
-        pMax.z = (lon > pMax.z) && z;
+        pMin.lon = (lon < pMin.lon) ? lon : pMin.lon;
+        pMin.lat = (lat < pMin.lat) ? lat : pMin.lat;
+        pMin.z =   (z < pMin.z) ? z : pMin.z;
+        pMax.lon = (lon > pMax.lon) ? lon : pMax.lon;
+        pMax.lat = (lat > pMax.lat) ? lat : pMax.lat;
+        pMax.z =   (z > pMax.z) ? z : pMax.z;
+
+        pMinXyz.x = (xyz[0] < pMinXyz.x) ? xyz[0] : pMinXyz.x;
+        pMinXyz.y = (xyz[1] < pMinXyz.y) ? xyz[1] : pMinXyz.y;
+        pMinXyz.z = (xyz[2] < pMinXyz.z) ? xyz[2] : pMinXyz.z;
+        pMaxXyz.x = (xyz[0] > pMaxXyz.x) ? xyz[0] : pMaxXyz.x;
+        pMaxXyz.y = (xyz[1] > pMaxXyz.y) ? xyz[1] : pMaxXyz.y;
+        pMaxXyz.z = (xyz[2] > pMaxXyz.z) ? xyz[2] : pMaxXyz.z;
     }
-    
+
     return {
         id: id,
-        pMin: pMin,
-        pMax: pMax
+        epsg4326: {
+            pMin: pMin,
+            pMax: pMax
+        },
+        epsg4978: {
+            pMin: pMinXyz,
+            pMax: pMaxXyz
+        }
     };
 }
