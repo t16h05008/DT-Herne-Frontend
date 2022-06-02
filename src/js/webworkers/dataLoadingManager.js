@@ -140,46 +140,17 @@ function calculateSewerShaftBBox(feature) {
     // Bbox is added in WGS84 (lon, lat, alt) and ECEF (x,y,z)
     return {
         id: id,
-        epsg4326: {
-            pMin: {
-                lon: lon,
-                lat: lat,
-                z: z - heightDiff 
-            },
-            pMax: {
-                lon: lon,
-                lat: lat,
-                z: z
-            }
-        },
-        epsg4978: {
-            pMin: {
-                x: pXyzMin[0],
-                y: pXyzMin[1],
-                z: pXyzMin[2]
-            },
-            pMax: {
-                x: pXyzMax[0],
-                y: pXyzMax[1],
-                z: pXyzMax[2]
-            }
-        }
+        // Single line segment, so we only need 2 points instead of 8
+        points: [
+            {x: pXyzMin[0], y: pXyzMin[1], z: pXyzMin[2]},
+            {x: pXyzMax[0], y: pXyzMax[1], z: pXyzMax[2]}
+        ]
     };
 }
 
 function calculateSewerPipeBBox(feature) {
     let id = feature.properties["id"];
     // Set min and max to first point initially
-    let pMin = {
-        lon: feature.geometry.coordinates[0][0],
-        lat: feature.geometry.coordinates[0][1],
-        z:feature.geometry.coordinates[0][2]
-    }
-    let pMax = {
-        lon: feature.geometry.coordinates[0][0],
-        lat: feature.geometry.coordinates[0][1],
-        z:feature.geometry.coordinates[0][2]
-    }
     let xyzMin = proj4("EPSG:4326", "EPSG:4978", [feature.geometry.coordinates[0][0], feature.geometry.coordinates[0][1], feature.geometry.coordinates[0][2]]);
     let xyzMax = proj4("EPSG:4326", "EPSG:4978", [feature.geometry.coordinates[0][0], feature.geometry.coordinates[0][1], feature.geometry.coordinates[0][2]]);
     let pMinXyz = {
@@ -194,18 +165,7 @@ function calculateSewerPipeBBox(feature) {
     }
 
     for(let coord of feature.geometry.coordinates) {
-        let lon = coord[0];
-        let lat = coord[1];
-        let z = coord[2];
-        let xyz = proj4("EPSG:4326", "EPSG:4978", [lon, lat, z]);
-
-        pMin.lon = (lon < pMin.lon) ? lon : pMin.lon;
-        pMin.lat = (lat < pMin.lat) ? lat : pMin.lat;
-        pMin.z =   (z < pMin.z) ? z : pMin.z;
-        pMax.lon = (lon > pMax.lon) ? lon : pMax.lon;
-        pMax.lat = (lat > pMax.lat) ? lat : pMax.lat;
-        pMax.z =   (z > pMax.z) ? z : pMax.z;
-
+        let xyz = proj4("EPSG:4326", "EPSG:4978", [coord[0], coord[1], coord[2]]);
         pMinXyz.x = (xyz[0] < pMinXyz.x) ? xyz[0] : pMinXyz.x;
         pMinXyz.y = (xyz[1] < pMinXyz.y) ? xyz[1] : pMinXyz.y;
         pMinXyz.z = (xyz[2] < pMinXyz.z) ? xyz[2] : pMinXyz.z;
@@ -214,15 +174,19 @@ function calculateSewerPipeBBox(feature) {
         pMaxXyz.z = (xyz[2] > pMaxXyz.z) ? xyz[2] : pMaxXyz.z;
     }
 
+    let cornerPoints = [
+        {x: pMinXyz.x, y: pMinXyz.y, z: pMinXyz.z},
+        {x: pMinXyz.x, y: pMinXyz.y, z: pMaxXyz.z},
+        {x: pMinXyz.x, y: pMaxXyz.y, z: pMinXyz.z},
+        {x: pMinXyz.x, y: pMaxXyz.y, z: pMaxXyz.z},
+        {x: pMaxXyz.x, y: pMinXyz.y, z: pMinXyz.z},
+        {x: pMaxXyz.x, y: pMinXyz.y, z: pMaxXyz.z},
+        {x: pMaxXyz.x, y: pMaxXyz.y, z: pMinXyz.z},
+        {x: pMaxXyz.x, y: pMaxXyz.y, z: pMaxXyz.z},
+    ]
+
     return {
         id: id,
-        epsg4326: {
-            pMin: pMin,
-            pMax: pMax
-        },
-        epsg4978: {
-            pMin: pMinXyz,
-            pMax: pMaxXyz
-        }
+        points: cornerPoints
     };
 }
