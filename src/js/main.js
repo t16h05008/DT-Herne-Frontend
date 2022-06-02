@@ -14,12 +14,12 @@ import {layerCategories} from "./layers.mjs";
 Cesium.Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
 const initialCameraView = {
   position: {
-    lat: 51.54005,
-    lon: 7.22795,
-    height: 350 // meter
+    lat: 47.36733, // 51.54005
+    lon: 10.94173,// 7.22795
+    height: 5222 // meter
   },
   orientation: { // in degree
-    heading: 295,
+    heading: 41,
     pitch: -30,
     roll: 0.0,
   }
@@ -45,6 +45,7 @@ const dataLoadingManager = new Worker(new URL("./webworkers/dataLoadingManager.j
 //let gltfModelStoreDB;
 const backendBaseUrl = "http://localhost:8000/";
 const layersToUpdateOnPovChange = [];
+let measurementToolActive = false;
 
 // Needed to display data attribution correctly
 // https://github.com/markedjs/marked/issues/395
@@ -64,7 +65,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
     //initializeIndexedDB();
     initializeDataLoadingManager();
     // Switch terrain to dgm10
-    document.querySelector("input[value='dgm10m']").click();
+    // document.querySelector("input[value='dgm10m']").click();
+    document.querySelector("input[value='Cesium World Terrain']").click();
     // load cityModels for development
     // document.querySelector("input[value='cityModel']").click();
 });
@@ -156,9 +158,7 @@ function initializeViewer(initialCameraViewFormatted) {
     document.querySelector(".cesium-credit-expand-link").textContent = "Copyright Datenquellen";
     document.querySelector(".cesium-credit-lightbox-title").textContent = "";
 
-    viewer.selectedEntityChanged.addEventListener( (entity) => {
-        handleSelectedEntityChanged(entity);
-    });
+    viewer.selectedEntityChanged.addEventListener(handleSelectedEntityChanged);
 }
 
 /**
@@ -362,6 +362,24 @@ function initializeSidebar() {
     enableMenuToggle(sidebarBtns);
     enableMenuResize(sidebarBtns);
     createMenuLayerTree(layerCategories);
+
+
+    // measurements
+    let lineBtn = document.getElementById("measurements-draw-line-btn");
+    lineBtn.addEventListener("click", function(e) {
+        let btn = e.target;
+        if(btn.classList.contains("active")) {
+            // Button was clicked multiple times without finishing the measurement
+            e.target.classList.add("active");
+            startMeasurement("line");
+        } else {
+            e.target.classList.add("active");
+            toggleMeasurementInfoVisibility("line");
+            startMeasurement("line");
+        }
+        
+    });
+    // TODO other buttons
 
     // globe settings
     let settingsGlobeColor = document.getElementById("settingsGlobeColor");
@@ -675,7 +693,7 @@ function createCategoryHtml(category, wrapper) {
 
     let span = document.createElement("span");
     span.id = "menu-data-" + category.name + "-heading";
-    span.classList.add("accordion-header", "h2");
+    span.classList.add("accordion-header");
     div.appendChild(span);
 
     let btn = document.createElement("button");
@@ -1540,7 +1558,7 @@ function handleLayerOpacityChange(input) {
 }
 
 
-async function handleSelectedEntityChanged(entity) {
+let handleSelectedEntityChanged = async function(entity) {
     if(entity) {
         // Cesium automatically shows the info box.
         entity.description = "Frage Attribut-Informationen vom Server ab...";
@@ -1600,4 +1618,165 @@ async function fetchWithTimeout(resource, options = {}) {
     });
     clearTimeout(id);
     return response;
+}
+
+
+function startMeasurement(drawingMode) {
+    measurementToolActive = true;
+    let result = 0.0;
+    let resultSpan = document.getElementById("measurement-line-result");
+    // Temporarily disable showing the info box when clickong on entities
+    // It would trigger while drawing
+    viewer.selectedEntityChanged.removeEventListener(handleSelectedEntityChanged)
+    
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+    let activeShape; // The shape that is currently drawn
+    let activeShapePoints = []; // The shap's points
+    let floatingPoint; // The point floating beneath the mouse cursor 
+
+    // Clear all existing measurements (delete entities)
+    let entitiesToRemove = viewer.entities.values.filter( entity => entity.name.includes("measurement") );
+    for(let entity of entitiesToRemove) {
+        viewer.entities.remove(entity);
+    }
+    
+
+    if (!Cesium.Entity.supportsPolylinesOnTerrain(scene)) {
+         window.alert("Dieser Browser unterstützt keine Polylinien auf der Geländeoberfläche");
+    }
+
+    // On left licking into the viewer
+    handler.setInputAction(function (event) {
+        viewer.selectedEntity = undefined;
+        // We use `viewer.scene.pickPosition` here instead of `viewer.camera.pickEllipsoid` so that
+        // we get the correct point when mousing over terrain.
+        const earthPosition = scene.pickPosition(event.position);
+        // `earthPosition` will be undefined if our mouse is not over the globe.
+        if (Cesium.defined(earthPosition)) {
+            if (activeShapePoints.length === 0) {
+                floatingPoint = createPoint(earthPosition); // Draw a point
+                activeShapePoints.push(earthPosition);
+                const dynamicPositions = new Cesium.CallbackProperty(function () {
+                    if (drawingMode === "polygon") {
+                      return new Cesium.PolygonHierarchy(activeShapePoints);
+                    }
+                    return activeShapePoints;
+                }, false);
+                activeShape = drawShape(dynamicPositions);
+            }
+            activeShapePoints.push(earthPosition);
+            createPoint(earthPosition);
+            // If this is not the first point of the shape
+            if(activeShapePoints.length > 2) {
+                // Calculate the distance between the last two points and add it to result
+                // -1 is the floating point, so -2 is the vertex set with the left click.
+                let startPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-3));
+                let endPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-2)); 
+                let ellipsoidGeodesic = new Cesium.EllipsoidGeodesic(startPoint, endPoint);
+                let distance = ellipsoidGeodesic.surfaceDistance;
+                result += distance;
+                resultSpan.innerText = Util.round(result, 3).toString().replace(".", ",");
+            }
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    // On mouse move
+    handler.setInputAction(function (event) {
+        // If we currently draw a line
+        if (Cesium.defined(floatingPoint)) {
+            const newPosition = viewer.scene.pickPosition(event.endPosition);
+            if (Cesium.defined(newPosition)) {
+                floatingPoint.position.setValue(newPosition); // Constantly update point position so it stays at the cursor
+                activeShapePoints.pop();
+                activeShapePoints.push(newPosition);
+                
+                 // result has the length up to the last vertex
+                let startPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-2));
+                let endPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-1)); // = newPosition
+                let ellipsoidGeodesic = new Cesium.EllipsoidGeodesic(startPoint, endPoint);
+                let distance = ellipsoidGeodesic.surfaceDistance;
+                resultSpan.innerText = Util.round(result + distance, 3).toString().replace(".", ",");
+            }
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+    
+    
+    handler.setInputAction(function (event) {
+        finishMeasurement();
+    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+
+    function finishMeasurement() {
+        terminateShape();
+        handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+        viewer.selectedEntityChanged.addEventListener(handleSelectedEntityChanged);
+        toggleMeasurementInfoVisibility(drawingMode);
+        let btn = document.getElementById("measurements-draw-" + drawingMode + "-btn");
+        btn.classList.remove("active");
+        resultSpan.innerText = Util.round(result, 3).toString().replace(".", ",");
+        handler.destroy();
+    }
+
+    // Redraw the shape so it's not dynamic and remove the dynamic shape.
+    function terminateShape() {
+        activeShapePoints.pop();
+        drawShape(activeShapePoints);
+        viewer.entities.remove(floatingPoint);
+        viewer.entities.remove(activeShape);
+        floatingPoint = undefined;
+        activeShape = undefined;
+        activeShapePoints = [];
+        measurementToolActive = false;
+    }
+
+    function createPoint(worldPosition) {
+        const point = viewer.entities.add({
+            name: "measurement-vertex",
+            position: worldPosition,
+            point: {
+                color: Cesium.Color.CYAN,
+                pixelSize: 5,
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            },
+            });
+        return point;
+    }
+
+    function drawShape(points) {
+        let shape;
+        if (drawingMode === "line") {
+            shape = viewer.entities.add({
+                name: "line-measurement",
+                polyline: {
+                    positions: points,
+                    clampToGround: true,
+                    width: 3,
+                    material: new Cesium.ColorMaterialProperty(
+                        Cesium.Color.CYAN
+                    ),
+                },
+            });
+        }
+        if (drawingMode === "polygon") {
+            shape = viewer.entities.add({
+                name: "polygon-measurement",
+                polygon: {
+                    hierarchy: points,
+                    material: new Cesium.ColorMaterialProperty(
+                        Cesium.Color.CYAN.withAlpha(0.7)
+                    ),
+                },
+            });
+        }
+        return shape;
+    }
+}
+
+function toggleMeasurementInfoVisibility(type) {
+    let infoDiv = document.getElementById("measurement-info-" + type)
+    if(infoDiv.style.display === "none" || infoDiv.style.display === "") {
+        infoDiv.style.display = "block";
+    } else {
+        infoDiv.style.display = "none";
+    }
 }

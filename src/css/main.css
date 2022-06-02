@@ -468,7 +468,6 @@ img.menu-category-icon {
     background-color: var(--secondary-ui-color)
 }
 
-
 .menu-content-wrapper {
     padding: 10px;
 }
@@ -488,4 +487,16 @@ img.menu-category-icon {
     top: calc(var(--header-height) + 10px) !important;
     left: calc(var(--sidebar-width) + 10px) !important;
     right:auto;
+}
+
+.measurement-info {
+    display: none;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    color: white;
+    width: fit-content;
+}
+
+.measurement-info-icon {
+    margin-right: 10px;
 }

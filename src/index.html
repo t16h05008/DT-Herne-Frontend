@@ -85,14 +85,14 @@
         <div id="menu-tools" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true"
           data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuToolsTitle">
           <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="menuToolsTitle">Werkzeuge</h5>
+            <h5 class="offcanvas-title h3" id="menuToolsTitle">Werkzeuge</h5>
             <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"
               aria-label="Close"></button>
           </div>
           <div class="offcanvas-body">
             <div class="accordion" id="menu-tools-main-accordion">
               <div class="accordion-item menu-item-level-1">
-                <span class="accordion-header h2" id="menu-tools-measuerments-heading">
+                <span class="accordion-header" id="menu-tools-measuerments-heading">
                   <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
                     data-bs-target="#menu-tools-measurements" aria-expanded="false"
                     aria-controls="menu-tools-measurements">
@@ -102,10 +102,109 @@
                 <div id="menu-tools-measurements" class="accordion-collapse collapse"
                   aria-labelledby="menu-tools-measurements">
                   <div class="accordion-body">
-                    <div class="menu-content-wrapper">
-                      TODO (Linie, Linienzug, Polygon, ...)<br /><br />
-                      https://github.com/mokrayaGISka/cesium_measurementTool/blob/master/measurement.html<br /><br />
-                      https://viewer.swissgeol.ch/?lang=en&map_transparency=0.00&lon=7.35549&lat=46.31056&elevation=55083&heading=24&pitch=-57&null=
+                    <div class="accordion" id="menu-tools-measurement-accordion">
+
+                      <div class="accordion-item menu-item-level-2">
+                        <span class="accordion-header" id="menu-tools-measuerments-line-heading">
+                          <button class="accordion-button collapsed menu-btn-level-2" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#menu-tools-measurements-line" aria-expanded="false"
+                            aria-controls="menu-tools-measurements-line">
+                            Strecke
+                          </button>
+                        </span>
+                        <div id="menu-tools-measurements-line" class="accordion-collapse collapse"
+                        aria-labelledby="menu-tools-measurements-line">
+                          <div class="accordion-body">
+                            <div class="menu-content-wrapper">
+                              <button type="button" id="measurements-draw-line-btn" class="btn btn-secondary">Linie zeichnen</button>
+                              <div id="measurement-info-line" class="measurement-info">
+                                <table>
+                                  <colgroup>
+                                    <col>
+                                    <col>
+                                  </colgroup>
+                                  <thead>
+                                    <tr>
+                                      <td rowspan="2"><i class="fa-solid fa-lg fa-circle-info measurement-info-icon"></i></td>
+                                      <td>Linksklick: Stützpunkt hinzufügen</td>
+                                    </tr>
+                                    <tr>
+                                      <td>Rechtsklick: Messung beenden</td>
+                                    </tr>
+                                  </thead>
+                                </table>
+                              </div>
+                              <div class="measurement-result-wrapper">
+                                <span>Gemessene Strecke: <span id="measurement-line-result">0,0</span> m
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="accordion-item menu-item-level-2">
+                        <span class="accordion-header" id="menu-tools-measuerments-vertical-line-heading">
+                          <button class="accordion-button collapsed menu-btn-level-2" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#menu-tools-measurements-vertical-line" aria-expanded="false"
+                            aria-controls="menu-tools-measurements-vertical-line">
+                            Strecke (vertikal)
+                          </button>
+                        </span>
+                        <div id="menu-tools-measurements-vertical-line" class="accordion-collapse collapse"
+                        aria-labelledby="menu-tools-measurements-vertical-line">
+                          <div class="accordion-body">
+                            <div class="menu-content-wrapper">
+                              <button>Linie zeichnen</button>
+                              <div class="measurement-result-wrapper">
+                                <span>Gemessene Strecke: <span id="measurement-line-result"></span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                     
+                      <div class="accordion-item menu-item-level-2">
+                        <span class="accordion-header" id="menu-tools-measuerments-rectangle-heading">
+                          <button class="accordion-button collapsed menu-btn-level-2" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#menu-tools-measurements-rectangle" aria-expanded="false"
+                            aria-controls="menu-tools-measurements-rectangle">
+                            Fläche (Rechteck)
+                          </button>
+                        </span>
+                        <div id="menu-tools-measurements-rectangle" class="accordion-collapse collapse"
+                        aria-labelledby="menu-tools-measurements-rectangle">
+                          <div class="accordion-body">
+                            <div class="menu-content-wrapper">
+                              <button>Rechteck zeichnen</button>
+                              <div class="measurement-result-wrapper">
+                                <span>Gemessene Fläche: <span id="measurement-line-result"></span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="accordion-item menu-item-level-2">
+                        <span class="accordion-header" id="menu-tools-measuerments-polygon-heading">
+                          <button class="accordion-button collapsed menu-btn-level-2" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#menu-tools-measurements-polygon" aria-expanded="false"
+                            aria-controls="menu-tools-measurements-polygon">
+                            Fläche (Polygon)
+                          </button>
+                        </span>
+                        <div id="menu-tools-measurements-polygon" class="accordion-collapse collapse"
+                        aria-labelledby="menu-tools-measurements-polygon">
+                          <div class="accordion-body">
+                            <div class="menu-content-wrapper">
+                              <button>Polygon zeichnen</button>
+                              <div class="measurement-result-wrapper">
+                                <span>Gemessene Fläche: <span id="measurement-line-result"></span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
                 </div>
@@ -125,7 +224,7 @@
           <div class="offcanvas-body">
             <div class="accordion" id="menu-settings-main-accordion">
               <div class="accordion-item menu-item-level-1">
-                <span class="accordion-header h2" id="menu-settings-globe-heading">
+                <span class="accordion-header" id="menu-settings-globe-heading">
                   <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
                     data-bs-target="#menu-settings-globe" aria-expanded="false"
                     aria-controls="menu-settings-globe">
@@ -145,7 +244,7 @@
                 </div>
               </div>
               <div class="accordion-item menu-item-level-1">
-                <span class="accordion-header h2" id="menu-settings-underground-heading">
+                <span class="accordion-header" id="menu-settings-underground-heading">
                   <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
                     data-bs-target="#menu-settings-underground" aria-expanded="false"
                     aria-controls="menu-settings-underground">
@@ -174,7 +273,7 @@
                 </div>
               </div>
               <div class="accordion-item menu-item-level-1">
-                <span class="accordion-header h2" id="menu-settings-performance-heading">
+                <span class="accordion-header" id="menu-settings-performance-heading">
                   <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
                     data-bs-target="#menu-settings-performance" aria-expanded="false"
                     aria-controls="menu-settings-performance">
