@@ -83,6 +83,7 @@ module.exports = {
           { from: nodeModulePathConstant + 'uuidjs/dist', to: 'dependencies/uuidjs'},
           { from: nodeModulePathConstant + 'marked', to: 'dependencies/marked'},
           { from: nodeModulePathConstant + 'dompurify/dist', to: 'dependencies/dompurify'},
+          { from: nodeModulePathConstant + 'proj4/dist', to: 'dependencies/proj4'},
           // Renaming only one file here. First copy other files, then the file while renaming it.
           { from: nodeModulePathConstant + '@thomasloven/round-slider',
             to: 'dependencies/round-slider',
