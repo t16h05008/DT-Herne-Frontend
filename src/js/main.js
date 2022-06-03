@@ -368,16 +368,24 @@ function initializeSidebar() {
     let lineBtn = document.getElementById("measurements-draw-line-btn");
     lineBtn.addEventListener("click", function(e) {
         let btn = e.target;
-        if(btn.classList.contains("active")) {
-            // Button was clicked multiple times without finishing the measurement
-            e.target.classList.add("active");
-            startMeasurement("line");
-        } else {
-            e.target.classList.add("active");
+        if(!btn.classList.contains("btn-outline-info")) {
+            e.target.classList.remove("btn-secondary");
+            e.target.classList.add("btn-outline-info");
             toggleMeasurementInfoVisibility("line");
-            startMeasurement("line");
         }
-        
+        // Button was clicked multiple times without finishing the measurement
+        startMeasurement("line");
+    });
+    let polygonBtn = document.getElementById("measurements-draw-polygon-btn");
+    polygonBtn.addEventListener("click", function(e) {
+        let btn = e.target;
+        // Button was clicked multiple times without finishing the measurement
+        if(!btn.classList.contains("btn-outline-info")) {
+            e.target.classList.remove("btn-secondary");
+            e.target.classList.add("btn-outline-info");
+            toggleMeasurementInfoVisibility("polygon");
+        }
+        startMeasurement("polygon");
     });
     // TODO other buttons
 
@@ -1624,26 +1632,31 @@ async function fetchWithTimeout(resource, options = {}) {
 function startMeasurement(drawingMode) {
     measurementToolActive = true;
     let result = 0.0;
-    let resultSpan = document.getElementById("measurement-line-result");
-    // Temporarily disable showing the info box when clickong on entities
+    let resultSpan = document.getElementById("measurement-" + drawingMode + "-result");
+    // Temporarily disable showing the info box when clicking on entities
     // It would trigger while drawing
     viewer.selectedEntityChanged.removeEventListener(handleSelectedEntityChanged)
     
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
-    let activeShape; // The shape that is currently drawn
-    let activeShapePoints = []; // The shap's points
+    let activeShape; // The shape that is currently drawn (polyline, polygon, ...)
+    let activeShapePoints = []; // The shape's vertices
     let floatingPoint; // The point floating beneath the mouse cursor 
+    let currentPolygonTriangle; // Stored here so we don't have to create millions of triangles when cursor moves
+    let currentPolygonTrianglePositions;
 
     // Clear all existing measurements (delete entities)
     let entitiesToRemove = viewer.entities.values.filter( entity => entity.name.includes("measurement") );
     for(let entity of entitiesToRemove) {
         viewer.entities.remove(entity);
     }
-    
 
     if (!Cesium.Entity.supportsPolylinesOnTerrain(scene)) {
          window.alert("Dieser Browser unterstützt keine Polylinien auf der Geländeoberfläche");
     }
+
+    viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
+        Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
+    );
 
     // On left licking into the viewer
     handler.setInputAction(function (event) {
@@ -1664,38 +1677,107 @@ function startMeasurement(drawingMode) {
                 }, false);
                 activeShape = drawShape(dynamicPositions);
             }
-            activeShapePoints.push(earthPosition);
-            createPoint(earthPosition);
-            // If this is not the first point of the shape
-            if(activeShapePoints.length > 2) {
-                // Calculate the distance between the last two points and add it to result
-                // -1 is the floating point, so -2 is the vertex set with the left click.
-                let startPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-3));
-                let endPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-2)); 
-                let ellipsoidGeodesic = new Cesium.EllipsoidGeodesic(startPoint, endPoint);
-                let distance = ellipsoidGeodesic.surfaceDistance;
-                result += distance;
+            
+            if(drawingMode === "line") {
+                // If this is not the first point of the shape
+                if(activeShapePoints.length > 1) {
+                    // Calculate the distance between the last two points and add it to result
+                    // -1 is the floating point, so -2 is the vertex set with the left click.
+                    let startPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-2));
+                    let endPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-1)); 
+                    let ellipsoidGeodesic = new Cesium.EllipsoidGeodesic(startPoint, endPoint);
+                    let distance = ellipsoidGeodesic.surfaceDistance;
+                    result += distance;
+                    resultSpan.innerText = Util.round(result, 3).toString().replace(".", ",");
+                }
+            }
+
+            if(drawingMode === "polygon") {
+                // Calculate the polygon area by summing up the area of the triangles used to draw it on the globe
+                let polygon = activeShape.polygon;
+                let hierarchy = polygon.hierarchy.getValue();
+                // Split the polygon into triangles
+                // Indices refer to the position of the vertex in hierarchy.positions
+                let indices = Cesium.PolygonPipeline.triangulate(hierarchy.positions, hierarchy.holes);
+                let sum = 0;
+                // For each triangle in the polygon
+                for (let i=0; i<indices.length; i+=3) {
+                    // Get vectors from the origin to each corner of the triangle
+                    let vector1 = hierarchy.positions[indices[i]];
+                    let vector2 = hierarchy.positions[indices[i+1]];
+                    let vector3 = hierarchy.positions[indices[i+2]];
+                    // Get the vector difference to get two of the edges as vectors.
+                    // These vectors define the sides of a parallelogram (double the size of the triangle)
+                    let vectorC = Cesium.Cartesian3.subtract(vector2, vector1, new Cesium.Cartesian3());
+                    let vectorD = Cesium.Cartesian3.subtract(vector3, vector1, new Cesium.Cartesian3());
+                    // Area of parallelogram is the cross product of the vectors
+                    let areaVector = Cesium.Cartesian3.cross(vectorC, vectorD, new Cesium.Cartesian3());
+                    // Area of the triangle is just half the area of the parallelogram, add it to the sum.
+                    let triangleArea = Cesium.Cartesian3.magnitude(areaVector)/2.0;
+                    sum += triangleArea;
+                }
+                result = sum;
                 resultSpan.innerText = Util.round(result, 3).toString().replace(".", ",");
             }
+
+            // Now that we did the measurement, we can add the next point
+            activeShapePoints.push(earthPosition);
+            createPoint(earthPosition);
+
+            // if(drawingMode === "polygon" && activeShapePoints.length >= 3) {
+            //     console.log(activeShapePoints.length);
+            //     let p1 = activeShapePoints[0]; // polygon start point
+            //     let p2 = activeShapePoints[activeShapePoints.length-2]; // point at clicked coordinate
+            //     let p3 = activeShapePoints[activeShapePoints.length-1]; // point beneath cursor
+            //     currentPolygonTrianglePositions = new Cesium.PolygonHierarchy([p1, p2, p3]);
+            //     currentPolygonTriangle = new Cesium.PolygonGraphics({
+            //         hierarchy: new Cesium.CallbackProperty(function () {
+            //             return currentPolygonTrianglePositions;
+            //         }, false)
+            //     });
+            // }
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
     // On mouse move
     handler.setInputAction(function (event) {
         // If we currently draw a line
-        if (Cesium.defined(floatingPoint)) {
-            const newPosition = viewer.scene.pickPosition(event.endPosition);
+        if(Cesium.defined(floatingPoint)) {
+            const newPosition = scene.pickPosition(event.endPosition);
             if (Cesium.defined(newPosition)) {
                 floatingPoint.position.setValue(newPosition); // Constantly update point position so it stays at the cursor
                 activeShapePoints.pop();
                 activeShapePoints.push(newPosition);
                 
-                 // result has the length up to the last vertex
-                let startPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-2));
-                let endPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-1)); // = newPosition
-                let ellipsoidGeodesic = new Cesium.EllipsoidGeodesic(startPoint, endPoint);
-                let distance = ellipsoidGeodesic.surfaceDistance;
-                resultSpan.innerText = Util.round(result + distance, 3).toString().replace(".", ",");
+                if(drawingMode === "line") {
+                    // result has the length up to the last vertex
+                    let startPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-2));
+                    let endPoint = Cesium.Cartographic.fromCartesian(activeShapePoints.at(-1)); // = newPosition
+                    let ellipsoidGeodesic = new Cesium.EllipsoidGeodesic(startPoint, endPoint);
+                    let distance = ellipsoidGeodesic.surfaceDistance;
+                    resultSpan.innerText = Util.round(result + distance, 3).toString().replace(".", ",");
+                }
+
+                // if(drawingMode === "polygon" && activeShapePoints.length >= 3) {
+                //     //console.log(currentPolygonTrianglePositions);
+                //     currentPolygonTrianglePositions.positions[2] = newPosition;
+                //     // Only calculate the area of the new triangle that got created by moving the cursor.
+                //     // Don't actually add it to result yet, but show the sum of both areas in result span.
+                //     //console.log("result so far: ", Util.round(result, 3));
+                //     let polygonHierarchy = currentPolygonTriangle.hierarchy.getValue();
+                //     let vector1 = polygonHierarchy.positions[0];
+                //     let vector2 = polygonHierarchy.positions[1];
+                //     let vector3 = polygonHierarchy.positions[2];
+                //     let vectorC = Cesium.Cartesian3.subtract(vector2, vector1, new Cesium.Cartesian3());
+                //     let vectorD = Cesium.Cartesian3.subtract(vector3, vector1, new Cesium.Cartesian3());
+                //     console.log("C: ", vectorC.toString(), "D: ", vectorD.toString());
+                //     let areaVector = Cesium.Cartesian3.cross(vectorC, vectorD, new Cesium.Cartesian3());
+                //     console.log(areaVector.toString());
+                //     let triangleArea = Cesium.Cartesian3.magnitude(areaVector)/2.0;
+                //     console.log("new triangle area: ", Util.round(triangleArea, 3));
+                    
+                //     // resultSpan.innerText = Util.round(result, 3).toString().replace(".", ",");
+                // }
             }
         }
     }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
@@ -1712,21 +1794,22 @@ function startMeasurement(drawingMode) {
         viewer.selectedEntityChanged.addEventListener(handleSelectedEntityChanged);
         toggleMeasurementInfoVisibility(drawingMode);
         let btn = document.getElementById("measurements-draw-" + drawingMode + "-btn");
-        btn.classList.remove("active");
+        btn.classList.remove("btn-outline-info");
+        btn.classList.add("btn-secondary");
         resultSpan.innerText = Util.round(result, 3).toString().replace(".", ",");
         handler.destroy();
+        measurementToolActive = false;
     }
 
-    // Redraw the shape so it's not dynamic and remove the dynamic shape.
+    
     function terminateShape() {
-        activeShapePoints.pop();
-        drawShape(activeShapePoints);
+        activeShapePoints.pop(); // remove point at mouse cursor
+        drawShape(activeShapePoints); // Redraw the shape so it's not dynamic
         viewer.entities.remove(floatingPoint);
-        viewer.entities.remove(activeShape);
+        viewer.entities.remove(activeShape); // Remove the dynamic shape.
         floatingPoint = undefined;
         activeShape = undefined;
         activeShapePoints = [];
-        measurementToolActive = false;
     }
 
     function createPoint(worldPosition) {
@@ -1744,7 +1827,7 @@ function startMeasurement(drawingMode) {
 
     function drawShape(points) {
         let shape;
-        if (drawingMode === "line") {
+        if(drawingMode === "line") {
             shape = viewer.entities.add({
                 name: "line-measurement",
                 polyline: {
@@ -1752,12 +1835,12 @@ function startMeasurement(drawingMode) {
                     clampToGround: true,
                     width: 3,
                     material: new Cesium.ColorMaterialProperty(
-                        Cesium.Color.CYAN
+                        Cesium.Color.CYAN.withAlpha(0.7)
                     ),
                 },
             });
         }
-        if (drawingMode === "polygon") {
+        if(drawingMode === "polygon") {
             shape = viewer.entities.add({
                 name: "polygon-measurement",
                 polygon: {

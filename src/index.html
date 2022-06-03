@@ -156,7 +156,7 @@
                             <div class="menu-content-wrapper">
                               <button>Linie zeichnen</button>
                               <div class="measurement-result-wrapper">
-                                <span>Gemessene Strecke: <span id="measurement-line-result"></span>
+                                <span>Gemessene Strecke: <span id="measurement-vertical-line-result"></span>
                               </div>
                             </div>
                           </div>
@@ -177,7 +177,7 @@
                             <div class="menu-content-wrapper">
                               <button>Rechteck zeichnen</button>
                               <div class="measurement-result-wrapper">
-                                <span>Gemessene Fläche: <span id="measurement-line-result"></span>
+                                <span>Gemessene Fläche: <span id="measurement-rectangle-result"></span>
                               </div>
                             </div>
                           </div>
@@ -196,9 +196,26 @@
                         aria-labelledby="menu-tools-measurements-polygon">
                           <div class="accordion-body">
                             <div class="menu-content-wrapper">
-                              <button>Polygon zeichnen</button>
+                              <button type="button" id="measurements-draw-polygon-btn" class="btn btn-secondary">Polygon zeichnen</button>
+                              <div id="measurement-info-polygon" class="measurement-info">
+                                <table>
+                                  <colgroup>
+                                    <col>
+                                    <col>
+                                  </colgroup>
+                                  <thead>
+                                    <tr>
+                                      <td rowspan="2"><i class="fa-solid fa-lg fa-circle-info measurement-info-icon"></i></td>
+                                      <td>Linksklick: Stützpunkt hinzufügen</td>
+                                    </tr>
+                                    <tr>
+                                      <td>Rechtsklick: Messung beenden</td>
+                                    </tr>
+                                  </thead>
+                                </table>
+                              </div>
                               <div class="measurement-result-wrapper">
-                                <span>Gemessene Fläche: <span id="measurement-line-result"></span>
+                                <span>Gemessene Fläche: <span id="measurement-polygon-result">0,0</span> m²
                               </div>
                             </div>
                           </div>
