@@ -369,15 +369,49 @@ function initializeSidebar() {
         let btn = document.getElementById("measurements-draw-" + type + "-btn");
         btn.addEventListener("click", function(e) {
             let btn = e.target;
-            if(!btn.classList.contains("btn-outline-info")) {
+            if(!btn.classList.contains("btn-info")) {
                 e.target.classList.remove("btn-secondary");
-                e.target.classList.add("btn-outline-info");
+                e.target.classList.add("btn-info");
                 toggleMeasurementInfoVisibility(type);
             }
             // Button was clicked multiple times without finishing the measurement
             startMeasurement(type);
         });
     }
+
+    // slicers
+    let slicersInsideBtn = document.getElementById("slicers-inside-btn");
+    let slicersOutsideBtn = document.getElementById("slicers-outside-btn");
+    slicersInsideBtn.addEventListener("click", function(e) {
+        let btn = e.target;
+        slicersOutsideBtn.classList.remove("btn-info");
+        slicersOutsideBtn.classList.add("btn-secondary");
+        if(!btn.classList.contains("btn-info")) {
+            e.target.classList.remove("btn-secondary");
+            e.target.classList.add("btn-info");
+            enableSlicersOutside();
+        } else {
+            e.target.classList.add("btn-secondary");
+            e.target.classList.remove("btn-info");
+            globe.clippingPlanes.enabled = false;
+        }
+    });
+    slicersOutsideBtn.addEventListener("click", function(e) {
+        let btn = e.target;
+        slicersInsideBtn.classList.remove("btn-info");
+        slicersInsideBtn.classList.add("btn-secondary");
+        if(!btn.classList.contains("btn-info")) {
+            e.target.classList.remove("btn-secondary");
+            e.target.classList.add("btn-info");
+            enableSlicersInside();
+        } else {
+            e.target.classList.add("btn-secondary");
+            e.target.classList.remove("btn-info");
+            globe.clippingPlanes.enabled = false;
+        }
+    });
+
+    
 
     // globe settings
     let settingsGlobeColor = document.getElementById("settingsGlobeColor");
@@ -1750,7 +1784,7 @@ function startMeasurement(drawingMode) {
         viewer.selectedEntityChanged.addEventListener(handleSelectedEntityChanged);
         toggleMeasurementInfoVisibility(drawingMode);
         let btn = document.getElementById("measurements-draw-" + drawingMode + "-btn");
-        btn.classList.remove("btn-outline-info");
+        btn.classList.remove("btn-info");
         btn.classList.add("btn-secondary");
         resultSpan.innerText = Util.round(result, 3).toString().replace(".", ",");
         handler.destroy();
@@ -1819,4 +1853,54 @@ function toggleMeasurementInfoVisibility(type) {
     } else {
         infoDiv.style.display = "none";
     }
+}
+
+function pickAtScreenCenter() {
+    let center = new Cesium.Cartesian2(viewer.container.clientWidth / 2, viewer.container.clientHeight / 2);
+    let pickRay = camera.getPickRay(center);
+    let pickPosition = globe.pick(pickRay, viewer.scene);
+    if(!pickPosition) {
+        alert("In der Mitte des Viewers konnte kein Terrain gefunden werden.");
+    }
+    return pickPosition;
+}
+
+function enableSlicersInside() {
+    let center = pickAtScreenCenter();
+    console.log(center);
+    const distance = 100.0; // distance from the center
+    globe.clippingPlanes = new Cesium.ClippingPlaneCollection({
+        modelMatrix: Cesium.Transforms.eastNorthUpToFixedFrame(center),
+        planes: [
+            new Cesium.ClippingPlane(new Cesium.Cartesian3(1.0, 0.0, 0.0), distance),
+            new Cesium.ClippingPlane(new Cesium.Cartesian3(-1.0, 0.0, 0.0), distance),
+            new Cesium.ClippingPlane(new Cesium.Cartesian3(0.0, 1.0, 0.0), distance),
+            new Cesium.ClippingPlane(new Cesium.Cartesian3(0.0, -1.0, 0.0), distance),
+        ],
+        unionClippingRegions: true,
+        edgeWidth: 5.0,
+        edgeColor: Cesium.Color.WHITE,
+        enabled: true,
+    });
+    globe.backFaceCulling = false;
+    globe.showSkirts = false;
+}
+
+function enableSlicersOutside() {
+    let center = pickAtScreenCenter();
+    const distance = -100.0; // distance from the center
+    globe.clippingPlanes = new Cesium.ClippingPlaneCollection({
+        modelMatrix: Cesium.Transforms.eastNorthUpToFixedFrame(center),
+        planes: [
+            new Cesium.ClippingPlane(new Cesium.Cartesian3(1.0, 0.0, 0.0), distance),
+            new Cesium.ClippingPlane(new Cesium.Cartesian3(-1.0, 0.0, 0.0), distance),
+            new Cesium.ClippingPlane(new Cesium.Cartesian3(0.0, 1.0, 0.0), distance),
+            new Cesium.ClippingPlane(new Cesium.Cartesian3(0.0, -1.0, 0.0), distance),
+        ],
+        edgeWidth: 5.0,
+        edgeColor: Cesium.Color.WHITE,
+        enabled: true,
+    });
+    globe.backFaceCulling = false;
+    globe.showSkirts = false;
 }
