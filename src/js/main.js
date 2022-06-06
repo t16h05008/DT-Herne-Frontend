@@ -14,14 +14,14 @@ import {layerCategories} from "./layers.mjs";
 Cesium.Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
 const initialCameraView = {
   position: {
-    lat: 47.36733, // 51.54005
-    lon: 10.94173,// 7.22795
-    height: 5222 // meter
+    lat: 51.54005, 
+    lon: 7.22795,
+    height: 350 // meter
   },
-  orientation: { // in degree
-    heading: 41,
+  orientation: {
+    heading: 295,
     pitch: -30,
-    roll: 0.0,
+    roll: 0,
   }
 }
 // derived from initialCameraView in the format needed by cesium
@@ -65,8 +65,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
     //initializeIndexedDB();
     initializeDataLoadingManager();
     // Switch terrain to dgm10
-    // document.querySelector("input[value='dgm10m']").click();
-    document.querySelector("input[value='Cesium World Terrain']").click();
+    document.querySelector("input[value='dgm10m']").click();
+    // document.querySelector("input[value='Cesium World Terrain']").click();
     // load cityModels for development
     // document.querySelector("input[value='cityModel']").click();
 });
@@ -365,29 +365,19 @@ function initializeSidebar() {
 
 
     // measurements
-    let lineBtn = document.getElementById("measurements-draw-line-btn");
-    lineBtn.addEventListener("click", function(e) {
-        let btn = e.target;
-        if(!btn.classList.contains("btn-outline-info")) {
-            e.target.classList.remove("btn-secondary");
-            e.target.classList.add("btn-outline-info");
-            toggleMeasurementInfoVisibility("line");
-        }
-        // Button was clicked multiple times without finishing the measurement
-        startMeasurement("line");
-    });
-    let polygonBtn = document.getElementById("measurements-draw-polygon-btn");
-    polygonBtn.addEventListener("click", function(e) {
-        let btn = e.target;
-        // Button was clicked multiple times without finishing the measurement
-        if(!btn.classList.contains("btn-outline-info")) {
-            e.target.classList.remove("btn-secondary");
-            e.target.classList.add("btn-outline-info");
-            toggleMeasurementInfoVisibility("polygon");
-        }
-        startMeasurement("polygon");
-    });
-    // TODO other buttons
+    for(let type of ["line", "polygon"]) {
+        let btn = document.getElementById("measurements-draw-" + type + "-btn");
+        btn.addEventListener("click", function(e) {
+            let btn = e.target;
+            if(!btn.classList.contains("btn-outline-info")) {
+                e.target.classList.remove("btn-secondary");
+                e.target.classList.add("btn-outline-info");
+                toggleMeasurementInfoVisibility(type);
+            }
+            // Button was clicked multiple times without finishing the measurement
+            startMeasurement(type);
+        });
+    }
 
     // globe settings
     let settingsGlobeColor = document.getElementById("settingsGlobeColor");
@@ -1641,8 +1631,8 @@ function startMeasurement(drawingMode) {
     let activeShape; // The shape that is currently drawn (polyline, polygon, ...)
     let activeShapePoints = []; // The shape's vertices
     let floatingPoint; // The point floating beneath the mouse cursor 
-    let currentPolygonTriangle; // Stored here so we don't have to create millions of triangles when cursor moves
-    let currentPolygonTrianglePositions;
+    //let currentPolygonTriangle; // Stored here so we don't have to create millions of triangles when cursor moves
+    //let currentPolygonTrianglePositions;
 
     // Clear all existing measurements (delete entities)
     let entitiesToRemove = viewer.entities.values.filter( entity => entity.name.includes("measurement") );
@@ -1665,13 +1655,13 @@ function startMeasurement(drawingMode) {
         // we get the correct point when mousing over terrain.
         const earthPosition = scene.pickPosition(event.position);
         // `earthPosition` will be undefined if our mouse is not over the globe.
-        if (Cesium.defined(earthPosition)) {
+        if(Cesium.defined(earthPosition)) {
             if (activeShapePoints.length === 0) {
                 floatingPoint = createPoint(earthPosition); // Draw a point
                 activeShapePoints.push(earthPosition);
                 const dynamicPositions = new Cesium.CallbackProperty(function () {
-                    if (drawingMode === "polygon") {
-                      return new Cesium.PolygonHierarchy(activeShapePoints);
+                    if(drawingMode === "polygon") {
+                        return new Cesium.PolygonHierarchy(activeShapePoints);
                     }
                     return activeShapePoints;
                 }, false);
@@ -1723,19 +1713,6 @@ function startMeasurement(drawingMode) {
             // Now that we did the measurement, we can add the next point
             activeShapePoints.push(earthPosition);
             createPoint(earthPosition);
-
-            // if(drawingMode === "polygon" && activeShapePoints.length >= 3) {
-            //     console.log(activeShapePoints.length);
-            //     let p1 = activeShapePoints[0]; // polygon start point
-            //     let p2 = activeShapePoints[activeShapePoints.length-2]; // point at clicked coordinate
-            //     let p3 = activeShapePoints[activeShapePoints.length-1]; // point beneath cursor
-            //     currentPolygonTrianglePositions = new Cesium.PolygonHierarchy([p1, p2, p3]);
-            //     currentPolygonTriangle = new Cesium.PolygonGraphics({
-            //         hierarchy: new Cesium.CallbackProperty(function () {
-            //             return currentPolygonTrianglePositions;
-            //         }, false)
-            //     });
-            // }
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
@@ -1757,27 +1734,6 @@ function startMeasurement(drawingMode) {
                     let distance = ellipsoidGeodesic.surfaceDistance;
                     resultSpan.innerText = Util.round(result + distance, 3).toString().replace(".", ",");
                 }
-
-                // if(drawingMode === "polygon" && activeShapePoints.length >= 3) {
-                //     //console.log(currentPolygonTrianglePositions);
-                //     currentPolygonTrianglePositions.positions[2] = newPosition;
-                //     // Only calculate the area of the new triangle that got created by moving the cursor.
-                //     // Don't actually add it to result yet, but show the sum of both areas in result span.
-                //     //console.log("result so far: ", Util.round(result, 3));
-                //     let polygonHierarchy = currentPolygonTriangle.hierarchy.getValue();
-                //     let vector1 = polygonHierarchy.positions[0];
-                //     let vector2 = polygonHierarchy.positions[1];
-                //     let vector3 = polygonHierarchy.positions[2];
-                //     let vectorC = Cesium.Cartesian3.subtract(vector2, vector1, new Cesium.Cartesian3());
-                //     let vectorD = Cesium.Cartesian3.subtract(vector3, vector1, new Cesium.Cartesian3());
-                //     console.log("C: ", vectorC.toString(), "D: ", vectorD.toString());
-                //     let areaVector = Cesium.Cartesian3.cross(vectorC, vectorD, new Cesium.Cartesian3());
-                //     console.log(areaVector.toString());
-                //     let triangleArea = Cesium.Cartesian3.magnitude(areaVector)/2.0;
-                //     console.log("new triangle area: ", Util.round(triangleArea, 3));
-                    
-                //     // resultSpan.innerText = Util.round(result, 3).toString().replace(".", ",");
-                // }
             }
         }
     }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
@@ -1825,7 +1781,7 @@ function startMeasurement(drawingMode) {
         return point;
     }
 
-    function drawShape(points) {
+    function drawShape(points, rotation) {
         let shape;
         if(drawingMode === "line") {
             shape = viewer.entities.add({
@@ -1840,6 +1796,7 @@ function startMeasurement(drawingMode) {
                 },
             });
         }
+        
         if(drawingMode === "polygon") {
             shape = viewer.entities.add({
                 name: "polygon-measurement",
