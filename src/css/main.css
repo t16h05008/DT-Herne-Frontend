@@ -500,3 +500,13 @@ img.menu-category-icon {
 .measurement-info-icon {
     margin-right: 10px;
 }
+
+#slicers-inside-btn,
+#slicers-outside-btn {
+    margin: 5px;
+    margin-top: 10px;
+}
+
+#slicers-inside-btn {
+    margin-left: 0
+}
