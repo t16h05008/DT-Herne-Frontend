@@ -1,7 +1,7 @@
 // The property "name" acts as an unique id and should not be modified.
 // "type" shouldn't be modified either.
 const layerCategories = [
-    // categories
+    // Categories
     {
         type: "category",
         name: "sewerage",
@@ -40,6 +40,27 @@ const layerCategories = [
         isBaseLayerCategory: false,
         show: true,
         layers: [
+            {
+                name: "humidity",
+                displayName: "Luftfeuchtigkeit",
+                thumbnailSrc: "",
+                show: false,
+                opacity: 100,
+                tooltip: "",
+                credit: "[Hochschule Bochum](https://www.hochschule-bochum.de/)"
+            },
+            {
+                type: "WMS",
+                name: "heavyRainHazardMap1",
+                displayName: "Starkregengefahrenkarte (2018) - seltener Starkregen",
+                url: "https://geodaten.herne.de/gisserver/klima/starkregen",
+                layerName: "seltener_starkregen",
+                thumbnailSrc: "static/images/layerPreview/heavy-rain-map.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Die Karte zeigt in welchen Bereichen eine besondere Überflutungsgefährdung zu erwarten ist. Überflutungshöhe und -ausdehnung werden durch unterschiedliche Blautöne dargestellt. Die Berechnung erfolgte auf Grundlag eines 1-stündigen Niederschlagereignisses. Seltener Starkregen: statistisch 30-jährliches Ereignis (42,8 l/m², Niederschlagsmengen in l/m² sind gleichbedeutend mit Angaben in mm).",
+                credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
+            },
             {
                 type: "WMS",
                 name: "heavyRainHazardMap1",

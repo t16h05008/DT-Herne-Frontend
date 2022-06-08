@@ -24,7 +24,25 @@ const initialCameraView = {
     roll: 0,
   }
 }
-// derived from initialCameraView in the format needed by cesium
+const defaultGlobeColor = "#1e8fc3"; // water blue
+const defaultUndergroundColor = "#383F38"; // dark gray
+let viewer, camera, scene, globe;
+const dataLoadingManager = new Worker(new URL("./webworkers/dataLoadingManager.js", import.meta.url));
+//let gltfModelStoreDB;
+const backendBaseUrl = "http://localhost:8000/";
+const layersToUpdateOnPovChange = [];
+let measurementToolActive = false;
+let slicersDrawRectangleActive = false;
+
+// Needed to display data attribution correctly
+// https://github.com/markedjs/marked/issues/395
+marked.Renderer.prototype.paragraph = (text) => {
+    if (text.includes("<a")) {
+      return text + "\n";
+    }
+    return "<p>" + text + "</p>";
+};
+// Derived from initialCameraView in the format needed by cesium
 const initialCameraViewFormatted = {
     destination : Cesium.Cartesian3.fromDegrees(
         initialCameraView.position.lon,
@@ -37,24 +55,6 @@ const initialCameraViewFormatted = {
         roll: Cesium.Math.toRadians(initialCameraView.orientation.roll)
     }
 }
-
-const defaultGlobeColor = "#1e8fc3"; // water blue
-const defaultUndergroundColor = "#383F38"; // dark gray
-let viewer, camera, scene, globe;
-const dataLoadingManager = new Worker(new URL("./webworkers/dataLoadingManager.js", import.meta.url));
-//let gltfModelStoreDB;
-const backendBaseUrl = "http://localhost:8000/";
-const layersToUpdateOnPovChange = [];
-let measurementToolActive = false;
-
-// Needed to display data attribution correctly
-// https://github.com/markedjs/marked/issues/395
-marked.Renderer.prototype.paragraph = (text) => {
-    if (text.includes("<a")) {
-      return text + "\n";
-    }
-    return "<p>" + text + "</p>";
-};
 
 document.addEventListener("DOMContentLoaded", function(event) {
     initializeViewer(initialCameraViewFormatted);
@@ -369,49 +369,29 @@ function initializeSidebar() {
         let btn = document.getElementById("measurements-draw-" + type + "-btn");
         btn.addEventListener("click", function(e) {
             let btn = e.target;
-            if(!btn.classList.contains("btn-info")) {
-                e.target.classList.remove("btn-secondary");
-                e.target.classList.add("btn-info");
+            if(!measurementToolActive) {
+                btn.classList.remove("btn-secondary");
+                btn.classList.add("btn-info");
                 toggleMeasurementInfoVisibility(type);
             }
-            // Button was clicked multiple times without finishing the measurement
             startMeasurement(type);
         });
     }
 
     // slicers
-    let slicersInsideBtn = document.getElementById("slicers-inside-btn");
-    let slicersOutsideBtn = document.getElementById("slicers-outside-btn");
-    slicersInsideBtn.addEventListener("click", function(e) {
-        let btn = e.target;
-        slicersOutsideBtn.classList.remove("btn-info");
-        slicersOutsideBtn.classList.add("btn-secondary");
-        if(!btn.classList.contains("btn-info")) {
-            e.target.classList.remove("btn-secondary");
-            e.target.classList.add("btn-info");
-            enableSlicersOutside();
-        } else {
-            e.target.classList.add("btn-secondary");
-            e.target.classList.remove("btn-info");
-            globe.clippingPlanes.enabled = false;
+    let slicersDrawRectangleBtn = document.getElementById("slicers-draw-rectangle-btn");
+    slicersDrawRectangleBtn.addEventListener("click", function(e) {
+        if(slicersDrawRectangleActive) {
+            let entitiesToRemove = viewer.entities.values.filter( entity => entity.name.includes("slicers") );
+            for(let entity of entitiesToRemove) {
+                viewer.entities.remove(entity);
+            }
         }
+        slicersDrawRectangleActive = true;
+        e.target.classList.remove("btn-secondary");
+        e.target.classList.add("btn-info");
+        drawSlicerRectangle();
     });
-    slicersOutsideBtn.addEventListener("click", function(e) {
-        let btn = e.target;
-        slicersInsideBtn.classList.remove("btn-info");
-        slicersInsideBtn.classList.add("btn-secondary");
-        if(!btn.classList.contains("btn-info")) {
-            e.target.classList.remove("btn-secondary");
-            e.target.classList.add("btn-info");
-            enableSlicersInside();
-        } else {
-            e.target.classList.add("btn-secondary");
-            e.target.classList.remove("btn-info");
-            globe.clippingPlanes.enabled = false;
-        }
-    });
-
-    
 
     // globe settings
     let settingsGlobeColor = document.getElementById("settingsGlobeColor");
@@ -1691,7 +1671,7 @@ function startMeasurement(drawingMode) {
         // `earthPosition` will be undefined if our mouse is not over the globe.
         if(Cesium.defined(earthPosition)) {
             if (activeShapePoints.length === 0) {
-                floatingPoint = createPoint(earthPosition); // Draw a point
+                floatingPoint = drawPoint(earthPosition); // Draw a point
                 activeShapePoints.push(earthPosition);
                 const dynamicPositions = new Cesium.CallbackProperty(function () {
                     if(drawingMode === "polygon") {
@@ -1746,7 +1726,7 @@ function startMeasurement(drawingMode) {
 
             // Now that we did the measurement, we can add the next point
             activeShapePoints.push(earthPosition);
-            createPoint(earthPosition);
+            drawPoint(earthPosition);
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
@@ -1802,7 +1782,7 @@ function startMeasurement(drawingMode) {
         activeShapePoints = [];
     }
 
-    function createPoint(worldPosition) {
+    function drawPoint(worldPosition) {
         const point = viewer.entities.add({
             name: "measurement-vertex",
             position: worldPosition,
@@ -1855,52 +1835,277 @@ function toggleMeasurementInfoVisibility(type) {
     }
 }
 
-function pickAtScreenCenter() {
-    let center = new Cesium.Cartesian2(viewer.container.clientWidth / 2, viewer.container.clientHeight / 2);
-    let pickRay = camera.getPickRay(center);
-    let pickPosition = globe.pick(pickRay, viewer.scene);
-    if(!pickPosition) {
-        alert("In der Mitte des Viewers konnte kein Terrain gefunden werden.");
+
+/**
+ * 
+ * @param {boolean} hideOutside | If true the outside of the rectangle is hidden, else the inside is hidden
+ */
+function enableSlicers(polygon, hideOutside) {
+    // Create a clipping plane for each edge of the polygon
+    // TODO Create a handler for each side of the polygon (a sphere entity)
+    // TODO Position of the sphere entities must be dynamic, but they are only movable orthogonal to the edge
+    // TODO  When sphere position changes, update the corresponding clipping plane
+    let points = polygon.polygon.hierarchy.getValue().positions;
+    let p1 = points[0];
+    let p2 = points[1];
+    let p3 = points[2];
+    let p4 = points[3];
+    let l1normal = new Cesium.Cartesian3();
+    let l2normal = new Cesium.Cartesian3();
+    let l3normal = new Cesium.Cartesian3();
+    let l4normal = new Cesium.Cartesian3();
+    Cesium.Cartesian3.subtract(p3, p2, l1normal);
+    Cesium.Cartesian3.subtract(p4, p3, l2normal);
+    Cesium.Cartesian3.subtract(p1, p4, l3normal);
+    Cesium.Cartesian3.subtract(p2, p1, l4normal);
+    Cesium.Cartesian3.normalize(l1normal, l1normal);
+    Cesium.Cartesian3.normalize(l2normal, l2normal);
+    Cesium.Cartesian3.normalize(l3normal, l3normal);
+    Cesium.Cartesian3.normalize(l4normal, l4normal);
+    if(!hideOutside) {
+        // Turn the normals outside the rectangle, so that the clipping planes clip the inside
+        l1normal = Cesium.Cartesian3.negate(l1normal, l1normal);
+        l2normal = Cesium.Cartesian3.negate(l2normal, l2normal);
+        l3normal = Cesium.Cartesian3.negate(l3normal, l3normal);
+        l4normal = Cesium.Cartesian3.negate(l4normal, l4normal);
     }
-    return pickPosition;
-}
-
-function enableSlicersInside() {
-    let center = pickAtScreenCenter();
-    console.log(center);
-    const distance = 100.0; // distance from the center
+    let plane1 = new Cesium.Plane.fromPointNormal(p2, l1normal);
+    let plane2 = new Cesium.Plane.fromPointNormal(p3, l2normal);
+    let plane3 = new Cesium.Plane.fromPointNormal(p4, l3normal);
+    let plane4 = new Cesium.Plane.fromPointNormal(p1, l4normal);
+    console.log(hideOutside);
     globe.clippingPlanes = new Cesium.ClippingPlaneCollection({
-        modelMatrix: Cesium.Transforms.eastNorthUpToFixedFrame(center),
         planes: [
-            new Cesium.ClippingPlane(new Cesium.Cartesian3(1.0, 0.0, 0.0), distance),
-            new Cesium.ClippingPlane(new Cesium.Cartesian3(-1.0, 0.0, 0.0), distance),
-            new Cesium.ClippingPlane(new Cesium.Cartesian3(0.0, 1.0, 0.0), distance),
-            new Cesium.ClippingPlane(new Cesium.Cartesian3(0.0, -1.0, 0.0), distance),
+            new Cesium.ClippingPlane.fromPlane(plane1),
+            new Cesium.ClippingPlane.fromPlane(plane2),
+            new Cesium.ClippingPlane.fromPlane(plane3),
+            new Cesium.ClippingPlane.fromPlane(plane4),
         ],
-        unionClippingRegions: true,
+        unionClippingRegions: hideOutside ? true : false,
         edgeWidth: 5.0,
         edgeColor: Cesium.Color.WHITE,
         enabled: true,
     });
     globe.backFaceCulling = false;
     globe.showSkirts = false;
+
+    // for(let direction of [north, east, south, west]) {
+    //     viewer.entities.add({
+    //         name: "",
+    //         position: Cesium.Cartesian3.fromDegrees(-107.0, 40.0, 300000.0),
+    //         ellipsoid: {
+    //           radii: new Cesium.Cartesian3(300000.0, 300000.0, 300000.0),
+    //           material: Cesium.Color.GRAY,
+    //         },
+    //     });
+    // }
+    
+
+    // If edge of rectangle was clicked (with epsilon)
+        // check which edge it was
+        // translate mouse movement into resizing the corresponding edge
+        // update clipping planes
+
 }
 
-function enableSlicersOutside() {
-    let center = pickAtScreenCenter();
-    const distance = -100.0; // distance from the center
-    globe.clippingPlanes = new Cesium.ClippingPlaneCollection({
-        modelMatrix: Cesium.Transforms.eastNorthUpToFixedFrame(center),
-        planes: [
-            new Cesium.ClippingPlane(new Cesium.Cartesian3(1.0, 0.0, 0.0), distance),
-            new Cesium.ClippingPlane(new Cesium.Cartesian3(-1.0, 0.0, 0.0), distance),
-            new Cesium.ClippingPlane(new Cesium.Cartesian3(0.0, 1.0, 0.0), distance),
-            new Cesium.ClippingPlane(new Cesium.Cartesian3(0.0, -1.0, 0.0), distance),
-        ],
-        edgeWidth: 5.0,
-        edgeColor: Cesium.Color.WHITE,
-        enabled: true,
-    });
-    globe.backFaceCulling = false;
-    globe.showSkirts = false;
+
+function drawSlicerRectangle() {
+    let insideBtn = document.getElementById("slicers-inside-btn")
+    if(insideBtn) insideBtn.remove();
+    let outsideBtn = document.getElementById("slicers-outside-btn")
+    if(outsideBtn) outsideBtn.remove();
+    // Temporarily disable showing the info box when clicking on entities
+    // It would trigger while drawing
+    viewer.selectedEntityChanged.removeEventListener(handleSelectedEntityChanged)
+    // On first click set the first vertex
+    // On second click set the second one.
+    // Then extrude the line orthogonal.
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+    let activeShape; // The shape that is currently drawn
+    let activeShapePoints = []; // The shape's vertices
+    let floatingPoint; // The point floating beneath the mouse cursor 
+    let offsetX = 0;
+    let offsetY = 0;
+    viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(
+        Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
+    );
+
+    // On left licking into the viewer
+    // First click sets the initial point
+    // Second click defines the second point
+    // Third click defines the third and last point
+    handler.setInputAction(function (event) {
+        viewer.selectedEntity = undefined;
+        const earthPosition = scene.pickPosition(event.position);
+        if(Cesium.defined(earthPosition)) {
+            activeShapePoints.push(earthPosition);
+            drawPoint(earthPosition);
+            console.log(activeShapePoints.length);
+            // Initial point
+            if(activeShapePoints.length === 1) {
+                floatingPoint = drawPoint(earthPosition); // Draw a point
+                activeShapePoints.push(earthPosition); // Will be moved on mouse move
+                const dynamicPositions = new Cesium.CallbackProperty(function () {
+                   return activeShapePoints;
+                }, false);
+                activeShape = drawLine(dynamicPositions);
+            // Second click
+            } else if(activeShapePoints.length === 3) {
+                activeShapePoints.push(activeShapePoints[0].clone()); // 4th point is same as 1st
+                const dynamicPositions = new Cesium.CallbackProperty(function () {
+                    return new Cesium.PolygonHierarchy(activeShapePoints);
+                }, false);
+                let p1 = new Cesium.Cartographic.fromCartesian(activeShapePoints[0])
+                let p2 = new Cesium.Cartographic.fromCartesian(activeShapePoints[1])
+                offsetX = p2.longitude - p1.longitude;
+                offsetY = p2.latitude - p1.latitude;
+                activeShape = drawPolygon(dynamicPositions);
+            // Last click
+            } else if(activeShapePoints.length === 5){
+                activeShapePoints.pop(); // remove point at mouse cursor
+                let poly = drawPolygon(activeShapePoints); // Redraw the shape so it's not dynamic
+                viewer.entities.remove(floatingPoint);
+                viewer.entities.remove(activeShape); // Remove the dynamic shape.
+                floatingPoint = undefined;
+                activeShape = undefined;
+                activeShapePoints = [];
+                viewer.selectedEntityChanged.addEventListener(handleSelectedEntityChanged);
+                handler.destroy();
+                let drawRectangleBtn = document.getElementById("slicers-draw-rectangle-btn");
+                drawRectangleBtn.classList.remove("btn-info");
+                drawRectangleBtn.classList.add("btn-secondary");
+                // Create additional slicer buttons in menu
+                insideBtn = document.getElementById("slicers-inside-btn");
+                let wrapper = document.querySelector("#menu-tools-slicers .menu-content-wrapper");
+                if(!insideBtn) {
+                    insideBtn = document.createElement("button");
+                    insideBtn.type = "button";
+                    insideBtn.id = "slicers-inside-btn";
+                    insideBtn.classList.add("btn", "btn-secondary");
+                    insideBtn.innerText = "Innen ausblenden";
+                    wrapper.appendChild(insideBtn);
+                    insideBtn.addEventListener("click", (e) => {
+                        let btn = e.target;
+                        outsideBtn.classList.remove("btn-info");
+                        outsideBtn.classList.add("btn-secondary");
+                        if(!btn.classList.contains("btn-info")) {
+                            e.target.classList.remove("btn-secondary");
+                            e.target.classList.add("btn-info");
+                            enableSlicers(poly, false);
+                        } else {
+                            e.target.classList.add("btn-secondary");
+                            e.target.classList.remove("btn-info");
+                            globe.clippingPlanes.enabled = false; // disable slicers
+                        }
+                    });
+                }
+                outsideBtn = document.getElementById("slicers-outside-btn")
+                if(!outsideBtn) {
+                    outsideBtn = document.createElement("button");
+                    outsideBtn.type = "button";
+                    outsideBtn.id = "slicers-outside-btn";
+                    outsideBtn.classList.add("btn", "btn-secondary");
+                    outsideBtn.innerText = "Außen ausblenden";
+                    wrapper.appendChild(outsideBtn);
+                    outsideBtn.addEventListener("click", (e) => {
+                        let btn = e.target;
+                        insideBtn.classList.remove("btn-info");
+                        insideBtn.classList.add("btn-secondary");
+                        if(!btn.classList.contains("btn-info")) {
+                            e.target.classList.remove("btn-secondary");
+                            e.target.classList.add("btn-info");
+                            enableSlicers(poly, true);
+                        } else {
+                            e.target.classList.add("btn-secondary");
+                            e.target.classList.remove("btn-info");
+                            globe.clippingPlanes.enabled = false; // disable slicers
+                        }
+                    });
+                }
+            }
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    // On mouse move
+    handler.setInputAction(function (event) {
+        // If we currently draw a line
+        if(Cesium.defined(floatingPoint)) {
+            const newPosition = scene.pickPosition(event.endPosition);
+            if (Cesium.defined(newPosition)) {
+                floatingPoint.position.setValue(newPosition); // Constantly update point position so it stays at the cursor
+                if(activeShapePoints.length <= 2) {
+                    activeShapePoints.pop();
+                    activeShapePoints.push(newPosition);
+                } else {
+                    activeShapePoints.pop();
+                    activeShapePoints.pop();
+                    
+                    // We want the new line to be orthogonal to the existing one
+                    let p1 = activeShapePoints[0].clone();
+                    let p2 = activeShapePoints[1].clone();
+                    let pMouse = newPosition.clone();
+                    let normal = new Cesium.Cartesian3(); // The normal vector of a plane through p1, p2 and the origin
+                    Cesium.Cartesian3.cross(p1, p2, normal);
+                    Cesium.Cartesian3.normalize(normal, normal);
+                    let plane = Cesium.Plane.fromPointNormal(p1, normal); // said plane
+                    let projected = new Cesium.Cartesian3(); // pMouse Projected onto the plane
+                    Cesium.Plane.projectPointOntoPlane(plane, pMouse, projected)
+                    let p2Carto = Cesium.Cartographic.fromCartesian(p2);
+                    let projectedCarto = Cesium.Cartographic.fromCartesian(projected);
+                    let diffLon = p2Carto.longitude - projectedCarto.longitude;
+                    let diffLat = p2Carto.latitude - projectedCarto.latitude;
+                    let pMouseCarto = Cesium.Cartographic.fromCartesian(pMouse);
+                    pMouseCarto.longitude += diffLon;
+                    pMouseCarto.latitude += diffLat;
+                    let p3 = new Cesium.Cartesian3.fromRadians(pMouseCarto.longitude, pMouseCarto.latitude, pMouseCarto.height)
+                    activeShapePoints.push(p3);
+                    // p4 is the last point needed for the rectangle. We calculated the offset (p1 p2) earlier
+                    let p4 = Cesium.Cartographic.fromCartesian(p3);
+                    p4.longitude -= offsetX;
+                    p4.latitude -= offsetY;
+                    activeShapePoints.push(new Cesium.Cartesian3.fromRadians(p4.longitude, p4.latitude, p4.height));
+                }
+            }
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+
+    function drawPolygon(points) {
+        return viewer.entities.add({
+            name: "slicers-polygon",
+            polygon: {
+                hierarchy: points,
+                material: new Cesium.ColorMaterialProperty(
+                    Cesium.Color.CYAN.withAlpha(0.7)
+                ),
+            }
+        });
+    }
+
+    function drawLine(points) {
+        return viewer.entities.add({
+            name: "slicers-line",
+            polyline: {
+                positions: points,
+                clampToGround: true,
+                width: 3,
+                material: new Cesium.ColorMaterialProperty(
+                    Cesium.Color.CYAN.withAlpha(0.7)
+                ),
+            },
+        });
+    }
+
+    function drawPoint(worldPosition) {
+        const point = viewer.entities.add({
+            name: "slicers-vertex",
+            position: worldPosition,
+            point: {
+                color: Cesium.Color.CYAN,
+                pixelSize: 5,
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            },
+            });
+        return point;
+    }
 }
