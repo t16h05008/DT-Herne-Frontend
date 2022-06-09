@@ -1315,7 +1315,6 @@ function addLayer(layer) {
 
     if(layer.name === "metrostationPointcloud") {
         let url = backendBaseUrl + "metrostation/pointcloud/"; // The last slash is important here!
-        console.log(url);
         let tileset = new Cesium.Cesium3DTileset({
             url: url,
             dynamicScreenSpaceError: true,
@@ -1840,12 +1839,14 @@ function toggleMeasurementInfoVisibility(type) {
  * 
  * @param {boolean} hideOutside | If true the outside of the rectangle is hidden, else the inside is hidden
  */
-function enableSlicers(polygon, hideOutside) {
+function enableSlicers(entity, hideOutside) {
+    // Change the appearance of the polygon
+    entity.show = false;
     // Create a clipping plane for each edge of the polygon
     // TODO Create a handler for each side of the polygon (a sphere entity)
     // TODO Position of the sphere entities must be dynamic, but they are only movable orthogonal to the edge
     // TODO  When sphere position changes, update the corresponding clipping plane
-    let points = polygon.polygon.hierarchy.getValue().positions;
+    let points = entity.polygon.hierarchy.getValue().positions;
     let p1 = points[0];
     let p2 = points[1];
     let p3 = points[2];
@@ -1873,7 +1874,6 @@ function enableSlicers(polygon, hideOutside) {
     let plane2 = new Cesium.Plane.fromPointNormal(p3, l2normal);
     let plane3 = new Cesium.Plane.fromPointNormal(p4, l3normal);
     let plane4 = new Cesium.Plane.fromPointNormal(p1, l4normal);
-    console.log(hideOutside);
     globe.clippingPlanes = new Cesium.ClippingPlaneCollection({
         planes: [
             new Cesium.ClippingPlane.fromPlane(plane1),
@@ -1940,7 +1940,6 @@ function drawSlicerRectangle() {
         if(Cesium.defined(earthPosition)) {
             activeShapePoints.push(earthPosition);
             drawPoint(earthPosition);
-            console.log(activeShapePoints.length);
             // Initial point
             if(activeShapePoints.length === 1) {
                 floatingPoint = drawPoint(earthPosition); // Draw a point
@@ -1963,7 +1962,7 @@ function drawSlicerRectangle() {
             // Last click
             } else if(activeShapePoints.length === 5){
                 activeShapePoints.pop(); // remove point at mouse cursor
-                let poly = drawPolygon(activeShapePoints); // Redraw the shape so it's not dynamic
+                let entity = drawPolygon(activeShapePoints); // Redraw the shape so it's not dynamic
                 viewer.entities.remove(floatingPoint);
                 viewer.entities.remove(activeShape); // Remove the dynamic shape.
                 floatingPoint = undefined;
@@ -1971,6 +1970,11 @@ function drawSlicerRectangle() {
                 activeShapePoints = [];
                 viewer.selectedEntityChanged.addEventListener(handleSelectedEntityChanged);
                 handler.destroy();
+                // remove entities (except polygon)
+                let entitiesToRemove = viewer.entities.values.filter( entity => entity.name.includes("slicers-line") || entity.name.includes("slicers-vertex"));
+                for(let entity of entitiesToRemove) {
+                    viewer.entities.remove(entity);
+                }
                 let drawRectangleBtn = document.getElementById("slicers-draw-rectangle-btn");
                 drawRectangleBtn.classList.remove("btn-info");
                 drawRectangleBtn.classList.add("btn-secondary");
@@ -1991,11 +1995,12 @@ function drawSlicerRectangle() {
                         if(!btn.classList.contains("btn-info")) {
                             e.target.classList.remove("btn-secondary");
                             e.target.classList.add("btn-info");
-                            enableSlicers(poly, false);
+                            enableSlicers(entity, false);
                         } else {
                             e.target.classList.add("btn-secondary");
                             e.target.classList.remove("btn-info");
                             globe.clippingPlanes.enabled = false; // disable slicers
+                            entity.show = true;
                         }
                     });
                 }
@@ -2014,11 +2019,12 @@ function drawSlicerRectangle() {
                         if(!btn.classList.contains("btn-info")) {
                             e.target.classList.remove("btn-secondary");
                             e.target.classList.add("btn-info");
-                            enableSlicers(poly, true);
+                            enableSlicers(entity, true);
                         } else {
                             e.target.classList.add("btn-secondary");
                             e.target.classList.remove("btn-info");
                             globe.clippingPlanes.enabled = false; // disable slicers
+                            entity.show = true;
                         }
                     });
                 }
