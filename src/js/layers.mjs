@@ -177,7 +177,7 @@ const layerCategories = [
             {
                 name: "metrostationPointcloud",
                 displayName: "U-Bahn Station (Punktwolke)",
-                thumbnailSrc: "static/images/layerPreview/osm-buildings.webp",
+                thumbnailSrc: "static/images/layerPreview/metro.webp",
                 show: false,
                 opacity: 100,
                 tooltip: "Terrestrisch erzeugte Laserscandaten.",
