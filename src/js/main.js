@@ -14,8 +14,8 @@ import {layerCategories} from "./layers.mjs";
 Cesium.Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
 const initialCameraView = {
   position: {
-    lat: 51.54005, 
-    lon: 7.22795,
+    lat: 51.54241, //51.54005, 
+    lon: 7.2246, //7.22795,
     height: 350 // meter
   },
   orientation: {
@@ -62,13 +62,15 @@ document.addEventListener("DOMContentLoaded", function(event) {
     setHomeLocation(initialCameraViewFormatted);
     loadBaseLayers(layerCategories);
     initializeSidebar();
+    initializeSensorInfoPanel();
     //initializeIndexedDB();
     initializeDataLoadingManager();
     // Switch terrain to dgm10
-    document.querySelector("input[value='dgm10m']").click();
+    document.querySelector("input[value='dgm1m']").click();
     // document.querySelector("input[value='Cesium World Terrain']").click();
     // load cityModels for development
     // document.querySelector("input[value='cityModel']").click();
+    document.querySelector("input[value='temperature']").click();
 });
 
 /**
@@ -141,9 +143,11 @@ function initializeViewer(initialCameraViewFormatted) {
         selectedTerrainProviderViewModel: terrainToSelect,
         geocoder: false,
         fullscreenButton: false,
-        sceneModePicker: false
+        sceneModePicker: false,
+        animation: false,
+        timeline: false
     });
-    viewer.extend(Cesium.viewerCesiumInspectorMixin);
+    //viewer.extend(Cesium.viewerCesiumInspectorMixin);
     //viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);
     camera = viewer.camera;
     scene = viewer.scene;
@@ -165,9 +169,17 @@ function initializeViewer(initialCameraViewFormatted) {
  * creates and adds custom overlays to the viewer
  */
 function createCustomOverlayComponents() {
+    let viewerElement = document.querySelector("#cesiumContainer .cesium-viewer")
+    let coordOverlay = document.getElementById("coordOverlay");
+    let sensorListOverlay = document.getElementById("sensorListOverlay");
+    let northArrowOverlay = document.getElementById("northArrowOverlay");
+    viewerElement.appendChild(coordOverlay);
+    viewerElement.appendChild(sensorListOverlay);
+    viewerElement.appendChild(northArrowOverlay);
+
     // Initialize camera position overlay
     // Gets called multiple times during camera movement
-    camera.changed.addEventListener(function() { 
+    camera.changed.addEventListener(() => { 
         // We round to one decimal place since we don't need to show it that accurate.
         let newHeadingDeg = Util.round(Cesium.Math.toDegrees(camera.heading), 1);
         let newPitchDeg = Util.round(Cesium.Math.toDegrees(camera.pitch), 1);
@@ -191,15 +203,19 @@ function createCustomOverlayComponents() {
     });
 
     // Rotate north arrow img according to heading
-    camera.changed.addEventListener(function() {
-        let northArrowImg = document.querySelector("#north-arrow-overlay")
+    camera.changed.addEventListener(() => {
+        let northArrowImg = document.querySelector("#northArrowOverlay")
         let newHeadingDeg = Util.round(Cesium.Math.toDegrees(camera.heading), 5);
         northArrowImg.style.transform = "rotate(" + (newHeadingDeg * -1) + "deg)";
     });
 
     camera.changed.raiseEvent(); // trigger 'changed' event programmatically to call the listeners initially
 
-    // Add overlay to control the camera with sliders
+    addCameraControlOverlay();
+}
+
+ // Add overlay to control the camera with sliders
+function addCameraControlOverlay() {
     let cesiumToolbar = document.querySelector(".cesium-viewer-toolbar"); // There should only be one toolbar
     let cameraControlBtn = document.createElement("button");
     let icon = document.createElement("i");
@@ -348,7 +364,7 @@ function setHomeLocation(initialCameraViewFormatted) {
     // zoom to our custom initial position instead of the cesium default one, which is in space
     viewer.homeButton.viewModel.command.beforeExecute.addEventListener( function(e) {
         e.cancel = true;
-        viewer.scene.camera.flyTo(initialCameraViewFormatted);
+        camera.flyTo(initialCameraViewFormatted);
     });
 }
 
@@ -483,30 +499,35 @@ function addSidebarButtonHighlighting(sidebarBtns) {
 
 
 function enableMenuToggle(sidebarBtns) {
+    let cesiumContainer = document.getElementById("cesiumContainer");
+    let sensorInfoPanel = document.getElementById("sensorInfoPanel");
     for(let btn of sidebarBtns) {
         let menuId = btn.dataset.bsTarget;
         let menu = document.querySelector(menuId);
         // Listeners for toggling the menu
         // On menu opened
         menu.addEventListener('show.bs.offcanvas', function () {
-            let menuWidth = getComputedStyle(document.documentElement,null).getPropertyValue('--menu-width');
+            let menuWidth = getComputedStyle(document.documentElement).getPropertyValue('--menu-width');
+            console.log(menuWidth);
             // Move the scene to the right when menu opens
             // No need to add the sidebar width since it is not in this div
-            document.getElementById("cesiumContainer").style.marginLeft = menuWidth;
+            cesiumContainer.style.marginLeft = menuWidth;
+            sensorInfoPanel.style.marginLeft = menuWidth;
             // Add pointer events to resize div
             let handle = menu.querySelector(".menu-resize-handle");
             handle.style.pointerEvents = "auto";
-            handle.style.cursor = "ew-resize";
+            document.body.style.setProperty("cursor", "ew-resize", "important");
         });
 
         // On menu closed
         menu.addEventListener('hide.bs.offcanvas', function () {
             // Move scene back to the left edge
-            document.getElementById("cesiumContainer").style.marginLeft = "0";
+            cesiumContainer.style.marginLeft = "0";
+            sensorInfoPanel.style.marginLeft = "0";
             // Remove pointer events from resize div
             let handle = menu.querySelector(".menu-resize-handle");
             handle.style.pointerEvents = "none";
-            handle.style.cursor = "default";
+            document.body.style.setProperty("cursor", "default");
         });
     }
 }
@@ -523,31 +544,36 @@ function enableMenuResize(sidebarBtns) {
     }
     
     for(let i=0; i<handles.length; i++) {
-        handles[i].addEventListener("mousedown", function(e) {
+        handles[i].addEventListener("mousedown", (e) => {
             initDrag(e, handles[i])
         })
     }
 
     let startX, startWidth;
-    async function initDrag(e, handle) {
+    let cesiumContainer = document.getElementById("cesiumContainer");
+    async function initDrag(e) {
         startX = e.clientX;
-        startWidth = window.getComputedStyle(document.body).getPropertyValue('--menu-width');
+        startWidth = window.getComputedStyle(document.documentElement).getPropertyValue('--menu-width');
         startWidth = parseInt(startWidth, 10);
         // Add listeners to body instead of handle to account for fast mouse movements
         document.body.addEventListener('mousemove', doDrag);
         document.body.addEventListener('mouseup', stopDrag);
+        cesiumContainer.classList.add("noTransition");
+        document.body.style.cursor = "ew-resize";
     }
 
     async function doDrag(e) {
         let newWidth = (startWidth + e.clientX - startX) + "px"
-        document.body.style.setProperty('--menu-width', newWidth);
+        document.documentElement.style.setProperty('--menu-width', newWidth);
         // Also resize cesium container
         document.getElementById("cesiumContainer").style.marginLeft = newWidth;
     }
 
-    async function stopDrag(e,) {
+    async function stopDrag() {
+        cesiumContainer.classList.remove("noTransition");
         document.body.removeEventListener('mousemove', doDrag, false);
         document.body.removeEventListener('mouseup', stopDrag, false);
+        document.body.style.cursor = "default";
     }
 }
 
@@ -577,9 +603,9 @@ function createMenuLayerHTML(category, layer) {
         // Style the inner circle according to menu depth
         // This is done in js so we can use string concatenation and variables for the color
         let color;
-        if(category.depth === 1) color = window.getComputedStyle(document.body).getPropertyValue('--primary-ui-color');
-        if(category.depth === 2) color = window.getComputedStyle(document.body).getPropertyValue('--secondary-ui-color');
-        if(category.depth === 3) color = window.getComputedStyle(document.body).getPropertyValue('--tertiary-ui-color');
+        if(category.depth === 1) color = window.getComputedStyle(document.documentElement).getPropertyValue('--primary-ui-color');
+        if(category.depth === 2) color = window.getComputedStyle(document.documentElement).getPropertyValue('--secondary-ui-color');
+        if(category.depth === 3) color = window.getComputedStyle(document.documentElement).getPropertyValue('--tertiary-ui-color');
         color = color.replace("#", "%23")
         let svg = "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='" + color + "'/%3e%3c/svg%3e\")";
         //svg = "#ffff00"
@@ -1203,7 +1229,7 @@ function loadBaseLayers(layerCategories) {
 
     Util.iterateRecursive(layerCategories, function(layer) {
         // Aerial Images RVR
-        if(layer.type === "WMS" && layer.name.startsWith("aerialImageRVR")) {
+        if(layer.type === "wms" && layer.name.startsWith("aerialImageRVR")) {
             let credit = layer.displayName + ": © " + layer.credit
             credit = new Cesium.Credit(DOMPurify.sanitize(marked.parse(credit), false));
             
@@ -1327,7 +1353,54 @@ function addLayer(layer) {
         layer.cesiumReference = tileset;
     }
 
-    if(layer.type === "WMS") {
+    if(layer.type === "sensor") {
+        let url = backendBaseUrl + "weather/" + layer.name;
+        fetch(url)
+            .then(response => response.json())
+            .then( data => {
+                console.log(data);
+                let dataSource = new Cesium.CustomDataSource(layer.name);
+                let entities = [];
+                for(let sensor of data) {
+                    let lon = sensor.position.lon;
+                    let lat = sensor.position.lat;
+                    // For now altitude is ignored and sensors are clamped to the globe
+                    // This has to be changed as soon as a sensor provides altitude information.
+
+                    let entity = new Cesium.Entity({
+                        id: sensor.id,
+                        name: sensor.id,
+                        position: new Cesium.Cartesian3.fromDegrees(lon, lat, 0),
+                        billboard: {
+                            image: "/static/images/sensor.webp",
+                            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                            verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                            disableDepthTestDistance: Number.POSITIVE_INFINITY, // Never applied --> symbol visible even underground
+                            width: 100, // in px
+                            height: 100,
+                            scaleByDistance: new Cesium.NearFarScalar(1, 1.0, 10000, 0.5) // slightly reduce size if camera is far away (100x100 --> 50x50)
+                        },
+                        properties: new Cesium.PropertyBag({
+                            position: sensor.position,
+                            measurement: sensor.measurement,
+                            timeseriesUrl: url + "/timeseries/" + sensor.id,
+                            isSensor: true
+                        })
+                    });
+                    dataSource.entities.add(entity);
+                    entities.push(entity);
+                }
+                viewer.dataSources.add(dataSource);
+                layer.cesiumReference = dataSource;
+                showSensorList(entities);
+            })
+            .catch(e => {
+                console.error(e);
+            });
+    }
+
+    if(layer.type === "wms") {
         let credit = layer.displayName + ": © " + layer.credit
         credit = new Cesium.Credit(DOMPurify.sanitize(marked.parse(credit), false));
 
@@ -1539,7 +1612,7 @@ function handleLayerOpacityChange(input) {
         }
     }
 
-    if(layer.type === "WMS") {
+    if(layer.type === "wms") {
         let currentLayers = viewer.scene.imageryLayers;
         for(let i=0;i<currentLayers.length;i++) {
             let l = currentLayers.get(i)
@@ -1572,48 +1645,67 @@ function handleLayerOpacityChange(input) {
 let handleSelectedEntityChanged = async function(entity) {
     if(entity) {
         // Cesium automatically shows the info box.
-        entity.description = "Frage Attribut-Informationen vom Server ab...";
-        let queriedId = entity.id;
-        let layerName = entity.entityCollection.owner.name;
-        let apiEndpoint;
-        Util.iterateRecursive(layerCategories, (obj) => {
-            if(obj.name === layerName) {
-                apiEndpoint =  obj.apiEndpoint;
-                return;
+        // Prevent that for sensor entities
+        let props = entity.properties.getValue(Cesium.JulianDate.now());
+        if(props.hasOwnProperty("isSensor")) {
+            if(props.isSensor) {
+                viewer.selectedEntity = undefined;
+                // TODO error handling
+                fetch(props.timeseriesUrl)
+                    .then(result => result.json())
+                    .then(data => {
+                        updateSensorInfoPanel(entity, data);
+                        openSensorInfoPanel();
+                    });
+                
             }
-        });
-        let url = backendBaseUrl + apiEndpoint + "/attributes?ids=" + queriedId;
-        let json;
-        try {
-            let resp = await fetchWithTimeout(url, {timeout: 5000});
-            json = await resp.json();
-        } catch (error) {
-            // Timeout if the request takes longer than 5 seconds
-            entity.description = "Keine Informationen verfügbar";
-        }
-        let attributes = json[0];
-        if(attributes.hasOwnProperty("properties")) {
-            attributes = attributes.properties; // for geojson
-        }
-        // Create a table structure, containing the entity properties
-        let table = document.createElement("table");
-        table.classList.add("cesium-infoBox-defaultTable");
-        let tbody = document.createElement("tbody");
-        table.appendChild(tbody)
-        for(let [key, value] of Object.entries(attributes)) {
-            if(attributes.hasOwnProperty(key)) {
-                let row = document.createElement("tr");
-                let keyCell = document.createElement("td");
-                let valueCell = document.createElement("td");
-                keyCell.innerHTML = key;
-                valueCell.innerHTML = value;
-                row.appendChild(keyCell);
-                row.appendChild(valueCell);
-                tbody.appendChild(row);
+        } else {
+            closeSensorInfoPanel();
+            entity.description = "Frage Attribut-Informationen vom Server ab...";
+            let queriedId = entity.id;
+            let layerName = entity.entityCollection.owner.name;
+            let apiEndpoint;
+            Util.iterateRecursive(layerCategories, (obj) => {
+                if(obj.name === layerName) {
+                    apiEndpoint =  obj.apiEndpoint;
+                    return;
+                }
+            });
+            let url = backendBaseUrl + apiEndpoint + "/attributes?ids=" + queriedId;
+            let json;
+            try {
+                let resp = await fetchWithTimeout(url, {timeout: 5000});
+                json = await resp.json();
+            } catch (error) {
+                // Timeout if the request takes longer than 5 seconds
+                entity.description = "Keine Informationen verfügbar";
             }
-        };
+            let attributes = json[0];
+            if(attributes.hasOwnProperty("properties")) {
+                attributes = attributes.properties; // for geojson
+            }
+            // Create a table structure, containing the entity properties
+            let table = document.createElement("table");
+            table.classList.add("cesium-infoBox-defaultTable");
+            let tbody = document.createElement("tbody");
+            table.appendChild(tbody)
+            for(let [key, value] of Object.entries(attributes)) {
+                if(attributes.hasOwnProperty(key)) {
+                    let row = document.createElement("tr");
+                    let keyCell = document.createElement("td");
+                    let valueCell = document.createElement("td");
+                    keyCell.innerHTML = key;
+                    valueCell.innerHTML = value;
+                    row.appendChild(keyCell);
+                    row.appendChild(valueCell);
+                    tbody.appendChild(row);
+                }
+            };
+    
+            entity.description = table.outerHTML;
+        }
 
-        entity.description = table.outerHTML;
+        
     }
 }
 
@@ -2114,4 +2206,147 @@ function drawSlicerRectangle() {
             });
         return point;
     }
+}
+
+/**
+ * 
+ * @param {*} newSensors | array of cesium entities
+ */
+function showSensorList(newSensors) {
+    let widgetDiv = document.getElementById("sensorListOverlay");
+    let listDiv = document.getElementById("sensorListContainer");
+    let alreadyAddedSensors = document.querySelectorAll("#sensorListContainer .sensorEntry");
+    console.log(alreadyAddedSensors);
+    for(let sensor of newSensors) {
+        console.log(sensor.id);
+        let alreadyInList = false;
+        if(alreadyAddedSensors && alreadyAddedSensors.length) {
+            for(let addedSensor of alreadyAddedSensors) {
+                if(sensor.id === addedSensor.dataset.id) {
+                    alreadyInList = true;
+                    break;
+                }
+            }
+        }
+
+        if(!alreadyInList) {
+            let sensorEntry = document.createElement("div");
+            sensorEntry.classList.add("sensorEntry");
+            sensorEntry.dataset.id = sensor.id;
+            let idSpan = document.createElement("span");
+            sensorEntry.classList.add("sensorEntryNameSpan");
+            idSpan.innerHTML = sensor.id;
+            sensorEntry.appendChild(idSpan);
+            listDiv.appendChild(sensorEntry);
+            let flyToSensorBtn = document.createElement("btn");
+            flyToSensorBtn.classList.add("flyToSensorBtn", "cesium-button");
+            let icon = document.createElement("i");
+            icon.classList.add("fa-solid", "fa-video");
+            flyToSensorBtn.appendChild(icon);
+            flyToSensorBtn.addEventListener("click", e => {
+                viewer.flyTo(sensor)
+            });
+            sensorEntry.appendChild(flyToSensorBtn);
+        }
+    }
+    widgetDiv.style.visibility = "visible";
+
+}
+
+function initializeSensorInfoPanel() {
+    enableSensorInfoPanelResize();
+    let closeBtn = document.getElementById("sensorInfoPanelCloseBtn");
+    closeBtn.addEventListener("click", closeSensorInfoPanel);
+}
+
+
+function openSensorInfoPanel() {
+    // Reduce cesium viewer size
+    let headerHeight = getComputedStyle(document.documentElement).getPropertyValue('--header-height');
+    let headerSpacerHeight = getComputedStyle(document.documentElement).getPropertyValue('--header-spacer-height');
+    let footerHeight = getComputedStyle(document.documentElement).getPropertyValue('--footer-height');
+    let sensorInfoPanelHeight = getComputedStyle(document.documentElement).getPropertyValue('--sensor-info-panel-height');
+    let newCesiumContainerHeight = "calc(100vh - " + headerHeight + " - " + headerSpacerHeight;
+    newCesiumContainerHeight += " - " + footerHeight + " - " + sensorInfoPanelHeight + ")";
+    document.documentElement.style.setProperty('--cesium-container-height', newCesiumContainerHeight);
+    // Show sensor info panel
+    let sensorInfoPanel = document.getElementById("sensorInfoPanel");
+    sensorInfoPanel.style.visibility = "visible";
+    sensorInfoPanel.style.transform = "translateY(0%)";
+    let handle = document.getElementById("sensorInfoPanel-resize-handle");
+    handle.style.pointerEvents = "auto";
+    handle.style.cursor = "ns-resize";
+}
+
+
+function closeSensorInfoPanel() {
+    // Increase cesium viewer size
+    let headerHeight = getComputedStyle(document.documentElement).getPropertyValue('--header-height');
+    let headerSpacerHeight = getComputedStyle(document.documentElement).getPropertyValue('--header-spacer-height');
+    let footerHeight = getComputedStyle(document.documentElement).getPropertyValue('--footer-height');
+    let newCesiumContainerHeight = "calc(100vh - " + headerHeight + " - " + headerSpacerHeight;
+    newCesiumContainerHeight += " - " + footerHeight + ")";
+    document.documentElement.style.setProperty('--cesium-container-height', newCesiumContainerHeight);
+    // Hide sensor info panel
+    let sensorInfoPanel = document.getElementById("sensorInfoPanel");
+    sensorInfoPanel.style.transform = "translateY(100%)";
+    let handle = document.getElementById("sensorInfoPanel-resize-handle");
+    handle.style.pointerEvents = "none";
+    handle.style.cursor = "default";
+    setTimeout( () => {
+        sensorInfoPanel.style.visibility = "hidden";
+    }, 300);
+}
+
+
+function enableSensorInfoPanelResize() {
+    let handle = document.getElementById("sensorInfoPanel-resize-handle");
+    handle.addEventListener("mousedown", (e) => {
+        initDrag(e)
+    });
+
+    let startY, startHeight;
+    let cesiumContainer = document.getElementById("cesiumContainer");
+    let headerHeight = getComputedStyle(document.documentElement).getPropertyValue('--header-height');
+    let headerSpacerHeight = getComputedStyle(document.documentElement).getPropertyValue('--header-spacer-height');
+    let footerHeight = getComputedStyle(document.documentElement).getPropertyValue('--footer-height');
+
+    async function initDrag(e) {
+        startY = e.clientY;
+        startHeight = window.getComputedStyle(document.documentElement).getPropertyValue('--sensor-info-panel-height');
+        startHeight = parseInt(startHeight, 10);
+        // Add listeners to body instead of handle to account for fast mouse movements
+        document.body.addEventListener('mousemove', doDrag);
+        document.body.addEventListener('mouseup', stopDrag);
+        cesiumContainer.classList.add("noTransition");
+        document.body.style.setProperty("cursor", "ns-resize", "important");
+    }
+
+    async function doDrag(e) {
+        let newHeight = (startHeight - e.clientY + startY) + "px"
+        let newCesiumContainerHeight = "calc(100vh - " + headerHeight + " - " + headerSpacerHeight;
+        newCesiumContainerHeight += " - " + footerHeight + " - " + newHeight + ")";
+        document.documentElement.style.setProperty('--sensor-info-panel-height', newHeight);
+        document.documentElement.style.setProperty('--cesium-container-height', newCesiumContainerHeight);
+    }
+
+    async function stopDrag(e) {
+        cesiumContainer.classList.remove("noTransition");
+        document.body.removeEventListener('mousemove', doDrag, false);
+        document.body.removeEventListener('mouseup', stopDrag, false);
+        document.body.style.setProperty("cursor", "default");
+    }
+}
+
+function updateSensorInfoPanel(entity, timeseriesArr) {
+    console.log(entity);
+    console.log(timeseriesArr);
+    let props = entity.properties.getValue(Cesium.JulianDate.now());
+    document.getElementById("sensorInfoPanelIdSpan").innerHTML = entity.id;
+    document.getElementById("sensorInfoSummaryLon").innerHTML = props.position.lon;
+    document.getElementById("sensorInfoSummaryLat").innerHTML = props.position.lat;
+    document.getElementById("sensorInfoSummaryTimestamp").innerHTML = props.measurement.time;
+    document.getElementById("sensorInfoSummaryValue").innerHTML = props.measurement.value + " " + props.measurement.unit;
+    let instance = echarts.getInstanceByDom(document.getElementById("sensorInfoPanelTimelineWrapper"));
+    // TODO
 }

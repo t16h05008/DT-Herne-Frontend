@@ -84,9 +84,9 @@ module.exports = {
           { from: nodeModulePathConstant + 'marked', to: 'dependencies/marked'},
           { from: nodeModulePathConstant + 'dompurify/dist', to: 'dependencies/dompurify'},
           { from: nodeModulePathConstant + 'proj4/dist', to: 'dependencies/proj4'},
+          { from: nodeModulePathConstant + 'echarts/dist', to: 'dependencies/echarts'},
           // Renaming only one file here. First copy other files, then the file while renaming it.
-          { from: nodeModulePathConstant + '@thomasloven/round-slider',
-            to: 'dependencies/round-slider',
+          { from: nodeModulePathConstant + '@thomasloven/round-slider', to: 'dependencies/round-slider',
             globOptions: {
               ignore: ["**/round-slider.js", "**/round-slider.iife.js"]
             }

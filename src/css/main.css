@@ -4,8 +4,12 @@
     --sidebar-width: 100px; /* width of the sidebar menu (always visible) */
     --menu-width: 400px; /* width of the menu ( opens on btn click) */
     --sidebar-bg-color: #111111;
+    --sensor-info-panel-bg-color: #111111;
     --header-spacer-height: 5px;
+    --sensor-info-panel-height: 150px;
     --cesium-container-height: calc(100vh - var(--header-height) - var(--header-spacer-height) - var(--footer-height));
+    --coord-overlay-bot-spacer: 10px;
+    --north-arrow-bot-spacer: 170px;
 
     --primary-ui-color: #00A4D7;
     --secondary-ui-color: #007C33;
@@ -36,15 +40,16 @@ body, html {
     padding: 0;
     height: var(--cesium-container-height);
     overflow: hidden;
-    transition: margin .3s ease-in-out;
+    transition: all .3s ease-in-out;
+    transition-property: height, margin-left;
 }
 
 #coordOverlay {
     z-index: 2;
-    position:absolute;
-    bottom:40px;
-    right:15px;
-    width:min-content;
+    position: absolute;
+    bottom: var(--coord-overlay-bot-spacer);
+    right: 15px;
+    width: min-content;
     background-color: rgba(255, 255, 255, 0.3)
 }
 
@@ -55,11 +60,11 @@ body, html {
     text-align: right;
 }
 
-#north-arrow-overlay {
+#northArrowOverlay {
     z-index: 2;
-    position:absolute;
-    bottom:200px;
-    right:15px;
+    position: absolute;
+    bottom: var(--north-arrow-bot-spacer);
+    right: 15px;
     opacity: 0.8;
 }
 
@@ -157,6 +162,36 @@ body, html {
     text-align: center;
 }
 
+#sensorListOverlay {
+    visibility: hidden;
+    z-index: 2;
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    /* copy cesium widget style (more or less) */
+    border: 1px solid #444;
+    background-color: rgba(38,38,38,.75);
+    padding-bottom: 5px;
+    border-radius: 10px;
+    padding: 10px;
+    color: white;
+    width: 300px;
+}
+
+#sensorListContainer .sensorEntry {
+    display: flex;
+    justify-content: space-between;
+}
+
+.sensorEntryNameSpan {
+    display: inline-flex;
+    align-items: center;
+}
+
+.sensorEntry .flyToSensorBtn {
+    display: inline !important;
+}
+
 
 #headerDiv {
     height: var(--header-height);
@@ -165,7 +200,6 @@ body, html {
     position: relative;
     text-align: center;
 }
-
 
 #headerDiv a {
     color: white;
@@ -228,6 +262,7 @@ body, html {
 
 #sidebar {
     width: var(--sidebar-width);
+    height: 100vh;
     z-index: 1100; /* menu has 1045 */
     background-color: var(--sidebar-bg-color);
     display: flex;
@@ -283,10 +318,9 @@ body, html {
 
 .menu-resize-handle {
     --width: 8px;
-
-    width:var(--width);
-    height:100%;
-    position:absolute;
+    width: var(--width);
+    height: 100%;
+    position: absolute;
     top:0;
     right:0;
     margin-right: var(--width) / 2;
@@ -509,4 +543,48 @@ img.menu-category-icon {
 
 #slicers-inside-btn {
     margin-left: 0
+}
+
+#sensorInfoPanel {
+    visibility: hidden;
+    height: var(--sensor-info-panel-height);
+    width: 100%;
+    color: white;
+    background-color: var(--sensor-info-panel-bg-color);
+    transform: translateY(100%);
+    transition: all .3s ease-in-out;
+    transition-property: margin-left, transform;
+}
+
+#sensorInfoPanelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 10px;
+    padding-top: 10px;
+    padding-right: 10px;
+}
+
+#sensorInfoPanel-resize-handle {
+    --height: 8px;
+    height: var(--height);
+    width: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-top: var(--height) / 2;
+    visibility: visible;
+    pointer-events: none;
+}
+
+#sensorInfoPanelBody hr {
+    margin-bottom: 10px;
+}
+
+.sensorInfoSummaryTd {
+    padding-left: 10px;
+}
+
+.noTransition  {
+    transition: none !important;
 }
