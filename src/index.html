@@ -21,6 +21,7 @@
   <script defer src="dependencies/uuidjs/uuid.core.js"></script>
   <script defer src="dependencies/marked/marked.min.js"></script>
   <script defer src="dependencies/dompurify/purify.min.js"></script>
+  <script defer src="dependencies/echarts/echarts.min.js"></script>
 </head>
 
 <body>
@@ -281,8 +282,6 @@
                   <div class="accordion-body">
                     <div class="menu-content-wrapper">
                       Cache-Größe: <input type="text" name="settings-cache-size" id="settings-cache-size" value="200"><br />
-                        
-                      
                     </div>
                   </div>
                 </div>
@@ -294,34 +293,58 @@
 
         <div id="cesiumContainer"></div>
 
-        <div id="coordOverlay">
-          <table>
-            <tr>
-              <td>Lat:</td>
-              <td><span id="coordOverlayLat"></span></td>
-            </tr>
-            <tr>
-              <td>Lon:</td>
-              <td><span id="coordOverlayLon"></span></td>
-            </tr>
-            <tr>
-              <td>Höhe:</td>
-              <td><span id="coordOverlayHeight"></span></td>
-            </tr>
-            <tr>
-              <td>Heading:
-              </td>
-              <td><span id="coordOverlayHeading"></span></td>
-            </tr>
-            <tr>
-              <td>Pitch:</td>
-              <td><span id="coordOverlayPitch"></span></td>
-            </tr>
-            <tr>
-              <td>Roll:</td>
-              <td><span id="coordOverlayRoll"></span></td>
-            </tr>
-          </table>
+        <div id="sensorInfoPanel">
+          <div id="sensorInfoPanelHeader">
+            <span id="sensorInfoPanelIdSpan" class="h4"></span>
+            <button id="sensorInfoPanelCloseBtn" type="button" class="btn-close btn-close-white text-reset" aria-label="Close"></button>
+          </div>
+          <div id="sensorInfoPanelBody" class="container-fluid">
+            <div class="row">
+              <hr>
+              <div class="col-4">
+                <div class="row">
+                  <div class="col-6">
+                    <table>
+                      <tbody>
+                        <tr>
+                          <td colspan="2" class="h5">Position</td>
+                        </tr>
+                        <tr>
+                            <td>Geogr. Länge:</td>
+                            <td id="sensorInfoSummaryLon" class="sensorInfoSummaryTd"></td>
+                        </tr>
+                        <tr>
+                          <td>Geogr. Breite:</td>
+                          <td id="sensorInfoSummaryLat" class="sensorInfoSummaryTd"></td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="col-6">
+                    <table>
+                      <tbody>
+                        <tr>
+                          <td colspan="2" class="h5">Aktuelle Messung</td>
+                        </tr>
+                        <tr>
+                            <td>Zeitpunkt:</td>
+                            <td id="sensorInfoSummaryTimestamp" class="sensorInfoSummaryTd"></td>
+                        </tr>
+                        <tr>
+                          <td>Messwert:</td>
+                          <td id="sensorInfoSummaryValue" class="sensorInfoSummaryTd"></td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div class="col-8">
+                <div id="sensorInfoPanelTimelineWrapper"></div>
+              </div>
+            </div>
+          </div>
+          <div id="sensorInfoPanel-resize-handle"></div>
         </div>
 
         <div id="cameraControlOverlay">
@@ -361,20 +384,67 @@
               </div>
             </div>
           </div>
-          
-          
-        </div>
-
-        <div>
-          <img id="north-arrow-overlay" src="static/images/north-arrow.png" width="80" height="80" alt="Nordpfeil" />
         </div>
       </div>
     </div>
     <div class="row">
       <div class="col" id="footerDiv">
-        <!-- nothing for now, just a spacer -->
+        <!-- nothing for now -->
       </div>
     </div>
+  </div>
+
+  <!-- Gets appended to cesium viewer with js -->
+  <div>
+    <img id="northArrowOverlay" src="static/images/north-arrow.png" width="80" height="80" alt="Nordpfeil" />
+  </div>
+
+  <!-- Gets appended to cesium viewer with js -->
+  <div id="sensorListOverlay">
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <span class="h4">Sensoren</span>
+        </div>
+      </div>
+      <hr>
+      <div class="row">
+        <div class="col">
+          <div id="sensorListContainer"></div>
+        </div>  
+      </div>
+    </div>
+  </div>
+
+  <!-- Gets appended to cesium viewer with js -->
+  <div id="coordOverlay">
+    <table>
+      <tr>
+        <td>Lat:</td>
+        <td><span id="coordOverlayLat"></span></td>
+      </tr>
+      <tr>
+        <td>Lon:</td>
+        <td><span id="coordOverlayLon"></span></td>
+      </tr>
+      <tr>
+        <td>Höhe:</td>
+        <td><span id="coordOverlayHeight"></span></td>
+      </tr>
+      <tr>
+        <td>Heading:
+        </td>
+        <td><span id="coordOverlayHeading"></span></td>
+      </tr>
+      <tr>
+        <td>Pitch:</td>
+        <td><span id="coordOverlayPitch"></span></td>
+      </tr>
+      <tr>
+        <td>Roll:</td>
+        <td><span id="coordOverlayRoll"></span></td>
+      </tr>
+    </table>
   </div>
 </body>
 

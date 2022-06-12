@@ -41,16 +41,37 @@ const layerCategories = [
         show: true,
         layers: [
             {
-                name: "humidity",
-                displayName: "Luftfeuchtigkeit",
-                thumbnailSrc: "",
+                type: "sensor",
+                name: "temperature",
+                displayName: "Temperatur",
+                thumbnailSrc: "static/images/layerPreview/temperature.webp",
                 show: false,
                 opacity: 100,
-                tooltip: "",
+                tooltip: "Sensorbasierte Temperaturmessungen in Herner Stadtgebiet.",
                 credit: "[Hochschule Bochum](https://www.hochschule-bochum.de/)"
             },
             {
-                type: "WMS",
+                type: "sensor",
+                name: "humidity",
+                displayName: "Luftfeuchtigkeit",
+                thumbnailSrc: "static/images/layerPreview/humidity.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Sensorbasierte Messungen der Luftfeuchtigkeit in Herner Stadtgebiet.",
+                credit: "[Hochschule Bochum](https://www.hochschule-bochum.de/)"
+            },
+            {
+                type: "sensor",
+                name: "precipitation",
+                displayName: "Niederschlag",
+                thumbnailSrc: "static/images/layerPreview/precipitation.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Sensorbasierte Niderschlags-Messungen in Herner Stadtgebiet.",
+                credit: "[Hochschule Bochum](https://www.hochschule-bochum.de/)"
+            },
+            {
+                type: "wms",
                 name: "heavyRainHazardMap1",
                 displayName: "Starkregengefahrenkarte (2018) - seltener Starkregen",
                 url: "https://geodaten.herne.de/gisserver/klima/starkregen",
@@ -62,19 +83,7 @@ const layerCategories = [
                 credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
             },
             {
-                type: "WMS",
-                name: "heavyRainHazardMap1",
-                displayName: "Starkregengefahrenkarte (2018) - seltener Starkregen",
-                url: "https://geodaten.herne.de/gisserver/klima/starkregen",
-                layerName: "seltener_starkregen",
-                thumbnailSrc: "static/images/layerPreview/heavy-rain-map.webp",
-                show: false,
-                opacity: 100,
-                tooltip: "Die Karte zeigt in welchen Bereichen eine besondere Überflutungsgefährdung zu erwarten ist. Überflutungshöhe und -ausdehnung werden durch unterschiedliche Blautöne dargestellt. Die Berechnung erfolgte auf Grundlag eines 1-stündigen Niederschlagereignisses. Seltener Starkregen: statistisch 30-jährliches Ereignis (42,8 l/m², Niederschlagsmengen in l/m² sind gleichbedeutend mit Angaben in mm).",
-                credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
-            },
-            {
-                type: "WMS",
+                type: "wms",
                 name: "heavyRainHazardMap2",
                 displayName: "Starkregengefahrenkarte (2018) - außergewöhnlicher Starkregen",
                 url: "https://geodaten.herne.de/gisserver/klima/starkregen",
@@ -86,7 +95,7 @@ const layerCategories = [
                 credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
             },
             {
-                type: "WMS",
+                type: "wms",
                 name: "heavyRainHazardMap3",
                 displayName: "Starkregengefahrenkarte (2018) - Extremregen",
                 url: "https://geodaten.herne.de/gisserver/klima/starkregen",
@@ -98,7 +107,7 @@ const layerCategories = [
                 credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
             },
             {
-                type: "WMS",
+                type: "wms",
                 name: "climateChangeAdaptionMap",
                 displayName: "Handlungskarte Klimafolgenanpassungskonzept (2019)",
                 url: "https://geodaten.herne.de/gisserver/qwc/klimaanpassung",
@@ -110,7 +119,7 @@ const layerCategories = [
                 credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
             },
             {
-                type: "WMS",
+                type: "wms",
                 name: "greenSpaceDevelopmentProgram",
                 displayName: "Grünflächenentwicklungsprogramm",
                 url: "https://geodaten.herne.de/gisserver/qwc/klimaanpassung",
@@ -124,7 +133,7 @@ const layerCategories = [
             // Has a couple more layers, but we choose only one for now.
             // Probably broken because we get compressed images back
             {
-                type: "WMS",
+                type: "wms",
                 name: "noisePollutionMap2017",
                 displayName: "Umgebungslärmkartierung 2017 Runde 3",
                 url: "https://www.wms.nrw.de/umwelt/laerm_stufe3",
@@ -207,7 +216,7 @@ const layerCategories = [
                     // Default cesium imagery gets inserted here at runtime
                     // 2021
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_2021",
                         displayName:  "Luftbilder 2021 (DOP)",
                         url: "https://geodaten.metropoleruhr.de/dop/dop_2021",
@@ -220,7 +229,7 @@ const layerCategories = [
                     },
                     // 2019
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_2019",
                         displayName:  "Luftbilder 2019 (DOP)",
                         url: "https://geodaten.metropoleruhr.de/dop/dop_2019",
@@ -233,7 +242,7 @@ const layerCategories = [
                     },
                     // 2017
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_2017",
                         displayName:  "Luftbilder 2017 (DOP)",
                         url: "https://geodaten.metropoleruhr.de/dop/dop_2017",
@@ -246,7 +255,7 @@ const layerCategories = [
                     },
                     // 2015
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_2015",
                         displayName:  "Luftbilder 2015 (DOP)",
                         url: "https://geodaten.metropoleruhr.de/dop/dop_2015",
@@ -259,7 +268,7 @@ const layerCategories = [
                     },
                     // 2013
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_2013",
                         displayName:  "Luftbilder 2013 (DOP)",
                         url: "https://geodaten.metropoleruhr.de/dop/dop_2013",
@@ -272,7 +281,7 @@ const layerCategories = [
                     },
                     // 2011
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_2011",
                         displayName:  "Luftbilder 2011 (DOP)",
                         url: "https://geodaten.metropoleruhr.de/dop/dop_2011",
@@ -285,7 +294,7 @@ const layerCategories = [
                     },
                     // 2009
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_2009",
                         displayName:  "Luftbilder 2009 (DOP)",
                         url: "https://geodaten.metropoleruhr.de/dop/dop_2009",
@@ -298,7 +307,7 @@ const layerCategories = [
                     },
                     // 2006
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_2006",
                         displayName:  "Luftbilder 2006 (DOP)",
                         url: "https://geodaten.metropoleruhr.de/dop/dop_2006",
@@ -311,7 +320,7 @@ const layerCategories = [
                     },
                     // 1998
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_1998",
                         displayName:  "Luftbilder 1998",
                         url: "https://geodaten.metropoleruhr.de/lubi/lubi_1998",
@@ -324,7 +333,7 @@ const layerCategories = [
                     },
                     // 1990
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_1990",
                         displayName:  "Luftbilder 1990",
                         url: "https://geodaten.metropoleruhr.de/lubi/lubi_1990",
@@ -337,7 +346,7 @@ const layerCategories = [
                     },
                     // 1969
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_1969",
                         displayName:  "Luftbilder 1969",
                         url: "https://geodaten.metropoleruhr.de/lubi/lubi_1969",
@@ -350,7 +359,7 @@ const layerCategories = [
                     },
                     // 1963
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_1963",
                         displayName:  "Luftbilder 1963",
                         url: "https://geodaten.metropoleruhr.de/lubi/lubi_1963",
@@ -363,7 +372,7 @@ const layerCategories = [
                     },
                     // 1952
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_1952",
                         displayName:  "Luftbilder 1952",
                         url: "https://geodaten.metropoleruhr.de/lubi/lubi_1952",
@@ -376,7 +385,7 @@ const layerCategories = [
                     },
                     // 1934
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_1934",
                         displayName:  "Luftbilder 1934",
                         url: "https://geodaten.metropoleruhr.de/lubi/lubi_1934",
@@ -389,7 +398,7 @@ const layerCategories = [
                     },
                     // 1926
                     {
-                        type: "WMS",
+                        type: "wms",
                         name: "aerialImageRVR_1926",
                         displayName:  "Luftbilder 1926",
                         url: "https://geodaten.metropoleruhr.de/lubi/lubi_1926",
