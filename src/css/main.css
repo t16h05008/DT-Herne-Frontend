@@ -6,7 +6,7 @@
     --sidebar-bg-color: #111111;
     --sensor-info-panel-bg-color: #111111;
     --header-spacer-height: 5px;
-    --sensor-info-panel-height: 150px;
+    --sensor-info-panel-height: 250px;
     --cesium-container-height: calc(100vh - var(--header-height) - var(--header-spacer-height) - var(--footer-height));
     --coord-overlay-bot-spacer: 10px;
     --north-arrow-bot-spacer: 170px;
@@ -553,7 +553,7 @@ img.menu-category-icon {
     background-color: var(--sensor-info-panel-bg-color);
     transform: translateY(100%);
     transition: all .3s ease-in-out;
-    transition-property: margin-left, transform;
+    transition-property: width, margin-left, transform;
 }
 
 #sensorInfoPanelHeader {
@@ -563,6 +563,10 @@ img.menu-category-icon {
     padding-left: 10px;
     padding-top: 10px;
     padding-right: 10px;
+}
+
+#sensorInfoPanel > .row {
+    width: 100%;
 }
 
 #sensorInfoPanel-resize-handle {
@@ -577,12 +581,35 @@ img.menu-category-icon {
     pointer-events: none;
 }
 
+#sensorInfoPanelBody {
+    height: 100%;
+}
+
 #sensorInfoPanelBody hr {
     margin-bottom: 10px;
 }
 
 .sensorInfoSummaryTd {
     padding-left: 10px;
+    padding-bottom: 3px;
+}
+
+#sensorInfoSummary table:first-child {
+    margin-left: 10px;
+}
+
+.sensorInfoSummaryHeading {
+    padding-bottom: 7px;
+}
+
+#sensorInfoSummaryAdditionalMeasurements {
+    margin-left: 10px;
+    margin-top: 20px;
+}
+
+#sensorInfoPanelTimelineWrapper {
+    height: 200px;
+    /* border-left: solid rgba(255, 255, 255, 0.25) 1px; */
 }
 
 .noTransition  {

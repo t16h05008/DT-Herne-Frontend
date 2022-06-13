@@ -298,44 +298,52 @@
             <span id="sensorInfoPanelIdSpan" class="h4"></span>
             <button id="sensorInfoPanelCloseBtn" type="button" class="btn-close btn-close-white text-reset" aria-label="Close"></button>
           </div>
+          <hr>
           <div id="sensorInfoPanelBody" class="container-fluid">
-            <div class="row">
-              <hr>
+            <div class="row h-100">
               <div class="col-4">
-                <div class="row">
-                  <div class="col-6">
-                    <table>
-                      <tbody>
-                        <tr>
-                          <td colspan="2" class="h5">Position</td>
-                        </tr>
-                        <tr>
+                <div id="sensorInfoSummary">
+                  <div class="row">
+                    <div class="col-6">
+                      <table>
+                        <tbody>
+                          <tr>
+                            <td colspan="2" class="h5 sensorInfoSummaryHeading">Position</td>
+                          </tr>
+                          <tr>
                             <td>Geogr. Länge:</td>
                             <td id="sensorInfoSummaryLon" class="sensorInfoSummaryTd"></td>
+                          </tr>
+                          <tr>
+                            <td>Geogr. Breite:</td>
+                            <td id="sensorInfoSummaryLat" class="sensorInfoSummaryTd"></td>
                         </tr>
-                        <tr>
-                          <td>Geogr. Breite:</td>
-                          <td id="sensorInfoSummaryLat" class="sensorInfoSummaryTd"></td>
-                      </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <div class="col-6">
-                    <table>
-                      <tbody>
-                        <tr>
-                          <td colspan="2" class="h5">Aktuelle Messung</td>
-                        </tr>
-                        <tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="col-6">
+                      <table>
+                        <tbody>
+                          <tr>
+                            <td colspan="2" class="h5 sensorInfoSummaryHeading">Aktuelle Messung [<span id="sensorInfoSummaryLayerName"></span>]</td>
+                          </tr>
+                          <tr>
                             <td>Zeitpunkt:</td>
                             <td id="sensorInfoSummaryTimestamp" class="sensorInfoSummaryTd"></td>
+                          </tr>
+                          <tr>
+                            <td>Messwert:</td>
+                            <td id="sensorInfoSummaryValue" class="sensorInfoSummaryTd"></td>
                         </tr>
-                        <tr>
-                          <td>Messwert:</td>
-                          <td id="sensorInfoSummaryValue" class="sensorInfoSummaryTd"></td>
-                      </tr>
-                      </tbody>
-                    </table>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <div id="sensorInfoSummaryAdditionalMeasurements"></div>
+                      <span id="sensorInfoSummaryAdditionalMeasurements"></span>
+                    </div>
                   </div>
                 </div>
               </div>

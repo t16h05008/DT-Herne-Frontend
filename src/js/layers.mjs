@@ -67,7 +67,7 @@ const layerCategories = [
                 thumbnailSrc: "static/images/layerPreview/precipitation.webp",
                 show: false,
                 opacity: 100,
-                tooltip: "Sensorbasierte Niderschlags-Messungen in Herner Stadtgebiet.",
+                tooltip: "Sensorbasierte Niederschlags-Messungen in Herner Stadtgebiet.",
                 credit: "[Hochschule Bochum](https://www.hochschule-bochum.de/)"
             },
             {
