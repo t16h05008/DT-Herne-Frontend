@@ -33,6 +33,7 @@ const backendBaseUrl = "http://localhost:8000/";
 const layersToUpdateOnPovChange = [];
 let measurementToolActive = false;
 let slicersDrawRectangleActive = false;
+let echartsSensorTimelineChart;
 
 // Needed to display data attribution correctly
 // https://github.com/markedjs/marked/issues/395
@@ -70,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     // document.querySelector("input[value='Cesium World Terrain']").click();
     // load cityModels for development
     // document.querySelector("input[value='cityModel']").click();
-    document.querySelector("input[value='temperature']").click();
+    document.querySelector("input[value='precipitation']").click();
 });
 
 /**
@@ -508,15 +509,28 @@ function enableMenuToggle(sidebarBtns) {
         // On menu opened
         menu.addEventListener('show.bs.offcanvas', function () {
             let menuWidth = getComputedStyle(document.documentElement).getPropertyValue('--menu-width');
-            console.log(menuWidth);
             // Move the scene to the right when menu opens
             // No need to add the sidebar width since it is not in this div
             cesiumContainer.style.marginLeft = menuWidth;
             sensorInfoPanel.style.marginLeft = menuWidth;
+            //sensorInfoPanel.style.width = "calc(100% - " + menuWidth + ")";
+            let sensorInfoPanelWidth = window.getComputedStyle(sensorInfoPanel).width;
+            let newSensorInfoPanelWidth = parseFloat(sensorInfoPanelWidth) - parseFloat(menuWidth);
+            sensorInfoPanel.style.width = newSensorInfoPanelWidth;
+            if(echartsSensorTimelineChart) {
+                echartsSensorTimelineChart.resize({
+                    width: 2/3 * newSensorInfoPanelWidth, //2/3 * sensorInfoPanel.style.width, // 2/3 because we have the chart in col-8
+                    height: 200,
+                    // animation: {
+                    //     duration: 300,
+                    //     easing: 
+                });
+            }
+            
             // Add pointer events to resize div
             let handle = menu.querySelector(".menu-resize-handle");
             handle.style.pointerEvents = "auto";
-            document.body.style.setProperty("cursor", "ew-resize", "important");
+            handle.style.setProperty("cursor", "ew-resize");
         });
 
         // On menu closed
@@ -524,10 +538,12 @@ function enableMenuToggle(sidebarBtns) {
             // Move scene back to the left edge
             cesiumContainer.style.marginLeft = "0";
             sensorInfoPanel.style.marginLeft = "0";
+            sensorInfoPanel.style.width = "100%";
+
             // Remove pointer events from resize div
             let handle = menu.querySelector(".menu-resize-handle");
             handle.style.pointerEvents = "none";
-            document.body.style.setProperty("cursor", "default");
+            handle.style.setProperty("cursor", "default");
         });
     }
 }
@@ -551,6 +567,7 @@ function enableMenuResize(sidebarBtns) {
 
     let startX, startWidth;
     let cesiumContainer = document.getElementById("cesiumContainer");
+    let sensorInfoPanel = document.getElementById("sensorInfoPanel")
     async function initDrag(e) {
         startX = e.clientX;
         startWidth = window.getComputedStyle(document.documentElement).getPropertyValue('--menu-width');
@@ -559,21 +576,25 @@ function enableMenuResize(sidebarBtns) {
         document.body.addEventListener('mousemove', doDrag);
         document.body.addEventListener('mouseup', stopDrag);
         cesiumContainer.classList.add("noTransition");
-        document.body.style.cursor = "ew-resize";
+        sensorInfoPanel.classList.add("noTransition");
+        document.body.style.setProperty("cursor", "ew-resize", "important");
     }
 
     async function doDrag(e) {
         let newWidth = (startWidth + e.clientX - startX) + "px"
         document.documentElement.style.setProperty('--menu-width', newWidth);
         // Also resize cesium container
-        document.getElementById("cesiumContainer").style.marginLeft = newWidth;
+        cesiumContainer.style.marginLeft = newWidth;
+        sensorInfoPanel.style.marginLeft = newWidth;
+        sensorInfoPanel.style.width = "calc(100% - " + newWidth + ")";
     }
 
     async function stopDrag() {
         cesiumContainer.classList.remove("noTransition");
+        sensorInfoPanel.classList.remove("noTransition");
         document.body.removeEventListener('mousemove', doDrag, false);
         document.body.removeEventListener('mouseup', stopDrag, false);
-        document.body.style.cursor = "default";
+        document.body.style.setProperty("cursor", "default");
     }
 }
 
@@ -1384,6 +1405,7 @@ function addLayer(layer) {
                         properties: new Cesium.PropertyBag({
                             position: sensor.position,
                             measurement: sensor.measurement,
+                            additionalMeasurements: sensor.additionalMeasurements,
                             timeseriesUrl: url + "/timeseries/" + sensor.id,
                             isSensor: true
                         })
@@ -1650,11 +1672,12 @@ let handleSelectedEntityChanged = async function(entity) {
         if(props.hasOwnProperty("isSensor")) {
             if(props.isSensor) {
                 viewer.selectedEntity = undefined;
+                let layerName = entity.entityCollection.owner.name;
                 // TODO error handling
                 fetch(props.timeseriesUrl)
                     .then(result => result.json())
                     .then(data => {
-                        updateSensorInfoPanel(entity, data);
+                        updateSensorInfoPanel(entity, layerName, data);
                         openSensorInfoPanel();
                     });
                 
@@ -2338,15 +2361,106 @@ function enableSensorInfoPanelResize() {
     }
 }
 
-function updateSensorInfoPanel(entity, timeseriesArr) {
+function updateSensorInfoPanel(entity, layerName, timeseriesArr) {
     console.log(entity);
     console.log(timeseriesArr);
     let props = entity.properties.getValue(Cesium.JulianDate.now());
+    let timestamp = new Date(props.measurement.time);
+    const formatDate = (current_datetime)=>{
+        let formatted_date = current_datetime.getDate() + "." +
+            (current_datetime.getMonth() + 1) + "." +
+            current_datetime.getFullYear() + " " +
+            current_datetime.getHours() + ":" +
+            current_datetime.getMinutes() + ":" +
+            current_datetime.getSeconds();
+        return formatted_date;
+    }
+    let additionalMeasurements = [];
+
+    for(let entry of props.additionalMeasurements) {
+        additionalMeasurements.push(entry);
+    }
+
+    let layerDisplayName;
+    Util.iterateRecursive(layerCategories, function(obj) {
+        if(obj.name === layerName && obj.type === "sensor") layerDisplayName = obj.displayName;
+    });
+
+    let sensorInfoSummaryAdditionalMeasurementsDiv = document.getElementById("sensorInfoSummaryAdditionalMeasurements");
+    sensorInfoSummaryAdditionalMeasurementsDiv.innerHTML = "Weitere Messgrößen dieses Sensors: ";
+    
     document.getElementById("sensorInfoPanelIdSpan").innerHTML = entity.id;
-    document.getElementById("sensorInfoSummaryLon").innerHTML = props.position.lon;
-    document.getElementById("sensorInfoSummaryLat").innerHTML = props.position.lat;
-    document.getElementById("sensorInfoSummaryTimestamp").innerHTML = props.measurement.time;
-    document.getElementById("sensorInfoSummaryValue").innerHTML = props.measurement.value + " " + props.measurement.unit;
-    let instance = echarts.getInstanceByDom(document.getElementById("sensorInfoPanelTimelineWrapper"));
-    // TODO
+    document.getElementById("sensorInfoSummaryLayerName").innerHTML = layerDisplayName;
+    document.getElementById("sensorInfoSummaryLon").innerHTML = props.position.lon.toString().replace(".", ",");
+    document.getElementById("sensorInfoSummaryLat").innerHTML = props.position.lat.toString().replace(".", ",");
+    document.getElementById("sensorInfoSummaryTimestamp").innerHTML = formatDate(timestamp);
+    document.getElementById("sensorInfoSummaryValue").innerHTML = props.measurement.value.toString().replace(".", ",") + " " + props.measurement.unit;
+    sensorInfoSummaryAdditionalMeasurementsDiv.innerHTML += additionalMeasurements.length ? additionalMeasurements.toString() : "Keine";
+    
+    let data = [];
+    for(let entry of timeseriesArr) {
+        data.push({
+            name: entry[0],
+            value: [entry[0], entry[1]]
+        })
+    };
+    console.log(document.getElementById("sensorInfoPanelTimelineWrapper"));
+    console.log(echarts);
+    let instance = echarts.init(document.getElementById("sensorInfoPanelTimelineWrapper"));
+    echartsSensorTimelineChart = instance; // Save reference as global variable
+    let echartsOptions = {
+        title: {
+            text: "Darstellung der letzten " + 200 + " Werte",
+            left: "center",
+            textStyle: {
+                color: "#FFFFFF",
+                fontWeight: 500
+            }
+        },
+        tooltip: {
+            trigger: 'axis',
+            formatter: function (params) {
+              params = params[0];
+              let date = new Date(params.name);
+              return (
+                date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + " " +
+                date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() +
+                ' : ' + params.value[1]
+              );
+            },
+            axisPointer: {
+              animation: false
+            }
+        },
+        xAxis: {
+            type: 'time',
+            splitLine: {
+                show: false
+            },
+            axisLabel: {
+                color: "#FFFFFF"
+            }
+        },
+        yAxis: {
+            type: 'value',
+            boundaryGap: [0, '100%'],
+            splitLine: {
+                show: false
+            },
+            axisLabel: {
+                color: "#FFFFFF"
+            }
+        },
+        series: [{
+            name: 'SensorData',
+            type: 'line',
+            showSymbol: false,
+            data: data,
+            itemStyle: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--primary-ui-color')
+            }
+          }
+        ]
+    }
+    instance.setOption(echartsOptions);
 }
