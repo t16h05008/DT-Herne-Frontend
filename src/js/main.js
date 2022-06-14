@@ -14,8 +14,8 @@ import {layerCategories} from "./layers.mjs";
 Cesium.Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
 const initialCameraView = {
   position: {
-    lat: 51.54241, //51.54005, 
-    lon: 7.2246, //7.22795,
+    lat: 51.54005, //51.54241, //, 
+    lon: 7.22795, // 7.2246, //,
     height: 350 // meter
   },
   orientation: {
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     // document.querySelector("input[value='Cesium World Terrain']").click();
     // load cityModels for development
     // document.querySelector("input[value='cityModel']").click();
-    document.querySelector("input[value='precipitation']").click();
+    //document.querySelector("input[value='precipitation']").click();
 });
 
 /**
