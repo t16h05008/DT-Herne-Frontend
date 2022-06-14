@@ -14,13 +14,13 @@ import {layerCategories} from "./layers.mjs";
 Cesium.Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
 const initialCameraView = {
   position: {
-    lat: 51.54005, //51.54241, //, 
-    lon: 7.22795, // 7.2246, //,
-    height: 350 // meter
+    lat: 51.53533, // 51.53631,
+    lon: 7.22618, //7.23048,
+    height: 106 // 349 // meter
   },
   orientation: {
-    heading: 295,
-    pitch: -30,
+    heading: 279,
+    pitch: -36.5,
     roll: 0,
   }
 }
@@ -66,12 +66,133 @@ document.addEventListener("DOMContentLoaded", function(event) {
     initializeSensorInfoPanel();
     //initializeIndexedDB();
     initializeDataLoadingManager();
-    // Switch terrain to dgm10
-    document.querySelector("input[value='dgm1m']").click();
-    // document.querySelector("input[value='Cesium World Terrain']").click();
-    // load cityModels for development
-    // document.querySelector("input[value='cityModel']").click();
-    //document.querySelector("input[value='precipitation']").click();
+    document.querySelector("input[value='Cesium World Terrain']").click();
+    //document.querySelector("input[value='osmBuildings']").click();
+    //document.querySelector("input[value='cityModel']").click();
+    // let osmBuildingsLayer;
+    // Util.iterateRecursive(layerCategories, function(obj) {
+    //     if(obj.name === "osmBuildings") osmBuildingsLayer = obj;
+    // });
+  
+    // osmBuildingsLayer.cesiumReference.style = new Cesium.Cesium3DTileStyle({
+    //     show: "${feature['elementId']} !== 712001732 && \
+    //             ${feature['elementId']} !== 553777083 && \
+    //             ${feature['elementId']} !== 119269705 && \
+    //             ${feature['part#elementId']} !== 775805970 && \
+    //             ${feature['part#elementId']} !== 775971759 && \
+    //             ${feature['part#elementId']} !== 775971760 && \
+    //             ${feature['part#elementId']} !== 775971761 && \
+    //             ${feature['part#elementId']} !== 775971762 && \
+    //             ${feature['part#elementId']} !== 775971763"
+    // });
+
+    let subwayTrain = new Cesium.Entity({
+        id: "subwayTrain",
+        name: "subwayTrain",
+        position: new Cesium.Cartesian3.fromDegrees(7.22613, 51.53562, 103.5),
+        //orientation: orientation,
+        // model reference gets added later
+        viewFrom: new Cesium.Cartesian3(5, -20, 2)
+    });
+
+    let url = "./SubwayCar.glb";
+    subwayTrain.model = new Cesium.ModelGraphics({
+        uri: url,
+        scale: 0.28
+    });
+    viewer.entities.add(subwayTrain);
+    viewer.zoomTo(subwayTrain)
+
+
+    document.querySelector("#startFlightBtn").addEventListener("click", function() {
+        const pathPositions = [
+            [new Cesium.Cartesian3.fromDegrees(7.22821, 51.5373, 187), 0],
+            [new Cesium.Cartesian3.fromDegrees(7.22642, 51.53686, 127), 20],
+            [new Cesium.Cartesian3.fromDegrees(7.22625, 51.53622, 121), 10],
+            [new Cesium.Cartesian3.fromDegrees(7.22624, 51.53607, 117), 10],
+            [new Cesium.Cartesian3.fromDegrees(7.22624, 51.536, 111), 2], // stairs bottom
+            [new Cesium.Cartesian3.fromDegrees(7.22625, 51.53593, 110), 2],
+            [new Cesium.Cartesian3.fromDegrees(7.22633, 51.53583, 110), 2],
+            [new Cesium.Cartesian3.fromDegrees(7.22633, 51.53575, 110), 2],
+            [new Cesium.Cartesian3.fromDegrees(7.22625, 51.53569, 110), 2],
+            [new Cesium.Cartesian3.fromDegrees(7.22625, 51.53557, 106), 2],
+            [new Cesium.Cartesian3.fromDegrees(7.22618, 51.53535, 106), 2],
+        ]
+        //Set bounds of our simulation time
+        const start = Cesium.JulianDate.fromDate(new Date(2015, 2, 25, 16));
+        const stop = Cesium.JulianDate.addSeconds(
+          start,
+          360,
+          new Cesium.JulianDate()
+        );
+        //Make sure viewer is at the desired time.
+        viewer.clock.startTime = start.clone();
+        viewer.clock.stopTime = stop.clone();
+        viewer.clock.currentTime = start.clone();
+        viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
+        viewer.clock.multiplier = 1;
+        //Set timeline to simulation bounds
+        viewer.timeline.zoomTo(start, stop);
+
+        const positionsWithTime = new Cesium.SampledPositionProperty();
+        let secondsSum = 0;
+        for(let idx=0; idx<pathPositions.length; idx++) {
+            let position = pathPositions[idx][0];
+            if(idx > 0) {
+                let speed = pathPositions[idx][1];
+                // Calculate length of the last line segment (linear)
+                let length = Cesium.Cartesian3.distance(pathPositions[idx-1][0], position);
+                let seconds = length / speed;
+                secondsSum += seconds;
+            }
+            let time = Cesium.JulianDate.addSeconds(start, secondsSum, new Cesium.JulianDate());
+            console.log(time, position);
+            positionsWithTime.addSample(time, position);
+
+            viewer.entities.add({
+                position: position,
+                point: {
+                  pixelSize: 8,
+                  color: Cesium.Color.TRANSPARENT,
+                  outlineColor: Cesium.Color.YELLOW,
+                  outlineWidth: 3,
+                },
+            });
+        }
+        
+
+        // Create entity
+        const redSphere = viewer.entities.add({
+            name: "Red sphere with black outline",
+            //Set the entity availability to the same interval as the simulation time.
+            availability: new Cesium.TimeIntervalCollection([
+                new Cesium.TimeInterval({
+                  start: start,
+                  stop: stop,
+                }),
+            ]),
+            position: positionsWithTime,
+            //Automatically compute orientation based on position movement.
+            orientation: new Cesium.VelocityOrientationProperty(positionsWithTime),
+            ellipsoid: {
+              radii: new Cesium.Cartesian3(0.1, 0.1, 0.1),
+              material: Cesium.Color.RED.withAlpha(0),
+            },
+            //Show the path as a pink line sampled in 1 second increments.
+            path: {
+              resolution: 1,
+              material: Cesium.Color.PINK,
+              width: 5,
+            },
+        });
+        // redSphere.position.setInterpolationOptions({
+        //     interpolationDegree: 2,
+        //     interpolationAlgorithm: Cesium.HermitePolynomialApproximation
+        // });
+        redSphere.show = true;
+        redSphere.viewFrom = new Cesium.Cartesian3(10, 3, 5)
+        viewer.trackedEntity = redSphere;
+    });
 });
 
 /**
@@ -145,8 +266,10 @@ function initializeViewer(initialCameraViewFormatted) {
         geocoder: false,
         fullscreenButton: false,
         sceneModePicker: false,
-        animation: false,
-        timeline: false
+        timeline: true,
+        infoBox: false, //Disable InfoBox widget
+        selectionIndicator: false, //Disable selection indicator
+        shouldAnimate: true, // Enable animations
     });
     //viewer.extend(Cesium.viewerCesiumInspectorMixin);
     //viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);
@@ -1063,10 +1186,9 @@ function onDataLoadingManagerMessageReceived(event) {
 
 function handleLoadingAndUnloadingCityModelEntities(entitiesToShow) {
     let layer;
-    let dgm1Layer;
+    let CesiumWorldTerrainLayer = viewer.terrainProvider;
     Util.iterateRecursive(layerCategories, function(obj) {
         if(obj.name === "cityModel") layer = obj;
-        if(obj.name === "dgm1m") dgm1Layer = obj;
     });
     // The entities have different formats, but both have an id property that can be used for comparison
     //console.log("number of entities to show", entitiesToShow.length);
@@ -1085,13 +1207,13 @@ function handleLoadingAndUnloadingCityModelEntities(entitiesToShow) {
     });
     //console.log("number of entities to unload", entitiesToUnload.length);
     // unload
-    for(let entity of entitiesToUnload) {
-        currentEntities.remove(entity);
-    }
+    // for(let entity of entitiesToUnload) {
+    //     currentEntities.remove(entity);
+    // }
 
     // Query terrain heights for the building's coordinates
     (async () => {
-        let terrainProvider = dgm1Layer.cesiumReference;
+        let terrainProvider = CesiumWorldTerrainLayer;
         var positions = [];
         for(let entity of entitiesToLoad) {
             let lon = parseFloat(entity.location.lon);
