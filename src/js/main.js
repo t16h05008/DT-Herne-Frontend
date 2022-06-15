@@ -14,9 +14,9 @@ import {layerCategories} from "./layers.mjs";
 Cesium.Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
 const initialCameraView = {
   position: {
-    lat: 51.53533, // 51.53631,
-    lon: 7.22618, //7.23048,
-    height: 106 // 349 // meter
+    lat: 51.53631,
+    lon: 7.23048,
+    height: 349 // meter
   },
   orientation: {
     heading: 279,
@@ -67,69 +67,90 @@ document.addEventListener("DOMContentLoaded", function(event) {
     //initializeIndexedDB();
     initializeDataLoadingManager();
     document.querySelector("input[value='Cesium World Terrain']").click();
-    //document.querySelector("input[value='osmBuildings']").click();
-    //document.querySelector("input[value='cityModel']").click();
-    // let osmBuildingsLayer;
-    // Util.iterateRecursive(layerCategories, function(obj) {
-    //     if(obj.name === "osmBuildings") osmBuildingsLayer = obj;
-    // });
+    document.querySelector("input[value='osmBuildings']").click();
+    document.querySelector("input[value='cityModel']").click();
+    let osmBuildingsLayer;
+    Util.iterateRecursive(layerCategories, function(obj) {
+        if(obj.name === "osmBuildings") osmBuildingsLayer = obj;
+    });
   
-    // osmBuildingsLayer.cesiumReference.style = new Cesium.Cesium3DTileStyle({
-    //     show: "${feature['elementId']} !== 712001732 && \
-    //             ${feature['elementId']} !== 553777083 && \
-    //             ${feature['elementId']} !== 119269705 && \
-    //             ${feature['part#elementId']} !== 775805970 && \
-    //             ${feature['part#elementId']} !== 775971759 && \
-    //             ${feature['part#elementId']} !== 775971760 && \
-    //             ${feature['part#elementId']} !== 775971761 && \
-    //             ${feature['part#elementId']} !== 775971762 && \
-    //             ${feature['part#elementId']} !== 775971763"
-    // });
+    osmBuildingsLayer.cesiumReference.style = new Cesium.Cesium3DTileStyle({
+        show: "${feature['elementId']} !== 712001732 && \
+                ${feature['elementId']} !== 553777083 && \
+                ${feature['elementId']} !== 119269705 && \
+                ${feature['part#elementId']} !== 775805970 && \
+                ${feature['part#elementId']} !== 775971759 && \
+                ${feature['part#elementId']} !== 775971760 && \
+                ${feature['part#elementId']} !== 775971761 && \
+                ${feature['part#elementId']} !== 775971762 && \
+                ${feature['part#elementId']} !== 775971763"
+    });
 
+    const position = new Cesium.Cartesian3.fromDegrees(7.22613, 51.53562, 103.5);
+    const position2 = new Cesium.Cartesian3.fromDegrees(7.226125, 51.535722, 103.5);
+    const position3 = new Cesium.Cartesian3.fromDegrees(7.22612, 51.535824, 103.5);
+    const position4 = new Cesium.Cartesian3.fromDegrees(7.226115, 51.535926, 103.5);
+
+    const heading = Cesium.Math.toRadians(358);
+    const pitch = 0;
+    const roll = 0;
+    const hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+    const orientation = Cesium.Transforms.headingPitchRollQuaternion(position,hpr);
     let subwayTrain = new Cesium.Entity({
         id: "subwayTrain",
         name: "subwayTrain",
-        position: new Cesium.Cartesian3.fromDegrees(7.22613, 51.53562, 103.5),
-        //orientation: orientation,
-        // model reference gets added later
+        position: position,
+        orientation: orientation,
+        model: new Cesium.ModelGraphics({
+            uri: "./SubwayCar.glb",
+            scale: 0.25
+        }),
         viewFrom: new Cesium.Cartesian3(5, -20, 2)
-    });
-
-    let url = "./SubwayCar.glb";
-    subwayTrain.model = new Cesium.ModelGraphics({
-        uri: url,
-        scale: 0.28
     });
     viewer.entities.add(subwayTrain);
     viewer.zoomTo(subwayTrain)
+    // Create more entities
+    let subwayTrain2 = new Cesium.Entity();
+    subwayTrain2.merge(subwayTrain);
+    subwayTrain2.position = position2;
+    viewer.entities.add(subwayTrain2);
+    let subwayTrain3 = new Cesium.Entity();
+    subwayTrain3.merge(subwayTrain);
+    subwayTrain3.position = position3;
+    viewer.entities.add(subwayTrain3);
+    let subwayTrain4 = new Cesium.Entity();
+    subwayTrain4.merge(subwayTrain);
+    subwayTrain4.position = position4;
+    viewer.entities.add(subwayTrain4);
 
 
     document.querySelector("#startFlightBtn").addEventListener("click", function() {
         const pathPositions = [
             [new Cesium.Cartesian3.fromDegrees(7.22821, 51.5373, 187), 0],
-            [new Cesium.Cartesian3.fromDegrees(7.22642, 51.53686, 127), 20],
-            [new Cesium.Cartesian3.fromDegrees(7.22625, 51.53622, 121), 10],
-            [new Cesium.Cartesian3.fromDegrees(7.22624, 51.53607, 117), 10],
+            [new Cesium.Cartesian3.fromDegrees(7.22642, 51.53678, 127), 12],
+            [new Cesium.Cartesian3.fromDegrees(7.22625, 51.53622, 121), 7],
+            [new Cesium.Cartesian3.fromDegrees(7.22624, 51.53607, 117), 5],
             [new Cesium.Cartesian3.fromDegrees(7.22624, 51.536, 111), 2], // stairs bottom
-            [new Cesium.Cartesian3.fromDegrees(7.22625, 51.53593, 110), 2],
+            [new Cesium.Cartesian3.fromDegrees(7.22625, 51.53585, 110), 2],
             [new Cesium.Cartesian3.fromDegrees(7.22633, 51.53583, 110), 2],
             [new Cesium.Cartesian3.fromDegrees(7.22633, 51.53575, 110), 2],
             [new Cesium.Cartesian3.fromDegrees(7.22625, 51.53569, 110), 2],
             [new Cesium.Cartesian3.fromDegrees(7.22625, 51.53557, 106), 2],
             [new Cesium.Cartesian3.fromDegrees(7.22618, 51.53535, 106), 2],
+            [new Cesium.Cartesian3.fromDegrees(7.22635, 51.53535, 106), 1],
         ]
         //Set bounds of our simulation time
-        const start = Cesium.JulianDate.fromDate(new Date(2015, 2, 25, 16));
+        const start = Cesium.JulianDate.fromDate(new Date(2022, 6, 24, 12));
         const stop = Cesium.JulianDate.addSeconds(
           start,
-          360,
+          90,
           new Cesium.JulianDate()
         );
         //Make sure viewer is at the desired time.
         viewer.clock.startTime = start.clone();
         viewer.clock.stopTime = stop.clone();
         viewer.clock.currentTime = start.clone();
-        viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
+        viewer.clock.clockRange = Cesium.ClockRange.CLAMPED;
         viewer.clock.multiplier = 1;
         //Set timeline to simulation bounds
         viewer.timeline.zoomTo(start, stop);
@@ -157,6 +178,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
                   outlineColor: Cesium.Color.YELLOW,
                   outlineWidth: 3,
                 },
+                show: false
             });
         }
         
@@ -181,7 +203,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
             //Show the path as a pink line sampled in 1 second increments.
             path: {
               resolution: 1,
-              material: Cesium.Color.PINK,
+              material: Cesium.Color.RED.withAlpha(0),
               width: 5,
             },
         });

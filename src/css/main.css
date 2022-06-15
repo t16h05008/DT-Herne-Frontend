@@ -8,8 +8,8 @@
     --header-spacer-height: 5px;
     --sensor-info-panel-height: 250px;
     --cesium-container-height: calc(100vh - var(--header-height) - var(--header-spacer-height) - var(--footer-height));
-    --coord-overlay-bot-spacer: 10px;
-    --north-arrow-bot-spacer: 170px;
+    --coord-overlay-bot-spacer: 30px;
+    --north-arrow-bot-spacer: 200px;
 
     --primary-ui-color: #00A4D7;
     --secondary-ui-color: #007C33;
@@ -27,6 +27,10 @@
     --radio-btn-level-1-background: #000;
     --radio-btn-level-2-background: #000;
     --radio-btn-level-3-background: #000;
+}
+
+#startFlightBtn {
+    color: var(--sidebar-bg-color)
 }
 
 body, html {
