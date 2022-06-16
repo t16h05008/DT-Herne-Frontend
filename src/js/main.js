@@ -29,7 +29,7 @@ const defaultUndergroundColor = "#383F38"; // dark gray
 let viewer, camera, scene, globe;
 const dataLoadingManager = new Worker(new URL("./webworkers/dataLoadingManager.js", import.meta.url));
 //let gltfModelStoreDB;
-const backendBaseUrl = "http://localhost:8000/";
+const backendBaseUrl = process.env.BACKEND_BASE_URL;
 const layersToUpdateOnPovChange = [];
 let measurementToolActive = false;
 let slicersDrawRectangleActive = false;
