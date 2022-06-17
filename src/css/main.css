@@ -616,3 +616,7 @@ img.menu-category-icon {
 .noTransition  {
     transition: none !important;
 }
+
+#menu-settings-sensorTimeline input[type="number"] {
+    width:50px;
+}
