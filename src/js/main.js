@@ -1694,7 +1694,6 @@ let handleSelectedEntityChanged = async function(entity) {
             if(props.isSensor) {
                 viewer.selectedEntity = undefined;
                 let layerName = entity.entityCollection.owner.name;
-                console.log(props.timeseriesUrl);
                 props.timeseriesUrl += "?n=" + settingsNumberTimeseriesMeasurementsValue;
                 fetch(props.timeseriesUrl)
                 .then(result => result.json())
@@ -2472,7 +2471,14 @@ function updateSensorInfoPanel(entity, layerName, timeseriesArr) {
         },
         yAxis: {
             type: 'value',
-            boundaryGap: [0, '100%'],
+            min: function (value) {
+                let diff = value.max-value.min;
+                return value.min - diff / 20; // 5% spacer bot
+            },
+            max: function (value) {
+                let diff = value.max-value.min;
+                return value.max + diff / 20; // 5% spacer top
+            },
             splitLine: {
                 show: false
             },
