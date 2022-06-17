@@ -33,7 +33,10 @@ const backendBaseUrl = process.env.BACKEND_BASE_URL;
 const layersToUpdateOnPovChange = [];
 let measurementToolActive = false;
 let slicersDrawRectangleActive = false;
+let sensorInfoPanelOpen = false;
 let echartsSensorTimelineChart;
+let diagramUpdateInterval;
+
 
 // Needed to display data attribution correctly
 // https://github.com/markedjs/marked/issues/395
@@ -502,6 +505,7 @@ function addSidebarButtonHighlighting(sidebarBtns) {
 function enableMenuToggle(sidebarBtns) {
     let cesiumContainer = document.getElementById("cesiumContainer");
     let sensorInfoPanel = document.getElementById("sensorInfoPanel");
+    let switchingMenu = false; // Tracks if a menu is closed and another one is opened instantly
     for(let btn of sidebarBtns) {
         let menuId = btn.dataset.bsTarget;
         let menu = document.querySelector(menuId);
@@ -515,31 +519,27 @@ function enableMenuToggle(sidebarBtns) {
             sensorInfoPanel.style.marginLeft = menuWidth;
             //sensorInfoPanel.style.width = "calc(100% - " + menuWidth + ")";
             let sensorInfoPanelWidth = window.getComputedStyle(sensorInfoPanel).width;
-            let newSensorInfoPanelWidth = parseFloat(sensorInfoPanelWidth) - parseFloat(menuWidth);
-            sensorInfoPanel.style.width = newSensorInfoPanelWidth;
-            if(echartsSensorTimelineChart) {
-                echartsSensorTimelineChart.resize({
-                    width: 2/3 * newSensorInfoPanelWidth, //2/3 * sensorInfoPanel.style.width, // 2/3 because we have the chart in col-8
-                    height: 200,
-                    // animation: {
-                    //     duration: 300,
-                    //     easing: 
-                });
-            }
-            
+            let newSensorInfoPanelWidth = parseFloat(sensorInfoPanelWidth);
+            if(!switchingMenu) {
+                newSensorInfoPanelWidth -= parseFloat(menuWidth)
+            };
+            sensorInfoPanel.style.setProperty("width", newSensorInfoPanelWidth + "px", "important");
             // Add pointer events to resize div
             let handle = menu.querySelector(".menu-resize-handle");
             handle.style.pointerEvents = "auto";
             handle.style.setProperty("cursor", "ew-resize");
+            switchingMenu = false;
         });
 
         // On menu closed
-        menu.addEventListener('hide.bs.offcanvas', function () {
+        menu.addEventListener('hide.bs.offcanvas', function (e) {
+            if(e.explicitOriginalTarget !== btn) {
+                switchingMenu = true;
+            };
             // Move scene back to the left edge
             cesiumContainer.style.marginLeft = "0";
             sensorInfoPanel.style.marginLeft = "0";
-            sensorInfoPanel.style.width = "100%";
-
+            sensorInfoPanel.style.setProperty("width", "100%", "important");
             // Remove pointer events from resize div
             let handle = menu.querySelector(".menu-resize-handle");
             handle.style.pointerEvents = "none";
@@ -587,6 +587,7 @@ function enableMenuResize(sidebarBtns) {
         cesiumContainer.style.marginLeft = newWidth;
         sensorInfoPanel.style.marginLeft = newWidth;
         sensorInfoPanel.style.width = "calc(100% - " + newWidth + ")";
+        resizeEchartsDiagram();
     }
 
     async function stopDrag() {
@@ -843,6 +844,17 @@ function onMenuLayerChbClicked(event, layer) {
         opacitySlider.disabled = true;
         opacitySliderWrapper.classList.add("opacitySliderWrapperDisabled");
         removeLayer(layer);
+        let lastSensorLayerRemoved = true;
+        if(layer.type === "sensor") {
+            // Check if this was the last sensor layer to be removed
+            Util.iterateRecursive(layerCategories, function(obj) {
+                if(obj.type === "sensor" && obj.show) lastSensorLayerRemoved = false;
+            });
+            if(lastSensorLayerRemoved) {
+                closeSensorInfoPanel();
+                hideSensorList();
+            }
+        }
     }
 }
 
@@ -1379,7 +1391,6 @@ function addLayer(layer) {
         fetch(url)
             .then(response => response.json())
             .then( data => {
-                console.log(data);
                 let dataSource = new Cesium.CustomDataSource(layer.name);
                 let entities = [];
                 for(let sensor of data) {
@@ -1673,14 +1684,19 @@ let handleSelectedEntityChanged = async function(entity) {
             if(props.isSensor) {
                 viewer.selectedEntity = undefined;
                 let layerName = entity.entityCollection.owner.name;
-                // TODO error handling
                 fetch(props.timeseriesUrl)
-                    .then(result => result.json())
-                    .then(data => {
-                        updateSensorInfoPanel(entity, layerName, data);
-                        openSensorInfoPanel();
-                    });
-                
+                .then(result => result.json())
+                .then(data => {
+                    updateSensorInfoPanel(entity, layerName, data);
+                    openSensorInfoPanel();
+                });
+                diagramUpdateInterval = setInterval( () => {
+                    fetch(props.timeseriesUrl)
+                        .then(result => result.json())
+                        .then(data => {
+                            updateSensorInfoPanel(entity, layerName, data);
+                        });
+                }, 30000); // 30 sec
             }
         } else {
             closeSensorInfoPanel();
@@ -2239,9 +2255,7 @@ function showSensorList(newSensors) {
     let widgetDiv = document.getElementById("sensorListOverlay");
     let listDiv = document.getElementById("sensorListContainer");
     let alreadyAddedSensors = document.querySelectorAll("#sensorListContainer .sensorEntry");
-    console.log(alreadyAddedSensors);
     for(let sensor of newSensors) {
-        console.log(sensor.id);
         let alreadyInList = false;
         if(alreadyAddedSensors && alreadyAddedSensors.length) {
             for(let addedSensor of alreadyAddedSensors) {
@@ -2273,7 +2287,12 @@ function showSensorList(newSensors) {
         }
     }
     widgetDiv.style.visibility = "visible";
+}
 
+function hideSensorList() {
+    document.getElementById("sensorListContainer").innerHTML = "";
+    let widgetDiv = document.getElementById("sensorListOverlay");
+    widgetDiv.style.visibility = "hidden";
 }
 
 function initializeSensorInfoPanel() {
@@ -2299,6 +2318,7 @@ function openSensorInfoPanel() {
     let handle = document.getElementById("sensorInfoPanel-resize-handle");
     handle.style.pointerEvents = "auto";
     handle.style.cursor = "ns-resize";
+    sensorInfoPanelOpen = true;
 }
 
 
@@ -2316,6 +2336,8 @@ function closeSensorInfoPanel() {
     let handle = document.getElementById("sensorInfoPanel-resize-handle");
     handle.style.pointerEvents = "none";
     handle.style.cursor = "default";
+    sensorInfoPanelOpen = false;
+    clearInterval(diagramUpdateInterval);
     setTimeout( () => {
         sensorInfoPanel.style.visibility = "hidden";
     }, 300);
@@ -2362,11 +2384,9 @@ function enableSensorInfoPanelResize() {
 }
 
 function updateSensorInfoPanel(entity, layerName, timeseriesArr) {
-    console.log(entity);
-    console.log(timeseriesArr);
     let props = entity.properties.getValue(Cesium.JulianDate.now());
-    let timestamp = new Date(props.measurement.time);
-    const formatDate = (current_datetime)=>{
+    let timestamp = new Date(timeseriesArr.at(-1)[0]);
+    const formatDate = (current_datetime) => {
         let formatted_date = current_datetime.getDate() + "." +
             (current_datetime.getMonth() + 1) + "." +
             current_datetime.getFullYear() + " " +
@@ -2404,8 +2424,7 @@ function updateSensorInfoPanel(entity, layerName, timeseriesArr) {
             value: [entry[0], entry[1]]
         })
     };
-    console.log(document.getElementById("sensorInfoPanelTimelineWrapper"));
-    console.log(echarts);
+
     let instance = echarts.init(document.getElementById("sensorInfoPanelTimelineWrapper"));
     echartsSensorTimelineChart = instance; // Save reference as global variable
     let echartsOptions = {
@@ -2463,4 +2482,12 @@ function updateSensorInfoPanel(entity, layerName, timeseriesArr) {
         ]
     }
     instance.setOption(echartsOptions);
+    window.addEventListener('resize', resizeEchartsDiagram);
+}
+
+
+function resizeEchartsDiagram() {
+     if(echartsSensorTimelineChart != null && echartsSensorTimelineChart != undefined){
+        echartsSensorTimelineChart.resize();
+    }
 }
