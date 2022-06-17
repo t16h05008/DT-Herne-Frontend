@@ -33,10 +33,10 @@ const backendBaseUrl = process.env.BACKEND_BASE_URL;
 const layersToUpdateOnPovChange = [];
 let measurementToolActive = false;
 let slicersDrawRectangleActive = false;
-let sensorInfoPanelOpen = false;
 let echartsSensorTimelineChart;
 let diagramUpdateInterval;
-
+let settingsNumberTimeseriesMeasurementsValue = document.getElementById("settings-number-timeseries-measurements").value;
+let settingsTimeseriesUpdateIntervalValue = document.getElementById("settings-timeseries-update-interval").value;
 
 // Needed to display data attribution correctly
 // https://github.com/markedjs/marked/issues/395
@@ -455,11 +455,21 @@ function initializeSidebar() {
     globe.undergroundColor = Cesium.Color.fromCssColorString(defaultUndergroundColor);
 
     let settingsUndergroundTransparencySlider = document.getElementById("settingsUndergroundTransparencySlider");
-    settingsUndergroundTransparencySlider.addEventListener("input", function(event) {
+    settingsUndergroundTransparencySlider.addEventListener("input", (event) => {
         let value = event.target.value;
         globe.undergroundColor.alpha = value / 100;
     });
     globe.undergroundColor.alpha = settingsUndergroundTransparencySlider.value / 100;
+
+    // timeseries settings
+    let settingsNumberTimeseriesMeasurements = document.getElementById("settings-number-timeseries-measurements");
+    settingsNumberTimeseriesMeasurements.addEventListener("change", (event) => {
+        settingsNumberTimeseriesMeasurementsValue = event.target.value;
+    });
+    let settingsTimeseriesUpdateInterval = document.getElementById("settings-timeseries-update-interval");
+    settingsTimeseriesUpdateInterval.addEventListener("change", (event) => {
+        settingsTimeseriesUpdateIntervalValue = event.target.value;
+    });
 }
 
 /**
@@ -1684,6 +1694,8 @@ let handleSelectedEntityChanged = async function(entity) {
             if(props.isSensor) {
                 viewer.selectedEntity = undefined;
                 let layerName = entity.entityCollection.owner.name;
+                console.log(props.timeseriesUrl);
+                props.timeseriesUrl += "?n=" + settingsNumberTimeseriesMeasurementsValue;
                 fetch(props.timeseriesUrl)
                 .then(result => result.json())
                 .then(data => {
@@ -1696,7 +1708,7 @@ let handleSelectedEntityChanged = async function(entity) {
                         .then(data => {
                             updateSensorInfoPanel(entity, layerName, data);
                         });
-                }, 30000); // 30 sec
+                }, settingsTimeseriesUpdateIntervalValue * 1000);
             }
         } else {
             closeSensorInfoPanel();
@@ -2318,7 +2330,6 @@ function openSensorInfoPanel() {
     let handle = document.getElementById("sensorInfoPanel-resize-handle");
     handle.style.pointerEvents = "auto";
     handle.style.cursor = "ns-resize";
-    sensorInfoPanelOpen = true;
 }
 
 
@@ -2336,7 +2347,6 @@ function closeSensorInfoPanel() {
     let handle = document.getElementById("sensorInfoPanel-resize-handle");
     handle.style.pointerEvents = "none";
     handle.style.cursor = "default";
-    sensorInfoPanelOpen = false;
     clearInterval(diagramUpdateInterval);
     setTimeout( () => {
         sensorInfoPanel.style.visibility = "hidden";
@@ -2429,7 +2439,7 @@ function updateSensorInfoPanel(entity, layerName, timeseriesArr) {
     echartsSensorTimelineChart = instance; // Save reference as global variable
     let echartsOptions = {
         title: {
-            text: "Darstellung der letzten " + 200 + " Werte",
+            text: "Darstellung der letzten " + timeseriesArr.length + " Werte",
             left: "center",
             textStyle: {
                 color: "#FFFFFF",
