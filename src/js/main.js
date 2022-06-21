@@ -1137,7 +1137,8 @@ function handleLoadingAndUnloadingCityModelEntities(entitiesToShow) {
                 name: entity.id,
                 position: position,
                 orientation: orientation,
-                description: ""
+                description: "",
+                properties: new Cesium.PropertyBag()
                 // model reference gets added later
             });
 
