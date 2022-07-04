@@ -45,7 +45,6 @@ onmessage = function(e) {
             result.push(parseInt(bbox.id))
         }
     }
-    console.log(result);
     return result;
 }
 
