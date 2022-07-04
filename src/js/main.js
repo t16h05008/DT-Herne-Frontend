@@ -1251,14 +1251,16 @@ function handleLoadingAndUnloadingSewerEntities(layerName, entityIdsToShow) {
             url += (i < entityIdsToLoad.length-1) ? "," : "";
         }
 
-        fetch(url).then( response => response.json()).then( featureCollection => {
-            for(let feature of featureCollection["features"]) {
-                let entity = createSewerEntityFromFeature(feature);
-                datasource.entities.add(entity);
-            }
-            // Apply current slider value
-            let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
-            handleLayerOpacityChange(opacitySlider);
+        fetch(url).then( response => response.json()).then( featureCollection  => {
+            (async () => {
+                for(let feature of featureCollection["features"]) {
+                    let entity = await createSewerEntityFromFeature(feature);
+                    datasource.entities.add(entity);
+                }
+                // Apply current slider value
+                let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
+                handleLayerOpacityChange(opacitySlider);
+            })();
         });
         
     }
@@ -1304,7 +1306,7 @@ function loadBaseLayers(layerCategories) {
 
         // Terrain GeobasisNRW
         if(layer.name.includes("dgm")) {
-            let resolution = layer.name.match(/\d/g).join("")
+            let resolution = layer.name.match(/\d/g).join("");
             let provider = new Cesium.CesiumTerrainProvider({
                 url : backendBaseUrl + "terrain/dem/" + resolution,
                 // No attribution required, http://www.govdata.de/dl-de/zero-2-0
@@ -1541,7 +1543,7 @@ function removeLayer(layer) {
 }
 
 
-function createSewerEntityFromFeature(feature) {
+async function createSewerEntityFromFeature(feature) {
     let geom = feature.geometry;
     let props = feature.properties;
     let geomType = geom.type;
@@ -1554,8 +1556,21 @@ function createSewerEntityFromFeature(feature) {
     let color = props["Farbe"];
     let colorSplit = color.split(",");
     colorSplit = colorSplit.map(entry => parseInt(entry));
+    let dgm1Layer;
+    Util.iterateRecursive(layerCategories, function(obj) {
+        if(obj.name === "dgm1m") dgm1Layer = obj;
+    });
     // Sewer shaft
     if(geomType === "Point") {
+        if(color == "150,150,150") {
+            // This shaft has no attributes attached
+            // Sample the terrain height at this point and show a standard depth
+            let terrainProvider = dgm1Layer.cesiumReference;
+            let positions = await Cesium.sampleTerrainMostDetailed(terrainProvider, [Cesium.Cartographic.fromDegrees(coords[0], coords[1])]);
+            coords[2] = positions[0].height;
+            entityProps["Deckelhöhe [m]"] = positions[0].height;
+            entityProps["Sohlhöhe [m]"] = entityProps["Deckelhöhe [m]"] - 5; // dummy depth of 3 m
+        }
         let shaftHeight = entityProps["Deckelhöhe [m]"] - entityProps["Sohlhöhe [m]"]
         let position = new Cesium.Cartesian3.fromDegrees(coords[0], coords[1], coords[2] - shaftHeight / 2) // lon, lat, height
         entity = new Cesium.Entity({
@@ -1571,7 +1586,7 @@ function createSewerEntityFromFeature(feature) {
                 material: new Cesium.ColorMaterialProperty(Cesium.Color.fromBytes(colorSplit[0], colorSplit[1], colorSplit[2]))
             },
             properties: entityProps
-        })
+        });
     }
 
     // Sewer pipe
@@ -1589,9 +1604,18 @@ function createSewerEntityFromFeature(feature) {
             show: true,
             properties: entityProps
         });
+        // Attribute is still null, but the pipe is shown
+        // Needed because the diameter is unknown for some pipes
+        console.log(props);
+        if(!props["Profilbreite [mm]"]) {
+            props["Profilbreite [mm]"] = 300;
+            colorSplit[0] = 150;
+            colorSplit[1] = 150;
+            colorSplit[2] = 150;
+        }
         entity.polylineVolume = new Cesium.PolylineVolumeGraphics({
             positions: positions,
-            shape: computeCircle(props["Durchmesser [mm]"] / 1000.0),
+            shape: computeCircle(props["Profilbreite [mm]"] / 1000.0), // We simplify the true geometry of the pipe here with a circle
             material: new Cesium.ColorMaterialProperty(Cesium.Color.fromBytes(colorSplit[0], colorSplit[1], colorSplit[2])),
             cornerType: Cesium.CornerType.MITERED
         });
