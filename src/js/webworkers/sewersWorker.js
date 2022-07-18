@@ -18,7 +18,6 @@ onmessage = function(e) {
  * @param {*} viewRect 
  */
  function calculateEntitiesToShow(planes, bboxes) {
-    // Iterate tiles and check if they intersect with the view rectangle.
     let result = [];
     for(let bbox of bboxes) {
         let insideOrIntersectingFrustum = false;

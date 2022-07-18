@@ -1,7 +1,4 @@
-// The property "name" acts as an unique id and should not be modified.
-// "type" shouldn't be modified either.
 const layerCategories = [
-    // Categories
     {
         type: "category",
         name: "sewerage",
@@ -9,8 +6,7 @@ const layerCategories = [
         displayName: "Kanalisation",
         isBaseLayerCategory: false,
         show: true,
-        layers: [
-            {
+        layers: [{
                 name: "sewerShafts",
                 displayName: "Schächte",
                 thumbnailSrc: "static/images/layerPreview/sewer-shaft.webp",
@@ -19,8 +15,7 @@ const layerCategories = [
                 tooltip: "Die Kanalschächte der Stadtentwässerung Herne.",
                 credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)",
                 apiEndpoint: "sewers/shafts"
-            },
-            {
+            }, {
                 name: "sewerPipes",
                 displayName: "Leitungen",
                 thumbnailSrc: "static/images/layerPreview/sewer-pipe.webp",
@@ -32,6 +27,7 @@ const layerCategories = [
             },
         ]
     },
+    
     {
         type: "category",
         name: "climate",

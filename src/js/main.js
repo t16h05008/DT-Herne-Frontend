@@ -67,14 +67,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
     loadBaseLayers(layerCategories);
     initializeSidebar();
     initializeSensorInfoPanel();
-    //initializeIndexedDB();
     initializeDataLoadingManager();
-    // Switch terrain to dgm10
     document.querySelector("input[value='dgm1m']").click();
-    // document.querySelector("input[value='Cesium World Terrain']").click();
-    // load cityModels for development
-    // document.querySelector("input[value='cityModel']").click();
-    //document.querySelector("input[value='precipitation']").click();
 });
 
 /**
@@ -373,7 +367,7 @@ function setHomeLocation(initialCameraViewFormatted) {
 }
 
 /**
- * Sets up everything related to the sidebar it's menus.
+ * Sets up everything related to the sidebar and it's menus.
  */
 function initializeSidebar() {
     let sidebarBtns = document.querySelectorAll(".sidebarBtn");
