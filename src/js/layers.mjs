@@ -168,6 +168,16 @@ const layerCategories = [
                 tooltip: "Das 3D-Stadtmodell der Stadt Herne.",
                 credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)",
                 apiEndpoint: "buildings"
+            },
+            {
+                name: "3dmesh",
+                displayName:  "3D Mesh",
+                thumbnailSrc: "static/images/layerPreview/city-model.webp",
+                url: "https://devslb5.geo.metropoleruhr.de/datasource-data/2020_Mesh_Herne/tileset.json",
+                show: false,
+                opacity: 100,
+                tooltip: "",
+                credit: "",
             }
         ]
     },
@@ -221,6 +231,19 @@ const layerCategories = [
                         show: false,
                         opacity: 100,
                         tooltip: "Digitale Orthofotos des RVR aus dem Jahr 2021. Sie sind mit einer Bodenauflösung von 0,1 m beflogen.",
+                        credit: "[Regionalverband Ruhr](https://daten.geoportal.ruhr/srv/api/records/d954a982-a436-48ba-8c11-9ad0222ae22f)"
+                    },
+                    // 2020
+                    {
+                        type: "wms",
+                        name: "aerialImageRVR_2020",
+                        displayName:  "Luftbilder 2020 (DOP)",
+                        url: "https://geodaten.metropoleruhr.de/dop/dop_2020",
+                        layerName: "dop_2021",
+                        thumbnailSrc: "static/images/layerPreview/aerial-imagery-2021.webp",
+                        show: false,
+                        opacity: 100,
+                        tooltip: "Digitale Orthofotos des RVR aus dem Jahr 2020. Sie sind mit einer Bodenauflösung von 0,1 m beflogen.",
                         credit: "[Regionalverband Ruhr](https://daten.geoportal.ruhr/srv/api/records/d954a982-a436-48ba-8c11-9ad0222ae22f)"
                     },
                     // 2019

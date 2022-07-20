@@ -1370,6 +1370,33 @@ function addLayer(layer) {
         camera.moveEnd.raiseEvent(); // Simulate the event to load the first models
     }
 
+    if(layer.name === "3dmesh") {
+        // 3D Tiles
+        let tileset = new Cesium.Cesium3DTileset({
+            url: layer.url,
+            dynamicScreenSpaceError: true,
+            dynamicScreenSpaceErrorDensity: 0.00278,
+            dynamicScreenSpaceErrorFactor: 4.0,
+            dynamicScreenSpaceErrorHeightFalloff: 0.25
+        });
+        // apply vertical offset
+        let heightOffset = 45.43; //m
+        tileset.readyPromise.then(function(tileset) {
+            // https://community.cesium.com/t/3d-tiles-building-positioned-underneath-the-world/5072/3
+            let boundingSphere = tileset.boundingSphere;
+            //viewer.camera.viewBoundingSphere(boundingSphere, new Cesium.HeadingPitchRange(0, -2.0, 0));
+            //viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+            // Position tileset
+            let cartographic = Cesium.Cartographic.fromCartesian(boundingSphere.center);
+            let surface = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 0.0);
+            let offset = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, heightOffset);
+            let translation = Cesium.Cartesian3.subtract(offset, surface, new Cesium.Cartesian3());
+            tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
+        });
+        scene.primitives.add(tileset);
+        layer.cesiumReference = tileset;
+    }
+
     if(layer.name.includes("sewer")) {
         // Had some trouble with GeoJsonDataSource, so CustomDataSource it is for now
         let sewerDataSource = new Cesium.CustomDataSource(layer.name);
