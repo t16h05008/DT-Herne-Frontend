@@ -1,0 +1,13 @@
+version: "3.0"
+services:
+  frontend:
+    container_name: frontend
+    image: node:16.13.2
+    working_dir: /app # Path in the container
+    volumes:
+      # Add the current directory as a volume in /app.
+      # That way changes are persisted when the conatiner shuts down.
+      - ./:/app 
+    ports: 
+      - 8080:8080 # Map container port 8080 to host os port 8080.
+    command: sh -c "npm install && npm start" # Start app
