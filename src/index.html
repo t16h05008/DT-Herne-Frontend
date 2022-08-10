@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digitaler Zwilling Herne</title>
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="<%=require('./icon.svg').default%>">
+  <link rel="apple-touch-icon" href="<%=require('./apple-touch-icon.png').default%>">
+  <link rel="stylesheet" href="dependencies/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="dependencies/range-slider-element/styles.css">
+  <link rel="stylesheet" href="dependencies/pickr/themes/classic.min.css">
+  <link rel="stylesheet" href="dependencies/toggle-switchy/toggle-switchy.css">
+  <script defer src="dependencies/bootstrap/js/bootstrap.min.js"></script>
+  <script defer src="dependencies/fontawesome/js/all.js"></script>
+  <script defer src="dependencies/range-slider-element/index.js"></script>
+  <script defer src="dependencies/round-slider/round-slider.js" ></script>
+  <script defer src="dependencies/pickr/pickr.min.js"></script>
+  <script defer src="dependencies/uuidjs/uuid.core.js"></script>
+  <script defer src="dependencies/marked/marked.min.js"></script>
+  <script defer src="dependencies/dompurify/purify.min.js"></script>
+  <script defer src="dependencies/echarts/echarts.min.js"></script>
+</head>
+
+<body>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col g-0" id="headerDiv">
+        <img id="header-bg" src="static/images/herneAerial_2814x120.webp">
+        <img id="header-bg-network" src="static/images/title-bg-network.svg">
+        <img id="header-title-bg" src="static/images/title-bg.svg">
+        <div id="header-img-title">
+          Digitaler Zwilling Herne
+          <div style="font-size:15pt">Pilotanwendung Bahnhofstraße (Untergrund)</div>
+        </div>
+        <div id="header-img-copyright">
+          Von
+          <a href="//commons.wikimedia.org/wiki/User:Laniakea-rubikon" title="User:Laniakea-rubikon">Rolf Kickuth</a> -
+          <span class="int-own-work" lang="de">Eigenes Werk, bearbeitet</span>, <a
+            href="https://creativecommons.org/licenses/by-sa/4.0"
+            title="Creative Commons Attribution-Share Alike 4.0">CC BY-SA 4.0</a>, <a
+            href="https://commons.wikimedia.org/w/index.php?curid=98132137">Link</a>
+        </div>
+      </div>
+    </div>
+    <div class="row" id="header-spacer">
+      <div class="col"></div>
+    </div>
+    <div class="row">
+      <div id="sidebar" class="gx-0">
+        <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas" data-bs-target="#menu-data"
+          aria-controls="menu-data">
+          <i class="fa-solid fa-lg fa-layer-group"></i><br /><span>Daten</span>
+        </button>
+        <hr class="sidebarSpacer" />
+        <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas" data-bs-target="#menu-tools"
+          aria-controls="menu-tools">
+          <i class="fa-solid fa-lg fa-tools"></i><br /><span>Werkzeuge</span>
+        </button>
+        <hr class="sidebarSpacer" />
+        <button class="btn sidebarBtn" type="button" data-bs-toggle="offcanvas" data-bs-target="#menu-settings"
+          aria-controls="menu-settings">
+          <i class="fa-solid fa-lg fa-sliders"></i><br /><span>Einstellungen</span>
+        </button>
+        <hr class="sidebarSpacer" />
+      </div>
+
+      <div class="col gx-0">
+        <!-- Menu that toggles on sidebar btn click -->
+        <div id="menu-data" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true"
+          data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuDataTitle">
+          <div class="offcanvas-header">
+            <span class="offcanvas-title h3" id="menuDataTitle">Datenkatalog</span>
+            <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"
+              aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body" id="menu-data-catalog-content-wrapper">
+            <!-- Data catalog gets inserted dynamically based on layers.mjs -->
+          </div>
+          <div class="menu-resize-handle"></div>
+        </div>
+
+        <div id="menu-tools" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true"
+          data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuToolsTitle">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title h3" id="menuToolsTitle">Werkzeuge</h5>
+            <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"
+              aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <div class="accordion" id="menu-tools-main-accordion">
+              <div class="accordion-item menu-item-level-1">
+                <span class="accordion-header" id="menu-tools-measuerments-heading">
+                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menu-tools-measurements" aria-expanded="false"
+                    aria-controls="menu-tools-measurements">
+                    <span class="menu-category-icon"><i class="fa-solid fa-ruler-combined"></i></span>Messwerkzeuge
+                  </button>
+                </span>
+                <div id="menu-tools-measurements" class="accordion-collapse collapse"
+                  aria-labelledby="menu-tools-measurements">
+                  <div class="accordion-body">
+                    <div class="accordion" id="menu-tools-measurement-accordion">
+
+                      <div class="accordion-item menu-item-level-2">
+                        <span class="accordion-header" id="menu-tools-measuerments-line-heading">
+                          <button class="accordion-button collapsed menu-btn-level-2" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#menu-tools-measurements-line" aria-expanded="false"
+                            aria-controls="menu-tools-measurements-line">
+                            Strecke
+                          </button>
+                        </span>
+                        <div id="menu-tools-measurements-line" class="accordion-collapse collapse"
+                        aria-labelledby="menu-tools-measurements-line">
+                          <div class="accordion-body">
+                            <div class="menu-content-wrapper">
+                              <button type="button" id="measurements-draw-line-btn" class="btn btn-secondary">Linie zeichnen</button>
+                              <div id="measurement-info-line" class="measurement-info">
+                                <table>
+                                  <colgroup>
+                                    <col>
+                                    <col>
+                                  </colgroup>
+                                  <thead>
+                                    <tr>
+                                      <td rowspan="2"><i class="fa-solid fa-lg fa-circle-info measurement-info-icon"></i></td>
+                                      <td>Linksklick: Stützpunkt hinzufügen (aktuell nur auf der Globus-Oberfläche möglich).</td>
+                                    </tr>
+                                    <tr>
+                                      <td>Rechtsklick: Messung beenden</td>
+                                    </tr>
+                                  </thead>
+                                </table>
+                              </div>
+                              <div class="measurement-result-wrapper">
+                                <span>Gemessene Strecke: <span id="measurement-line-result">0,0</span> m
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="accordion-item menu-item-level-2">
+                        <span class="accordion-header" id="menu-tools-measuerments-polygon-heading">
+                          <button class="accordion-button collapsed menu-btn-level-2" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#menu-tools-measurements-polygon" aria-expanded="false"
+                            aria-controls="menu-tools-measurements-polygon">
+                            Fläche
+                          </button>
+                        </span>
+                        <div id="menu-tools-measurements-polygon" class="accordion-collapse collapse"
+                        aria-labelledby="menu-tools-measurements-polygon">
+                          <div class="accordion-body">
+                            <div class="menu-content-wrapper">
+                              <button type="button" id="measurements-draw-polygon-btn" class="btn btn-secondary">Polygon zeichnen</button>
+                              <div id="measurement-info-polygon" class="measurement-info">
+                                <table>
+                                  <colgroup>
+                                    <col>
+                                    <col>
+                                  </colgroup>
+                                  <thead>
+                                    <tr>
+                                      <td rowspan="2"><i class="fa-solid fa-lg fa-circle-info measurement-info-icon"></i></td>
+                                      <td>Linksklick: Stützpunkt hinzufügen (aktuell nur auf der Globus-Oberfläche möglich).</td>
+                                    </tr>
+                                    <tr>
+                                      <td>Rechtsklick: Messung beenden</td>
+                                    </tr>
+                                  </thead>
+                                </table>
+                              </div>
+                              <div class="measurement-result-wrapper">
+                                <span>Gemessene Fläche: <span id="measurement-polygon-result">0,0</span> m²
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item menu-item-level-1">
+                <span class="accordion-header" id="menu-tools-slicers-heading">
+                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menu-tools-slicers" aria-expanded="false"
+                    aria-controls="menu-tools-slicers">
+                    <span class="menu-category-icon"><i class="fa-solid fa-ruler-combined"></i></span>Schnittlinien
+                  </button>
+                </span>
+                <div id="menu-tools-slicers" class="accordion-collapse collapse"
+                  aria-labelledby="menu-tools-slicers">
+                  <div class="accordion-body">
+                    <div class="menu-content-wrapper">
+                      <button type="button" id="slicers-draw-rectangle-btn" class="btn btn-secondary">Rechteck zeichnen</button>
+                      <br />
+                      <!-- <button type="button" id="slicers-inside-btn" class="btn btn-secondary">Innen ausblenden</button>
+                      <button type="button" id="slicers-outside-btn" class="btn btn-secondary">Außen ausblenden</button> -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="menu-resize-handle"></div>
+        </div>
+
+        <div id="menu-settings" class="offcanvas offcanvas-start sidebar-menu" data-bs-scroll="true"
+          data-bs-backdrop="false" tabindex="-1" aria-labelledby="menuSettingsTitle">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="menuSettingsTitle">Einstellungen</h5>
+            <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"
+              aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <div class="accordion" id="menu-settings-main-accordion">
+              <div class="accordion-item menu-item-level-1">
+                <span class="accordion-header" id="menu-settings-globe-heading">
+                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menu-settings-globe" aria-expanded="false"
+                    aria-controls="menu-settings-globe">
+                    <span class="menu-category-icon"><i class="fa-solid fa-globe"></i></span> Globus-Visualisierung
+                  </button>
+                </span>
+                <div id="menu-settings-globe" class="accordion-collapse collapse"
+                  aria-labelledby="menu-settings-globe">
+                  <div class="accordion-body">
+                    <div class="menu-content-wrapper">
+                      Farbe: <div id="settingsGlobeColor"></div>
+                      Transparenz: <range-slider id="settingsGlobeTransparencySlider" value="100" class="opacitySlider"></range-slider>
+                        
+                      
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="accordion-item menu-item-level-1">
+                <span class="accordion-header" id="menu-settings-underground-heading">
+                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menu-settings-underground" aria-expanded="false"
+                    aria-controls="menu-settings-underground">
+                    <span class="menu-category-icon"><i class="fa-solid fa-circle-down"></i></span> Untergrund-Visualisierung
+                  </button>
+                </span>
+                <div id="menu-settings-underground" class="accordion-collapse collapse"
+                  aria-labelledby="menu-settings-underground">
+                  <div class="accordion-body">
+                    <div class="menu-content-wrapper">
+
+                      <label for="settingsUndergroundCameraSwitch" class="toggle-switchy" data-style="rounded" data-label="left" data-color="blue">
+                        
+                        <input checked type="checkbox" id="settingsUndergroundCameraSwitch">
+                        <span class="toggle">
+                          <span class="switch"></span>
+                        </span>
+                        Unterirdische Kameraposition&nbsp;&nbsp;
+                      </label>
+                      <br />
+
+                      Farbe: <div id="settingsUndergroundColor"></div>
+                      Transparenz: <range-slider id="settingsUndergroundTransparencySlider" value="100" class="opacitySlider"></range-slider>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!--
+              <div class="accordion-item menu-item-level-1">
+                <span class="accordion-header" id="menu-settings-performance-heading">
+                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menu-settings-performance" aria-expanded="false"
+                    aria-controls="menu-settings-performance">
+                    <img class="menu-category-icon" src="/static/icons/bootstrap/speedometer.svg" alt="speedometer" width="32" height="32"> Performanz
+                  </button>
+                </span>
+                <div id="menu-settings-performance" class="accordion-collapse collapse"
+                  aria-labelledby="menu-settings-performance">
+                  <div class="accordion-body">
+                    <div class="menu-content-wrapper">
+                      Cache-Größe: <input type="text" name="settings-cache-size" id="settings-cache-size" value="200"><br />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              -->
+
+              <div class="accordion-item menu-item-level-1">
+                <span class="accordion-header" id="menu-settings-sensorTimeline-heading">
+                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#menu-settings-sensorTimeline" aria-expanded="false"
+                    aria-controls="menu-settings-sensorTimeline">
+                    <span class="menu-category-icon"><i class="fa-solid fa-chart-line"></i></span> Sensor-Zeitreihe
+                  </button>
+                </span>
+                <div id="menu-settings-sensorTimeline" class="accordion-collapse collapse"
+                  aria-labelledby="menu-settings-sensorTimeline">
+                  <div class="accordion-body">
+                    <div class="menu-content-wrapper">
+                      Anzahl Messwerte: <input type="number" min="2" name="settings-number-timeseries-measurements" id="settings-number-timeseries-measurements" value="50"><br />
+                      Update-Interval (Sekunden): <input type="number" min="5" name="settings-timeseries-update-interval" id="settings-timeseries-update-interval" value="30"><br />
+                      <br />
+                      Änderungen werden bei erneutem Diagrammaufruf wirksam.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="menu-resize-handle"></div>
+        </div>
+
+        <div id="cesiumContainer"></div>
+
+        <div id="sensorInfoPanel">
+          <div id="sensorInfoPanelHeader">
+            <span id="sensorInfoPanelIdSpan" class="h4"></span>
+            <button id="sensorInfoPanelCloseBtn" type="button" class="btn-close btn-close-white text-reset" aria-label="Close"></button>
+          </div>
+          <hr>
+          <div id="sensorInfoPanelBody" class="container-fluid">
+            <div class="row h-100">
+              <div class="col-4">
+                <div id="sensorInfoSummary">
+                  <div class="row">
+                    <div class="col-6">
+                      <table>
+                        <tbody>
+                          <tr>
+                            <td colspan="2" class="h5 sensorInfoSummaryHeading">Position</td>
+                          </tr>
+                          <tr>
+                            <td>Geogr. Länge:</td>
+                            <td id="sensorInfoSummaryLon" class="sensorInfoSummaryTd"></td>
+                          </tr>
+                          <tr>
+                            <td>Geogr. Breite:</td>
+                            <td id="sensorInfoSummaryLat" class="sensorInfoSummaryTd"></td>
+                        </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="col-6">
+                      <table>
+                        <tbody>
+                          <tr>
+                            <td colspan="2" class="h5 sensorInfoSummaryHeading">Aktuelle Messung [<span id="sensorInfoSummaryLayerName"></span>]</td>
+                          </tr>
+                          <tr>
+                            <td>Zeitpunkt:</td>
+                            <td id="sensorInfoSummaryTimestamp" class="sensorInfoSummaryTd"></td>
+                          </tr>
+                          <tr>
+                            <td>Messwert:</td>
+                            <td id="sensorInfoSummaryValue" class="sensorInfoSummaryTd"></td>
+                        </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <div id="sensorInfoSummaryAdditionalMeasurements"></div>
+                      <span id="sensorInfoSummaryAdditionalMeasurements"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-8">
+                <div id="sensorInfoPanelTimelineWrapper"></div>
+              </div>
+            </div>
+          </div>
+          <div id="sensorInfoPanel-resize-handle"></div>
+        </div>
+
+        <div id="cameraControlOverlay">
+          <div class="container">
+            <div class="row">
+              <div class="col">
+                <span class="h4">Kamerasteuerung</span>
+              </div>
+            </div>
+            <hr>
+            <div class="row">
+              <div class="col">
+                <span class="h5">Richtung</span>
+                <round-slider id="cameraControlHeadingSlider" class="cameraControlSlider" value="0" arclength="360" startangle="270"></round-slider>
+                <input type="number" name="cameraControlHeadingInput" id="cameraControlHeadingInput">
+              </div>  
+            </div>
+            <hr>
+            <div class="row">
+              <div class="col-6">
+                  <span class="h5">Neigung</span>
+                  <range-slider id="cameraControlPitchSlider" class="cameraControlSlider verticalSlider" value="0" min="-90" max="90" ></range-slider>
+                  <input type="number" name="cameraControlPitchInput" id="cameraControlPitchInput">
+              </div>
+              <div class="col-6">
+                <span class="h5">Höhe</span>
+                <range-slider id="cameraControlHeightSlider" class="cameraControlSlider verticalSlider" value="0" min="-2500" max="2500" ></range-slider>
+                <input type="number" name="cameraControlHeightInput" id="cameraControlHeightInput">
+              </div>
+            </div>
+            <hr>
+            <div class="row">
+              <div class="col">
+                <span class="h5">Querneigung</span>
+                <range-slider id="cameraControlRollSlider" class="cameraControlSlider" value="0" min="-90" max="90" ></range-slider>
+                <input type="number" name="cameraControlRollInput" id="cameraControlRollInput">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col" id="footerDiv">
+        <!-- nothing for now -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Gets appended to cesium viewer with js -->
+  <div>
+    <img id="northArrowOverlay" src="static/images/north-arrow.png" width="80" height="80" alt="Nordpfeil" />
+  </div>
+
+  <!-- Gets appended to cesium viewer with js -->
+  <div id="sensorListOverlay">
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <span class="h4">Sensoren</span>
+        </div>
+      </div>
+      <hr>
+      <div class="row">
+        <div class="col">
+          <div id="sensorListContainer"></div>
+        </div>  
+      </div>
+    </div>
+  </div>
+
+  <!-- Gets appended to cesium viewer with js -->
+  <div id="coordOverlay">
+    <table>
+      <tr>
+        <td>Lon:</td>
+        <td><span id="coordOverlayLon"></span></td>
+      </tr>
+      <tr>
+        <td>Lat:</td>
+        <td><span id="coordOverlayLat"></span></td>
+      </tr>
+      <tr>
+        <td>Höhe:</td>
+        <td><span id="coordOverlayHeight"></span></td>
+      </tr>
+      <tr>
+        <td>Heading:
+        </td>
+        <td><span id="coordOverlayHeading"></span></td>
+      </tr>
+      <tr>
+        <td>Pitch:</td>
+        <td><span id="coordOverlayPitch"></span></td>
+      </tr>
+      <tr>
+        <td>Roll:</td>
+        <td><span id="coordOverlayRoll"></span></td>
+      </tr>
+    </table>
+  </div>
+</body>
+
+</html>
