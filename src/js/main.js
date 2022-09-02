@@ -837,7 +837,7 @@ function createMenuLayerTree(categories) {
 
 function onMenuLayerChbClicked(event, layer) {
     let chb = event.target;
-    let opacitySlider = document.querySelector("range-slider[data-layer-name=" + layer.name + "]")
+    let opacitySlider = document.querySelector("range-slider[data-layer-name='" + layer.name + "']")
     let opacitySliderWrapper = opacitySlider.parentElement;
 
     if(chb.checked) {
