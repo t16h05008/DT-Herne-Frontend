@@ -11,13 +11,20 @@ const distFolderPath = path.resolve(__dirname, 'dist')
 
 module.exports = merge(baseConfig, {
   mode: 'production',
+  devtool: 'source-map',
   module: {
     rules: [
       {
-        test: /\.css$/i,
-        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+        test: /\.css$/,
+        use: [MiniCssExtractPlugin.loader, "css-loader"],
+        sideEffects: true // apparently the import statements for css files via js count as side effects...
       }
     ]
+  },
+  performance: {
+    hints: false,
+    maxEntrypointSize: 512000,
+    maxAssetSize: 512000
   },
   optimization: {
     splitChunks: {
@@ -37,7 +44,6 @@ module.exports = merge(baseConfig, {
     ],
     usedExports: true,
   },
-  devtool: 'source-map',
   plugins: [
     new MiniCssExtractPlugin({
       filename: "[name].css",
