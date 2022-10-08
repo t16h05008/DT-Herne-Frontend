@@ -1069,12 +1069,6 @@ function onDataLoadingManagerMessageReceived(event) {
     if(layers.includes("cityModel")) {
         handleLoadingAndUnloadingCityModelEntities(data["cityModel"]);
     }
-    if(layers.includes("sewerShafts")) {
-        handleLoadingAndUnloadingSewerEntities("sewerShafts", data["sewerShafts"]);
-    }
-    if(layers.includes("sewerPipes")) {
-        handleLoadingAndUnloadingSewerEntities("sewerPipes", data["sewerPipes"]);
-    }
 }
 
 function handleLoadingAndUnloadingCityModelEntities(entitiesToShow) {
@@ -1204,60 +1198,6 @@ function handleLoadingAndUnloadingCityModelEntities(entitiesToShow) {
         //         }
         //     };
         // }
-}
-
-function handleLoadingAndUnloadingSewerEntities(layerName, entityIdsToShow) {
-    let layer;
-    Util.iterateRecursive(layerCategories, function(obj) {
-        if(obj.name === layerName) {
-            layer = obj;
-        }
-    });
-    // Note that we work with the properties.id here, not the id of the entity, which is random
-    let datasource = viewer.dataSources.getByName(layer.name)[0];
-    let currentEntities = datasource.entities;
-    let currentEntitiesIds = currentEntities.values.map( entity => entity.properties.id.getValue() );
-    // Get all entities that should be loaded (some might be loaded already)
-    let entityIdsToLoad =  entityIdsToShow.filter( (id) => {
-        return !currentEntitiesIds.includes(id);
-    });
-
-    // And the ones to unload
-    let entitiesToUnload = currentEntities.values.filter( (entity) => {
-        return !entityIdsToShow.includes(entity.properties.id.getValue());
-    });
-
-    // console.log("number of currently loaded entities: ", currentEntitiesIds.length);
-    // console.log("number of entities to show", entityIdsToShow.length);
-    // console.log("number of entities to load", entityIdsToLoad.length);
-    // console.log("number of entities to unload", entitiesToUnload.length);
-    
-    // Unload
-    for(let entity of entitiesToUnload) {
-        datasource.entities.remove(entity);
-    }
-
-    // Load
-    if(entityIdsToLoad.length) {
-        let url = backendBaseUrl + layer.apiEndpoint + "?ids=";
-        for(let i=0; i<entityIdsToLoad.length; i++) {
-            url +=  entityIdsToLoad[i]
-            url += (i < entityIdsToLoad.length-1) ? "," : "";
-        }
-
-        fetch(url).then( response => response.json()).then( featureCollection  => {
-            (async () => {
-                for(let feature of featureCollection["features"]) {
-                    let entity = await createSewerEntityFromFeature(feature);
-                    datasource.entities.add(entity);
-                }
-                // Apply current slider value
-                let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
-                handleLayerOpacityChange(opacitySlider);
-            })();
-        });
-        
-    }
 }
 
 /**
@@ -1393,29 +1333,6 @@ function addLayer(layer) {
             let translation = Cesium.Cartesian3.subtract(offset, surface, new Cesium.Cartesian3());
             tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
         });
-        scene.primitives.add(tileset);
-        layer.cesiumReference = tileset;
-    }
-
-    if(layer.name.includes("sewer")) {
-        // Had some trouble with GeoJsonDataSource, so CustomDataSource it is for now
-        let sewerDataSource = new Cesium.CustomDataSource(layer.name);
-        viewer.dataSources.add(sewerDataSource);
-        layer.cesiumReference = sewerDataSource;
-        layersToUpdateOnPovChange.push(layer.name);
-        camera.moveEnd.raiseEvent(); // Simulate the event to load the first features
-    }
-
-    if(layer.name === "metrostationPointcloud") {
-        let url = backendBaseUrl + "metrostation/pointcloud/"; // The last slash is important here!
-        let tileset = new Cesium.Cesium3DTileset({
-            url: url,
-            dynamicScreenSpaceError: true,
-            dynamicScreenSpaceErrorDensity: 0.00278,
-            dynamicScreenSpaceErrorFactor: 4.0,
-            dynamicScreenSpaceErrorHeightFalloff: 0.25
-        })
-
         scene.primitives.add(tileset);
         layer.cesiumReference = tileset;
     }
@@ -1563,101 +1480,6 @@ function removeLayer(layer) {
     }
 }
 
-
-async function createSewerEntityFromFeature(feature) {
-    let geom = feature.geometry;
-    let props = feature.properties;
-    let geomType = geom.type;
-    let coords = geom.coordinates;
-    let entity;
-    let entityProps = new Cesium.PropertyBag();
-    for(let [key, value] of Object.entries(props)) {
-        entityProps.addProperty(key, value);
-    }
-    let color = props["Farbe"];
-    let colorSplit = color.split(",");
-    colorSplit = colorSplit.map(entry => parseInt(entry));
-    let dgm1Layer;
-    Util.iterateRecursive(layerCategories, function(obj) {
-        if(obj.name === "dgm1m") dgm1Layer = obj;
-    });
-    // Sewer shaft
-    if(geomType === "Point") {
-        if(color == "150,150,150") {
-            // This shaft has no attributes attached
-            // Sample the terrain height at this point and show a standard depth
-            let terrainProvider = dgm1Layer.cesiumReference;
-            let positions = await Cesium.sampleTerrainMostDetailed(terrainProvider, [Cesium.Cartographic.fromDegrees(coords[0], coords[1])]);
-            coords[2] = positions[0].height;
-            entityProps["Deckelhöhe [m]"] = positions[0].height;
-            entityProps["Sohlhöhe [m]"] = entityProps["Deckelhöhe [m]"] - 5; // dummy depth of 3 m
-        }
-        let shaftHeight = entityProps["Deckelhöhe [m]"] - entityProps["Sohlhöhe [m]"]
-        let position = new Cesium.Cartesian3.fromDegrees(coords[0], coords[1], coords[2] - shaftHeight / 2) // lon, lat, height
-        entity = new Cesium.Entity({
-            id: props.id,
-            name: props.id,
-            position: position,
-            show: true,
-            billboard: new Cesium.BillboardGraphics(),
-            cylinder: {
-                length: shaftHeight,
-                topRadius: 1,
-                bottomRadius: 1,
-                material: new Cesium.ColorMaterialProperty(Cesium.Color.fromBytes(colorSplit[0], colorSplit[1], colorSplit[2]))
-            },
-            properties: entityProps
-        });
-    }
-
-    // Sewer pipe
-    if(geomType === "LineString") {
-        let coordArr = [];
-        for(let point of coords) {
-            coordArr.push(point[0])
-            coordArr.push(point[1])
-            coordArr.push(point[2])
-        }
-        let positions = new Cesium.Cartesian3.fromDegreesArrayHeights(coordArr)
-        entity = new Cesium.Entity({
-            id: props.id,
-            name: props.id,
-            show: true,
-            properties: entityProps
-        });
-        // Attribute is still null, but the pipe is shown
-        // Needed because the diameter is unknown for some pipes
-        console.log(props);
-        if(!props["Profilbreite [mm]"]) {
-            props["Profilbreite [mm]"] = 300;
-            colorSplit[0] = 150;
-            colorSplit[1] = 150;
-            colorSplit[2] = 150;
-        }
-        entity.polylineVolume = new Cesium.PolylineVolumeGraphics({
-            positions: positions,
-            shape: computeCircle(props["Profilbreite [mm]"] / 1000.0), // We simplify the true geometry of the pipe here with a circle
-            material: new Cesium.ColorMaterialProperty(Cesium.Color.fromBytes(colorSplit[0], colorSplit[1], colorSplit[2])),
-            cornerType: Cesium.CornerType.MITERED
-        });
-
-        // Computes the circle, that will be extruded to form the pipe
-        function computeCircle(radius) {
-            const positions = [];
-            for (let i = 0; i < 360; i++) {
-              const radians = Cesium.Math.toRadians(i);
-              positions.push(
-                new Cesium.Cartesian2(
-                  radius * Math.cos(radians),
-                  radius * Math.sin(radians)
-                )
-              );
-            }
-            return positions;
-        }
-    }
-    return entity;
-}
 
 
 /**

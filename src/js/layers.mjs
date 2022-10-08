@@ -1,71 +1,12 @@
 const layerCategories = [
     {
         type: "category",
-        name: "sewerage",
-        icon: "<i class='fa-solid fa-droplet'></i>",
-        displayName: "Kanalisation",
-        isBaseLayerCategory: false,
-        show: true,
-        layers: [{
-                name: "sewerShafts",
-                displayName: "Schächte",
-                thumbnailSrc: "static/images/layerPreview/sewer-shaft.webp",
-                show: false,
-                opacity: 100,
-                tooltip: "Die Kanalschächte der Stadtentwässerung Herne.",
-                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)",
-                apiEndpoint: "sewers/shafts"
-            }, {
-                name: "sewerPipes",
-                displayName: "Leitungen",
-                thumbnailSrc: "static/images/layerPreview/sewer-pipe.webp",
-                show: false,
-                opacity: 100,
-                tooltip: "Die unterirdischen Leitungen der Stadtentwässerung Herne.",
-                credit: "[Stadtentwässerung Herne (SEH)](https://www.se-herne.de/)",
-                apiEndpoint: "sewers/pipes"
-            },
-        ]
-    },
-    
-    {
-        type: "category",
         name: "climate",
         icon: "<i class='fa-solid fa-tree'></i>",
         displayName: "Natur, Umwelt & Klima",
         isBaseLayerCategory: false,
         show: true,
         layers: [
-            {
-                type: "sensor",
-                name: "temperature",
-                displayName: "Temperatur",
-                thumbnailSrc: "static/images/layerPreview/temperature.webp",
-                show: false,
-                opacity: 100,
-                tooltip: "Sensorbasierte Temperaturmessungen in Herner Stadtgebiet.",
-                credit: "[Hochschule Bochum](https://www.hochschule-bochum.de/)"
-            },
-            {
-                type: "sensor",
-                name: "humidity",
-                displayName: "Luftfeuchtigkeit",
-                thumbnailSrc: "static/images/layerPreview/humidity.webp",
-                show: false,
-                opacity: 100,
-                tooltip: "Sensorbasierte Messungen der Luftfeuchtigkeit in Herner Stadtgebiet.",
-                credit: "[Hochschule Bochum](https://www.hochschule-bochum.de/)"
-            },
-            {
-                type: "sensor",
-                name: "precipitation",
-                displayName: "Niederschlag",
-                thumbnailSrc: "static/images/layerPreview/precipitation.webp",
-                show: false,
-                opacity: 100,
-                tooltip: "Sensorbasierte Niederschlags-Messungen in Herner Stadtgebiet.",
-                credit: "[Hochschule Bochum](https://www.hochschule-bochum.de/)"
-            },
             {
                 type: "wms",
                 name: "heavyRainHazardMap1",
@@ -159,16 +100,16 @@ const layerCategories = [
                 tooltip: "Gebäude aus OpenStreetMap.",
                 credit: ""
             },
-            {
-                name: "cityModel",
-                displayName:  "Stadtmodell",
-                thumbnailSrc: "static/images/layerPreview/city-model.webp",
-                show: false,
-                opacity: 100,
-                tooltip: "Das 3D-Stadtmodell der Stadt Herne.",
-                credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)",
-                apiEndpoint: "buildings"
-            },
+            // {
+            //     name: "cityModel",
+            //     displayName:  "Stadtmodell",
+            //     thumbnailSrc: "static/images/layerPreview/city-model.webp",
+            //     show: false,
+            //     opacity: 100,
+            //     tooltip: "Das 3D-Stadtmodell der Stadt Herne.",
+            //     credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)",
+            //     apiEndpoint: "buildings"
+            // },
             {
                 name: "3dmesh",
                 displayName:  "3D Mesh",
@@ -178,25 +119,6 @@ const layerCategories = [
                 opacity: 100,
                 tooltip: "",
                 credit: "",
-            }
-        ]
-    },
-    {
-        type: "category",
-        name: "publicTransport",
-        displayName: "ÖPNV",
-        icon: "<i class='fa-solid fa-house'></i>",
-        isBaseLayerCategory: false,
-        show: true,
-        layers: [
-            {
-                name: "metrostationPointcloud",
-                displayName: "U-Bahn Station (Punktwolke)",
-                thumbnailSrc: "static/images/layerPreview/metro.webp",
-                show: false,
-                opacity: 100,
-                tooltip: "Terrestrisch erzeugte Laserscandaten.",
-                credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
             }
         ]
     },
