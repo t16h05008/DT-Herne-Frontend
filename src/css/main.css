@@ -302,12 +302,12 @@ body, html {
 }
 
 .sidebar-menu {
-    top: calc( var(--header-height) + var(--header-spacer-height) );
-    left: var(--sidebar-width);
-    bottom: var(--footer-height);
-    width: var(--menu-width);
-    background-color: var(--menu-background-color);
-    color: white;
+    top: calc( var(--header-height) + var(--header-spacer-height) ) !important;
+    left: var(--sidebar-width) !important;
+    bottom: var(--footer-height) !important;
+    width: var(--menu-width) !important;
+    background-color: var(--menu-background-color) !important;
+    color: white !important;
 }
 
 .offcanvas-body {
@@ -398,6 +398,7 @@ body, html {
     display: flex;
     align-items: center;
     padding: 10px;
+    color: white;
 }
 
 .menu-layer-entry input:first-child {
@@ -407,6 +408,9 @@ body, html {
     background-color: rgb(230, 230, 230)
 }
 
+.menu-item-level-1, .menu-item-level-2, .menu-btn-level-3 {
+    border: none;
+}
 
 .menu-item-level-1 .menu-layer-entry input:first-child:checked[type="checkbox"] {
     background-color: var(--primary-ui-color);
