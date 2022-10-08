@@ -6,4 +6,4 @@ RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.config /etc/nginx/conf.d/default.conf
 
 # Copy build application
-COPY ./dist /usr/share/nginx/html
+# COPY ./dist /usr/share/nginx/html
