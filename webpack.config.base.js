@@ -39,7 +39,13 @@ module.exports = {
   },
   resolve: {
     fallback: {
-      fs: "{}" // Recommended for cesiumJS
+      // These are used by Cesium and lead to errors with webpack 5, since polyfills are no longer added automatically
+      // Fow now we don't provide polyfills
+      fs: '{}', 
+      http: false,
+      https: false,
+      zlib: false,
+      url: false
     }
   },
   plugins: [

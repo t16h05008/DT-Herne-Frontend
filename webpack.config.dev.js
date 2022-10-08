@@ -5,6 +5,9 @@ const path = require('path');
 
 module.exports = merge(baseConfig, {
   mode: 'development',
+  watchOptions: {
+    ignored: ['**/node_modules', '**/dist'],
+  },
   module: {
     rules: [
       {
@@ -19,9 +22,6 @@ module.exports = merge(baseConfig, {
     usedExports: true,
   },
   devServer: {
-    static: {
-      directory: path.join(__dirname, "dist")
-    },
     client: {
       logging: 'log',
       overlay: {
@@ -31,18 +31,15 @@ module.exports = merge(baseConfig, {
       progress: true,
     },
     compress: true,
-    port: 8080,
+    port: 8081, // If run simultaneously to docker, port 8080 is in use
     watchFiles: {
       paths: [
         'src/**/*.html',
-        'src/**/*.css'
+        'src/**/*.css',
       ],
       options: {
         usePolling: false,
       },
     },
-  },
-  plugins: [
-    
-  ]
+  }
 });
