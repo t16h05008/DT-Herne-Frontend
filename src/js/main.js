@@ -14,13 +14,13 @@ import {layerCategories} from "./layers.mjs";
 Cesium.Ion.defaultAccessToken = process.env.CESIUM_ION_ACCESS_TOKEN;
 const initialCameraView = {
   position: {
-    lat: 51.54005, //51.54241, //, 
-    lon: 7.22795, // 7.2246, //,
-    height: 350 // meter
+    lat: 51.52908,
+    lon: 7.15538,
+    height: 535 // meter
   },
   orientation: {
-    heading: 295,
-    pitch: -30,
+    heading: 28.1,
+    pitch: -44.7,
     roll: 0,
   }
 }
