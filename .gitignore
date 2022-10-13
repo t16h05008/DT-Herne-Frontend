@@ -1,4 +1,6 @@
 .env
+.env.development
+!.env.example
 .vscode
 node_modules/
 dist/
