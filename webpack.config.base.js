@@ -8,7 +8,7 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const WebpackPwaManifest = require('webpack-pwa-manifest');
-const Dotenv = require('dotenv-webpack');
+
 const WebpackLicensePlugin = require('webpack-license-plugin');
 
 const nodeModulePathConstant = "node_modules/";
@@ -103,9 +103,9 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       // Define relative base path in cesium for loading assets
+      // This is an environment variable
       CESIUM_BASE_URL: JSON.stringify('/static/cesiumJS/')
     }),
-    new Dotenv(),
     // Below is a custom plugin definition
     // For whatever reason webpack creates an additional png-file in the dist folder.
     // It seem to be part of a dependency of cesiumJS and is not a valid image either.
