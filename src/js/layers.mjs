@@ -114,11 +114,11 @@ const layerCategories = [
                 name: "3dmesh",
                 displayName:  "3D Mesh",
                 thumbnailSrc: "static/images/layerPreview/city-model.webp",
-                url: "https://devslb5.geo.metropoleruhr.de/datasource-data/2020_Mesh_Herne/tileset.json",
                 show: false,
                 opacity: 100,
-                tooltip: "",
-                credit: "",
+                tooltip: "3D-Mesh der Stadt Herne.",
+                credit: "Datenursprung: Regionalverband Ruhr",
+                apiEndpoint: "terrain/3dmesh"
             }
         ]
     },

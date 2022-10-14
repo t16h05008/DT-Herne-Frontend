@@ -1311,8 +1311,9 @@ function addLayer(layer) {
 
     if(layer.name === "3dmesh") {
         // 3D Tiles
+        let url = backendBaseUrl + layer.apiEndpoint;
         let tileset = new Cesium.Cesium3DTileset({
-            url: layer.url,
+            url: url,
             dynamicScreenSpaceError: true,
             dynamicScreenSpaceErrorDensity: 0.00278,
             dynamicScreenSpaceErrorFactor: 4.0,
