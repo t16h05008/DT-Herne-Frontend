@@ -3,6 +3,8 @@ const baseConfig = require('./webpack.config.base.js');
 
 const path = require('path');
 
+const Dotenv = require('dotenv-webpack');
+
 module.exports = merge(baseConfig, {
   mode: 'development',
   watchOptions: {
@@ -41,5 +43,10 @@ module.exports = merge(baseConfig, {
         usePolling: false,
       },
     },
-  }
+  },
+  plugins: [
+    new Dotenv({
+      path: './.env.development'
+    }),
+  ]
 });
