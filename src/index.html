@@ -21,7 +21,6 @@
   <script defer src="dependencies/uuidjs/uuid.core.js"></script>
   <script defer src="dependencies/marked/marked.min.js"></script>
   <script defer src="dependencies/dompurify/purify.min.js"></script>
-  <script defer src="dependencies/echarts/echarts.min.js"></script>
 </head>
 
 <body>
@@ -288,95 +287,12 @@
                 </div>
               </div>
               -->
-
-              <div class="accordion-item menu-item-level-1">
-                <span class="accordion-header" id="menu-settings-sensorTimeline-heading">
-                  <button class="accordion-button collapsed menu-btn-level-1" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#menu-settings-sensorTimeline" aria-expanded="false"
-                    aria-controls="menu-settings-sensorTimeline">
-                    <span class="menu-category-icon"><i class="fa-solid fa-chart-line"></i></span> Sensor-Zeitreihe
-                  </button>
-                </span>
-                <div id="menu-settings-sensorTimeline" class="accordion-collapse collapse"
-                  aria-labelledby="menu-settings-sensorTimeline">
-                  <div class="accordion-body">
-                    <div class="menu-content-wrapper">
-                      Anzahl Messwerte: <input type="number" min="2" name="settings-number-timeseries-measurements" id="settings-number-timeseries-measurements" value="50"><br />
-                      Update-Interval (Sekunden): <input type="number" min="5" name="settings-timeseries-update-interval" id="settings-timeseries-update-interval" value="30"><br />
-                      <br />
-                      Änderungen werden bei erneutem Diagrammaufruf wirksam.
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
           <div class="menu-resize-handle"></div>
         </div>
 
         <div id="cesiumContainer"></div>
-
-        <div id="sensorInfoPanel">
-          <div id="sensorInfoPanelHeader">
-            <span id="sensorInfoPanelIdSpan" class="h4"></span>
-            <button id="sensorInfoPanelCloseBtn" type="button" class="btn-close btn-close-white text-reset" aria-label="Close"></button>
-          </div>
-          <hr>
-          <div id="sensorInfoPanelBody" class="container-fluid">
-            <div class="row h-100">
-              <div class="col-4">
-                <div id="sensorInfoSummary">
-                  <div class="row">
-                    <div class="col-6">
-                      <table>
-                        <tbody>
-                          <tr>
-                            <td colspan="2" class="h5 sensorInfoSummaryHeading">Position</td>
-                          </tr>
-                          <tr>
-                            <td>Geogr. Länge:</td>
-                            <td id="sensorInfoSummaryLon" class="sensorInfoSummaryTd"></td>
-                          </tr>
-                          <tr>
-                            <td>Geogr. Breite:</td>
-                            <td id="sensorInfoSummaryLat" class="sensorInfoSummaryTd"></td>
-                        </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <div class="col-6">
-                      <table>
-                        <tbody>
-                          <tr>
-                            <td colspan="2" class="h5 sensorInfoSummaryHeading">Aktuelle Messung [<span id="sensorInfoSummaryLayerName"></span>]</td>
-                          </tr>
-                          <tr>
-                            <td>Zeitpunkt:</td>
-                            <td id="sensorInfoSummaryTimestamp" class="sensorInfoSummaryTd"></td>
-                          </tr>
-                          <tr>
-                            <td>Messwert:</td>
-                            <td id="sensorInfoSummaryValue" class="sensorInfoSummaryTd"></td>
-                        </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col">
-                      <div id="sensorInfoSummaryAdditionalMeasurements"></div>
-                      <span id="sensorInfoSummaryAdditionalMeasurements"></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-8">
-                <div id="sensorInfoPanelTimelineWrapper"></div>
-              </div>
-            </div>
-          </div>
-          <div id="sensorInfoPanel-resize-handle"></div>
-        </div>
 
         <div id="cameraControlOverlay">
           <div class="container">
@@ -428,23 +344,6 @@
   <!-- Gets appended to cesium viewer with js -->
   <div>
     <img id="northArrowOverlay" src="static/images/north-arrow.png" width="80" height="80" alt="Nordpfeil" />
-  </div>
-
-  <!-- Gets appended to cesium viewer with js -->
-  <div id="sensorListOverlay">
-    <div class="container">
-      <div class="row">
-        <div class="col">
-          <span class="h4">Sensoren</span>
-        </div>
-      </div>
-      <hr>
-      <div class="row">
-        <div class="col">
-          <div id="sensorListContainer"></div>
-        </div>  
-      </div>
-    </div>
   </div>
 
   <!-- Gets appended to cesium viewer with js -->
