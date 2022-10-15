@@ -122,6 +122,24 @@ const layerCategories = [
             }
         ]
     },
+    {
+        type: "category",
+        name: "miscellaneous",
+        icon: "<i class='fa-solid fa-circle-question'></i>",
+        displayName: "Sonstiges",
+        isBaseLayerCategory: false,
+        show: true,
+        layers: [{
+            name: "360images",
+            displayName:  "360° Aufnahmen",
+            thumbnailSrc: "static/images/layerPreview/camera.webp",
+            show: false,
+            opacity: 100,
+            tooltip: "360° Panorama Aufnahmen von ausgewählten Standpunkten.",
+            credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)",
+            apiEndpoint: "images/360deg/locations"
+        }]
+    },
     /* ========================================
        ============= BASE LAYERS ==============
        ========================================

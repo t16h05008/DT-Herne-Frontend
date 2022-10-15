@@ -1327,6 +1327,50 @@ function addLayer(layer) {
         layer.cesiumReference = tileset;
     }
 
+    if(layer.name === "360images") {
+        // Add the locations. Images are requested when location is opened.
+        let url = backendBaseUrl + layer.apiEndpoint;
+        fetch(url)
+            .then(response => response.json())
+            .then( data => {
+                // CustomDataSource is easier than GeoJsonDataSource
+                // We can set our own icons from an image.
+                let dataSource = new Cesium.CustomDataSource(layer.name);
+                let entities = [];
+                for(let marker of data.features) {
+                    let lon = marker.geometry.coordinates[0];
+                    let lat = marker.geometry.coordinates[1];
+                    // For now altitude is ignored and markers are clamped to the globe
+                    let entity = new Cesium.Entity({
+                        id: marker.properties.id,
+                        name: marker.properties.id,
+                        position: new Cesium.Cartesian3.fromDegrees(lon, lat, 0),
+                        billboard: {
+                            image: "/static/images/image-spot-marker.webp",
+                            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                            verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                            disableDepthTestDistance: Number.POSITIVE_INFINITY, // Never applied --> symbol visible even underground
+                            width: 75, // in px
+                            height: 75,
+                            scaleByDistance: new Cesium.NearFarScalar(1, 1.0, 10000, 0.5) // slightly reduce size if camera is far away (100x100 --> 50x50)
+                        },
+                        properties: new Cesium.PropertyBag({
+                            position: {lon: lon, lat: lat}
+                            // description: marker.description // TODO
+                        })
+                    });
+                    dataSource.entities.add(entity);
+                    entities.push(entity);
+                }
+                viewer.dataSources.add(dataSource);
+                layer.cesiumReference = dataSource;
+            })
+            .catch(e => {
+                console.error(e);
+            });
+    }
+
     if(layer.type === "wms") {
         let credit = layer.displayName + ": © " + layer.credit
         credit = new Cesium.Credit(DOMPurify.sanitize(marked.parse(credit), false));
