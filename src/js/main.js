@@ -1290,7 +1290,8 @@ function addLayer(layer) {
             })
         }));
         layer.cesiumReference = buildingsTileset;
-        buildingsTileset.readyPromise.then( () => {
+        buildingsTileset.readyPromise.then( (tileset) => {
+            applyCustomHeightOffset(tileset, 4.8) // Offset counts negative here for some reason.
             // Apply current slider value
             let opacitySlider = document.querySelector(".opacitySlider[data-layer-name='" + layer.name + "']");
             handleLayerOpacityChange(opacitySlider);
@@ -1319,19 +1320,8 @@ function addLayer(layer) {
             dynamicScreenSpaceErrorFactor: 4.0,
             dynamicScreenSpaceErrorHeightFalloff: 0.25
         });
-        // apply vertical offset
-        let heightOffset = 45.43; //m
         tileset.readyPromise.then(function(tileset) {
-            // https://community.cesium.com/t/3d-tiles-building-positioned-underneath-the-world/5072/3
-            let boundingSphere = tileset.boundingSphere;
-            //viewer.camera.viewBoundingSphere(boundingSphere, new Cesium.HeadingPitchRange(0, -2.0, 0));
-            //viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-            // Position tileset
-            let cartographic = Cesium.Cartographic.fromCartesian(boundingSphere.center);
-            let surface = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 0.0);
-            let offset = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, heightOffset);
-            let translation = Cesium.Cartesian3.subtract(offset, surface, new Cesium.Cartesian3());
-            tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
+            applyCustomHeightOffset(tileset, 45.43);
         });
         scene.primitives.add(tileset);
         layer.cesiumReference = tileset;
@@ -2077,4 +2067,20 @@ function drawSlicerRectangle() {
             });
         return point;
     }
+}
+
+/**
+     * Applies a height offset to a 3d tileset.
+     * @param {*} tileset | The 3d tileset
+     * @param {*} heightOffset | Height offset in meter
+     */
+ function applyCustomHeightOffset(tileset, heightOffset) {
+    let boundingSphere = tileset.boundingSphere;
+    // Position tileset
+    let cartographic = Cesium.Cartographic.fromCartesian(boundingSphere.center);
+    let surface = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 0.0);
+    let offset = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, heightOffset);
+    let translation = Cesium.Cartesian3.subtract(offset, surface, new Cesium.Cartesian3());
+    console.log(offset, surface, translation)
+    tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
 }
