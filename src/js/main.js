@@ -33,6 +33,7 @@ const backendBaseUrl = process.env.BACKEND_BASE_URL;
 const layersToUpdateOnPovChange = [];
 let measurementToolActive = false;
 let slicersDrawRectangleActive = false;
+let image360viewer;
 
 // Needed to display data attribution correctly
 // https://github.com/markedjs/marked/issues/395
@@ -63,6 +64,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     loadBaseLayers(layerCategories);
     initializeSidebar();
     initializeDataLoadingManager();
+    initializeImageSpotViewer();
     document.querySelector("input[value='dgm1m']").click();
 });
 
@@ -447,6 +449,13 @@ function initializeSidebar() {
         globe.undergroundColor.alpha = value / 100;
     });
     globe.undergroundColor.alpha = settingsUndergroundTransparencySlider.value / 100;
+}
+
+
+function initializeImageSpotViewer() {
+    image360viewer = new PhotoSphereViewer.Viewer({
+        container: document.querySelector('#img360viewer'),
+    });
 }
 
 /**
@@ -1313,8 +1322,10 @@ function addLayer(layer) {
                             scaleByDistance: new Cesium.NearFarScalar(1, 1.0, 10000, 0.5) // slightly reduce size if camera is far away (100x100 --> 50x50)
                         },
                         properties: new Cesium.PropertyBag({
-                            position: {lon: lon, lat: lat}
-                            // description: marker.description // TODO
+                            position: {lon: lon, lat: lat},
+                            src: marker.properties.src,
+                            description: marker.properties.description,
+                            isImageSpotMarker: true
                         })
                     });
                     dataSource.entities.add(entity);
@@ -1499,50 +1510,62 @@ function handleLayerOpacityChange(input) {
 
 let handleSelectedEntityChanged = async function(entity) {
     if(entity) {
-        // TODO handle image spot markers
         // Cesium automatically shows the info box.
-        entity.description = "Frage Attribut-Informationen vom Server ab...";
-        let queriedId = entity.id;
-        let layerName = entity.entityCollection.owner.name;
-        let apiEndpoint;
-        Util.iterateRecursive(layerCategories, (obj) => {
-            if(obj.name === layerName) {
-                apiEndpoint =  obj.apiEndpoint;
-                return;
+        // Prevent that for image location entities
+        let props = entity.properties.getValue(Cesium.JulianDate.now());
+        if(props.hasOwnProperty("isImageSpotMarker") && props.isImageSpotMarker) {
+            viewer.selectedEntity = undefined;
+            let image360container = document.getElementById("img360container");
+            image360container.style.display = "block"
+            image360viewer.setPanorama("static/images/" + props.src),
+            image360viewer.setOption("caption", props.description)
+            image360viewer.setOption("description", props.description) // Shown when the user clicks the "i" button
+
+        } else {
+            entity.description = "Frage Attribut-Informationen vom Server ab...";
+            let queriedId = entity.id;
+            let layerName = entity.entityCollection.owner.name;
+            let apiEndpoint;
+            Util.iterateRecursive(layerCategories, (obj) => {
+                if(obj.name === layerName) {
+                    apiEndpoint =  obj.apiEndpoint;
+                    return;
+                }
+            });
+            let url = backendBaseUrl + apiEndpoint + "/attributes?ids=" + queriedId;
+            let json;
+            try {
+                let resp = await fetchWithTimeout(url, {timeout: 5000});
+                json = await resp.json();
+            } catch (error) {
+                // Timeout if the request takes longer than 5 seconds
+                entity.description = "Keine Informationen verfügbar";
             }
-        });
-        let url = backendBaseUrl + apiEndpoint + "/attributes?ids=" + queriedId;
-        let json;
-        try {
-            let resp = await fetchWithTimeout(url, {timeout: 5000});
-            json = await resp.json();
-        } catch (error) {
-            // Timeout if the request takes longer than 5 seconds
-            entity.description = "Keine Informationen verfügbar";
-        }
-        let attributes = json[0];
-        if(attributes.hasOwnProperty("properties")) {
-            attributes = attributes.properties; // for geojson
-        }
-        // Create a table structure, containing the entity properties
-        let table = document.createElement("table");
-        table.classList.add("cesium-infoBox-defaultTable");
-        let tbody = document.createElement("tbody");
-        table.appendChild(tbody)
-        for(let [key, value] of Object.entries(attributes)) {
-            if(attributes.hasOwnProperty(key)) {
-                let row = document.createElement("tr");
-                let keyCell = document.createElement("td");
-                let valueCell = document.createElement("td");
-                keyCell.innerHTML = key;
-                valueCell.innerHTML = value;
-                row.appendChild(keyCell);
-                row.appendChild(valueCell);
-                tbody.appendChild(row);
+            let attributes = json[0];
+            if(attributes.hasOwnProperty("properties")) {
+                attributes = attributes.properties; // for geojson
             }
-        };
-    
-        entity.description = table.outerHTML;
+            // Create a table structure, containing the entity properties
+            let table = document.createElement("table");
+            table.classList.add("cesium-infoBox-defaultTable");
+            let tbody = document.createElement("tbody");
+            table.appendChild(tbody)
+            for(let [key, value] of Object.entries(attributes)) {
+                if(attributes.hasOwnProperty(key)) {
+                    let row = document.createElement("tr");
+                    let keyCell = document.createElement("td");
+                    let valueCell = document.createElement("td");
+                    keyCell.innerHTML = key;
+                    valueCell.innerHTML = value;
+                    row.appendChild(keyCell);
+                    row.appendChild(valueCell);
+                    tbody.appendChild(row);
+                }
+            };
+
+            entity.description = table.outerHTML;
+        }
+        
     }
 }
 

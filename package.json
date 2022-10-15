@@ -16,6 +16,7 @@
     "cesium": "^1.98.0",
     "dompurify": "^2.3.8",
     "marked": "^4.0.15",
+    "photo-sphere-viewer": "^4.7.3",
     "proj4": "^2.8.0",
     "range-slider-element": "^1.0.0",
     "txml": "^5.1.1",
