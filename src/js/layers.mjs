@@ -116,14 +116,14 @@ const layerCategories = [
             },
             {
                 type: "wms",
-                name: "greenSpaceDevelopmentProgram",
-                displayName: "Grünflächenentwicklungsprogramm",
+                name: "greenSpaceDevelopmentPlan",
+                displayName: "Grünflächenentwicklungsplan",
                 url: "https://geodaten.herne.de/gisserver/qwc/klimaanpassung",
-                layerName: "Grünflächenentwicklungsprogramm",
+                layerName: "Grünflächenentwicklungsplan",
                 thumbnailSrc: "static/images/layerPreview/green-space-development-program.webp",
                 show: false,
                 opacity: 100,
-                tooltip: "Das Grünflächenentwicklungsprogramm (GEP) stellt auf Basis des vorhandenen Grünbestandes Entwicklungsmöglichkeiten dar und zeigt Vernetzungsstrukturen auf.",
+                tooltip: "Der Grünflächenentwicklungsplan (GEP) stellt auf Basis des vorhandenen Grünbestandes Entwicklungsmöglichkeiten dar und zeigt Vernetzungsstrukturen auf.",
                 credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)"
             },
             // Has a couple more layers, but we choose only one for now.
