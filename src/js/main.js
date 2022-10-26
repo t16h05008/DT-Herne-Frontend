@@ -1345,11 +1345,12 @@ function addLayer(layer) {
                 let dataSource = new Cesium.CustomDataSource(layer.name);
                 let entities = [];
                 for(let sensor of data) {
-                    let lon = sensor.position.lon;
-                    let lat = sensor.position.lat;
+                    // TODO As long as we only include a virtual sensor, we can overwrite the position here.
+                    // This needs to be changed when real sensors are added.
+                    let lon = 7.15714;
+                    let lat = 51.53534;
                     // For now altitude is ignored and sensors are clamped to the globe
                     // This has to be changed as soon as a sensor provides altitude information.
-
                     let entity = new Cesium.Entity({
                         id: sensor.id,
                         name: sensor.id,
