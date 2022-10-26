@@ -92,6 +92,7 @@ module.exports = {
           { from: nodeModulePathConstant + 'proj4/dist', to: 'dependencies/proj4'},
           { from: nodeModulePathConstant + 'three/build', to: 'dependencies/three'},
           { from: nodeModulePathConstant + 'uevent', to: 'dependencies/uevent'},
+          { from: nodeModulePathConstant + 'echarts/dist', to: 'dependencies/echarts'},
           { from: nodeModulePathConstant + 'photo-sphere-viewer/dist', to: 'dependencies/photo-sphere-viewer'},
           // Renaming only one file here. First copy other files, then the file while renaming it.
           { from: nodeModulePathConstant + '@thomasloven/round-slider', to: 'dependencies/round-slider',
