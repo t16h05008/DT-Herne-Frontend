@@ -3,6 +3,7 @@
     --footer-height: 0px;
     --sidebar-width: 100px; /* width of the sidebar menu (always visible) */
     --menu-width: 400px; /* width of the menu ( opens on btn click) */
+    --img-360-top-bar-height: 30px;
     --sidebar-bg-color: #111111;
     --sensor-info-panel-bg-color: #111111;
     --header-spacer-height: 5px;
@@ -627,10 +628,30 @@ img.menu-category-icon {
 
 #img360container {
     position: absolute;
-    top: calc(var(--header-height) + var(--header-spacer-height) + 50px);
-    right: 10px;
+    top: 10px;
+    left: 10px;
+    padding: 3px;
     background-color: white;
-    width: 800px;
-    height: 400px;
     display: block;
+    z-index: 10;
+    resize: both;
+    overflow: auto;
+    --width: 600px;
+    width: var(--width);
+    height: calc(var(--width) / 2);
+}
+
+#img360topbar {
+    height: var(--img-360-top-bar-height);
+    text-align: right;
+    padding-right: 5px;
+}
+
+#img360movebtn  {
+    margin-right: 5px;
+}
+
+#img360viewer {
+    width: 100%;
+    height: calc(100% - var(--img-360-top-bar-height));
 }
