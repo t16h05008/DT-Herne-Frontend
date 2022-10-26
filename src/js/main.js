@@ -33,6 +33,10 @@ const backendBaseUrl = process.env.BACKEND_BASE_URL;
 const layersToUpdateOnPovChange = [];
 let measurementToolActive = false;
 let slicersDrawRectangleActive = false;
+let echartsSensorTimelineChart;
+let diagramUpdateInterval;
+let settingsNumberTimeseriesMeasurementsValue = document.getElementById("settings-number-timeseries-measurements").value;
+let settingsTimeseriesUpdateIntervalValue = document.getElementById("settings-timeseries-update-interval").value;
 let image360viewer;
 
 // Needed to display data attribution correctly
@@ -166,8 +170,10 @@ function initializeViewer(initialCameraViewFormatted) {
 function createCustomOverlayComponents() {
     let viewerElement = document.querySelector("#cesiumContainer .cesium-viewer")
     let coordOverlay = document.getElementById("coordOverlay");
+    let sensorListOverlay = document.getElementById("sensorListOverlay");
     let northArrowOverlay = document.getElementById("northArrowOverlay");
     viewerElement.appendChild(coordOverlay);
+    viewerElement.appendChild(sensorListOverlay);
     viewerElement.appendChild(northArrowOverlay);
 
     // Initialize camera position overlay
@@ -449,6 +455,16 @@ function initializeSidebar() {
         globe.undergroundColor.alpha = value / 100;
     });
     globe.undergroundColor.alpha = settingsUndergroundTransparencySlider.value / 100;
+
+    // timeseries settings
+    let settingsNumberTimeseriesMeasurements = document.getElementById("settings-number-timeseries-measurements");
+    settingsNumberTimeseriesMeasurements.addEventListener("change", (event) => {
+        settingsNumberTimeseriesMeasurementsValue = event.target.value;
+    });
+    let settingsTimeseriesUpdateInterval = document.getElementById("settings-timeseries-update-interval");
+    settingsTimeseriesUpdateInterval.addEventListener("change", (event) => {
+        settingsTimeseriesUpdateIntervalValue = event.target.value;
+    });
 }
 
 
@@ -500,6 +516,7 @@ function addSidebarButtonHighlighting(sidebarBtns) {
 
 function enableMenuToggle(sidebarBtns) {
     let cesiumContainer = document.getElementById("cesiumContainer");
+    let sensorInfoPanel = document.getElementById("sensorInfoPanel");
     let switchingMenu = false; // Tracks if a menu is closed and another one is opened instantly
     for(let btn of sidebarBtns) {
         let menuId = btn.dataset.bsTarget;
@@ -511,6 +528,14 @@ function enableMenuToggle(sidebarBtns) {
             // Move the scene to the right when menu opens
             // No need to add the sidebar width since it is not in this div
             cesiumContainer.style.marginLeft = menuWidth;
+            sensorInfoPanel.style.marginLeft = menuWidth;
+            //sensorInfoPanel.style.width = "calc(100% - " + menuWidth + ")";
+            let sensorInfoPanelWidth = window.getComputedStyle(sensorInfoPanel).width;
+            let newSensorInfoPanelWidth = parseFloat(sensorInfoPanelWidth);
+            if(!switchingMenu) {
+                newSensorInfoPanelWidth -= parseFloat(menuWidth)
+            };
+            sensorInfoPanel.style.setProperty("width", newSensorInfoPanelWidth + "px", "important");
             // Add pointer events to resize div
             let handle = menu.querySelector(".menu-resize-handle");
             handle.style.pointerEvents = "auto";
@@ -525,6 +550,8 @@ function enableMenuToggle(sidebarBtns) {
             };
             // Move scene back to the left edge
             cesiumContainer.style.marginLeft = "0";
+            sensorInfoPanel.style.marginLeft = "0";
+            sensorInfoPanel.style.setProperty("width", "100%", "important");
             // Remove pointer events from resize div
             let handle = menu.querySelector(".menu-resize-handle");
             handle.style.pointerEvents = "none";
@@ -552,6 +579,7 @@ function enableMenuResize(sidebarBtns) {
 
     let startX, startWidth;
     let cesiumContainer = document.getElementById("cesiumContainer");
+    let sensorInfoPanel = document.getElementById("sensorInfoPanel")
     async function initDrag(e) {
         startX = e.clientX;
         startWidth = window.getComputedStyle(document.documentElement).getPropertyValue('--menu-width');
@@ -560,6 +588,7 @@ function enableMenuResize(sidebarBtns) {
         document.body.addEventListener('mousemove', doDrag);
         document.body.addEventListener('mouseup', stopDrag);
         cesiumContainer.classList.add("noTransition");
+        sensorInfoPanel.classList.add("noTransition");
         document.body.style.setProperty("cursor", "ew-resize", "important");
     }
 
@@ -568,11 +597,14 @@ function enableMenuResize(sidebarBtns) {
         document.documentElement.style.setProperty('--menu-width', newWidth);
         // Also resize cesium container
         cesiumContainer.style.marginLeft = newWidth;
+        sensorInfoPanel.style.marginLeft = newWidth;
+        sensorInfoPanel.style.width = "calc(100% - " + newWidth + ")";
         resizeEchartsDiagram();
     }
 
     async function stopDrag() {
         cesiumContainer.classList.remove("noTransition");
+        sensorInfoPanel.classList.remove("noTransition");
         document.body.removeEventListener('mousemove', doDrag, false);
         document.body.removeEventListener('mouseup', stopDrag, false);
         document.body.style.setProperty("cursor", "default");
@@ -824,6 +856,17 @@ function onMenuLayerChbClicked(event, layer) {
         opacitySlider.disabled = true;
         opacitySliderWrapper.classList.add("opacitySliderWrapperDisabled");
         removeLayer(layer);
+        let lastSensorLayerRemoved = true;
+        if(layer.type === "sensor") {
+            // Check if this was the last sensor layer to be removed
+            Util.iterateRecursive(layerCategories, function(obj) {
+                if(obj.type === "sensor" && obj.show) lastSensorLayerRemoved = false;
+            });
+            if(lastSensorLayerRemoved) {
+                closeSensorInfoPanel();
+                hideSensorList();
+            }
+        }
     }
 }
 
@@ -1511,17 +1554,37 @@ function handleLayerOpacityChange(input) {
 let handleSelectedEntityChanged = async function(entity) {
     if(entity) {
         // Cesium automatically shows the info box.
-        // Prevent that for image location entities
+        // Prevent that for sensor entities and image loaction entities
         let props = entity.properties.getValue(Cesium.JulianDate.now());
-        if(props.hasOwnProperty("isImageSpotMarker") && props.isImageSpotMarker) {
+        
+        if(props.hasOwnProperty("isSensor")) {
+            if(props.isSensor) {
+                viewer.selectedEntity = undefined;
+                let layerName = entity.entityCollection.owner.name;
+                props.timeseriesUrl += "?n=" + settingsNumberTimeseriesMeasurementsValue;
+                fetch(props.timeseriesUrl)
+                .then(result => result.json())
+                .then(data => {
+                    updateSensorInfoPanel(entity, layerName, data);
+                    openSensorInfoPanel();
+                });
+                diagramUpdateInterval = setInterval( () => {
+                    fetch(props.timeseriesUrl)
+                        .then(result => result.json())
+                        .then(data => {
+                            updateSensorInfoPanel(entity, layerName, data);
+                        });
+                }, settingsTimeseriesUpdateIntervalValue * 1000);
+            }
+        } else if(props.hasOwnProperty("isImageSpotMarker") && props.isImageSpotMarker) {
             viewer.selectedEntity = undefined;
             let image360container = document.getElementById("img360container");
             image360container.style.display = "block"
             image360viewer.setPanorama("static/images/" + props.src),
             image360viewer.setOption("caption", props.description)
             image360viewer.setOption("description", props.description) // Shown when the user clicks the "i" button
-
         } else {
+            closeSensorInfoPanel();
             entity.description = "Frage Attribut-Informationen vom Server ab...";
             let queriedId = entity.id;
             let layerName = entity.entityCollection.owner.name;
@@ -1562,10 +1625,9 @@ let handleSelectedEntityChanged = async function(entity) {
                     tbody.appendChild(row);
                 }
             };
-
+    
             entity.description = table.outerHTML;
         }
-        
     }
 }
 
