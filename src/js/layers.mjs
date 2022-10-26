@@ -8,6 +8,36 @@ const layerCategories = [
         show: true,
         layers: [
             {
+                type: "sensor",
+                name: "temperature",
+                displayName: "Temperatur",
+                thumbnailSrc: "static/images/layerPreview/temperature.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Sensorbasierte Temperaturmessungen in Herner Stadtgebiet.",
+                credit: "[Hochschule Bochum](https://www.hochschule-bochum.de/)"
+            },
+            {
+                type: "sensor",
+                name: "humidity",
+                displayName: "Luftfeuchtigkeit",
+                thumbnailSrc: "static/images/layerPreview/humidity.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Sensorbasierte Messungen der Luftfeuchtigkeit in Herner Stadtgebiet.",
+                credit: "[Hochschule Bochum](https://www.hochschule-bochum.de/)"
+            },
+            {
+                type: "sensor",
+                name: "precipitation",
+                displayName: "Niederschlag",
+                thumbnailSrc: "static/images/layerPreview/precipitation.webp",
+                show: false,
+                opacity: 100,
+                tooltip: "Sensorbasierte Niederschlags-Messungen in Herner Stadtgebiet.",
+                credit: "[Hochschule Bochum](https://www.hochschule-bochum.de/)"
+            },
+            {
                 type: "wms",
                 name: "heavyRainHazardMap1",
                 displayName: "Starkregengefahrenkarte (2018) - seltener Starkregen",
