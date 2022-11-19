@@ -113,7 +113,7 @@ module.exports = {
     new webpack.DefinePlugin({
       // Define relative base path in cesium for loading assets
       // This is an environment variable
-      CESIUM_BASE_URL: JSON.stringify('/static/cesiumJS/')
+      CESIUM_BASE_URL: JSON.stringify('./static/cesiumJS/')
     }),
     // Below is a custom plugin definition
     // For whatever reason webpack creates an additional png-file in the dist folder.
