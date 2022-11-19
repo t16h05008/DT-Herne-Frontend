@@ -7,6 +7,9 @@ const Dotenv = require('dotenv-webpack');
 
 module.exports = merge(baseConfig, {
   mode: 'development',
+  watchOptions: {
+    ignored: ['**/node_modules', '**/dist'],
+  },
   module: {
     rules: [
       {
@@ -21,9 +24,6 @@ module.exports = merge(baseConfig, {
     usedExports: true,
   },
   devServer: {
-    static: {
-      directory: path.join(__dirname, "dist")
-    },
     client: {
       logging: 'log',
       overlay: {
@@ -37,7 +37,7 @@ module.exports = merge(baseConfig, {
     watchFiles: {
       paths: [
         'src/**/*.html',
-        'src/**/*.css'
+        'src/**/*.css',
       ],
       options: {
         usePolling: false,
