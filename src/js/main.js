@@ -1367,7 +1367,8 @@ function addLayer(layer) {
                         name: sensor.id,
                         position: new Cesium.Cartesian3.fromDegrees(lon, lat, 0),
                         billboard: {
-                            image: "/static/images/sensor.webp",
+                            // Use relative path to work with proxy
+                            image: "./static/images/sensor.webp",
                             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
                             verticalOrigin: Cesium.VerticalOrigin.CENTER,
                             horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
@@ -1415,7 +1416,8 @@ function addLayer(layer) {
                         name: marker.properties.id,
                         position: new Cesium.Cartesian3.fromDegrees(lon, lat, 0),
                         billboard: {
-                            image: "/static/images/image-spot-marker.webp",
+                            // Use relative path to work with proxy
+                            image: "./static/images/image-spot-marker.webp",
                             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
                             verticalOrigin: Cesium.VerticalOrigin.CENTER,
                             horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
