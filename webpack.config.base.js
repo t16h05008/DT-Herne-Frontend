@@ -11,10 +11,10 @@ const WebpackPwaManifest = require('webpack-pwa-manifest');
 
 const WebpackLicensePlugin = require('webpack-license-plugin');
 
-const nodeModulePathConstant = "node_modules/";
-const cesiumSourcePathConstant = 'node_modules/cesium/Source';
-const cesiumStaticFilesPathConstant = 'static/cesiumJS/';
-const distFolderPathConstant = path.resolve(__dirname, 'dist');
+const nodeModulePathConstant = "./node_modules/";
+const cesiumSourcePathConstant = './node_modules/cesium/Source';
+const cesiumStaticFilesPathConstant = './static/cesiumJS/';
+const distFolderPathConstant = path.resolve(__dirname, './dist');
 
 
 module.exports = {
@@ -80,34 +80,34 @@ module.exports = {
           { from: path.join(cesiumSourcePathConstant, 'ThirdParty'), to: path.join(cesiumStaticFilesPathConstant, "ThirdParty") },
           // Copy dist folders of dependencies
           // TODO specify files to copy to reduce size of dist folder. Licenses are copied by a plugin anyway.
-          { from: nodeModulePathConstant + 'bootstrap/dist', to: 'dependencies/bootstrap/' },
-          { from: nodeModulePathConstant + '@fortawesome/fontawesome-free', to: 'dependencies/fontawesome'},
-          { from: nodeModulePathConstant + 'range-slider-element/dist', to: 'dependencies/range-slider-element'},
-          { from: nodeModulePathConstant + '@simonwep/pickr/dist', to: 'dependencies/pickr'},
-          { from: nodeModulePathConstant + 'txml/dist/', to: 'dependencies/txml'},
-          { from: nodeModulePathConstant + '@turf/turf/dist/', to: 'dependencies/turf/'},
-          { from: nodeModulePathConstant + 'uuidjs/dist', to: 'dependencies/uuidjs'},
-          { from: nodeModulePathConstant + 'marked', to: 'dependencies/marked'},
-          { from: nodeModulePathConstant + 'dompurify/dist', to: 'dependencies/dompurify'},
-          { from: nodeModulePathConstant + 'proj4/dist', to: 'dependencies/proj4'},
-          { from: nodeModulePathConstant + 'three/build', to: 'dependencies/three'},
-          { from: nodeModulePathConstant + 'uevent', to: 'dependencies/uevent'},
-          { from: nodeModulePathConstant + 'echarts/dist', to: 'dependencies/echarts'},
-          { from: nodeModulePathConstant + 'photo-sphere-viewer/dist', to: 'dependencies/photo-sphere-viewer'},
+          { from: nodeModulePathConstant + 'bootstrap/dist', to: './dependencies/bootstrap/' },
+          { from: nodeModulePathConstant + '@fortawesome/fontawesome-free', to: './dependencies/fontawesome'},
+          { from: nodeModulePathConstant + 'range-slider-element/dist', to: './dependencies/range-slider-element'},
+          { from: nodeModulePathConstant + '@simonwep/pickr/dist', to: './dependencies/pickr'},
+          { from: nodeModulePathConstant + 'txml/dist/', to: './dependencies/txml'},
+          { from: nodeModulePathConstant + '@turf/turf/dist/', to: './dependencies/turf/'},
+          { from: nodeModulePathConstant + 'uuidjs/dist', to: './dependencies/uuidjs'},
+          { from: nodeModulePathConstant + 'marked', to: './dependencies/marked'},
+          { from: nodeModulePathConstant + 'dompurify/dist', to: './dependencies/dompurify'},
+          { from: nodeModulePathConstant + 'proj4/dist', to: './dependencies/proj4'},
+          { from: nodeModulePathConstant + 'three/build', to: './dependencies/three'},
+          { from: nodeModulePathConstant + 'uevent', to: './dependencies/uevent'},
+          { from: nodeModulePathConstant + 'echarts/dist', to: './dependencies/echarts'},
+          { from: nodeModulePathConstant + 'photo-sphere-viewer/dist', to: './dependencies/photo-sphere-viewer'},
           // Renaming only one file here. First copy other files, then the file while renaming it.
-          { from: nodeModulePathConstant + '@thomasloven/round-slider', to: 'dependencies/round-slider',
+          { from: nodeModulePathConstant + '@thomasloven/round-slider', to: './dependencies/round-slider',
             globOptions: {
               ignore: ["**/round-slider.js", "**/round-slider.iife.js"]
             }
           },
-          { from: nodeModulePathConstant + '@thomasloven/round-slider/round-slider.iife.js', to: 'dependencies/round-slider/round-slider.js'},
+          { from: nodeModulePathConstant + '@thomasloven/round-slider/round-slider.iife.js', to: './dependencies/round-slider/round-slider.js'},
           
-          { from: "src/libs/toggle-switchy/toggle-switchy.css", to: "dependencies/toggle-switchy/toggle-switchy.css"},
+          { from: "src/libs/toggle-switchy/toggle-switchy.css", to: "./dependencies/toggle-switchy/toggle-switchy.css"},
           // Copy images
-          { from: 'src/images', to: 'static/images/'},
-          { from: nodeModulePathConstant + 'bootstrap-icons/icons/', to: 'static/icons/bootstrap/' },
+          { from: 'src/images', to: './static/images/'},
+          { from: nodeModulePathConstant + 'bootstrap-icons/icons/', to: './static/icons/bootstrap/' },
           // Copy favicon
-          { from: 'src/favicon.ico', to: 'favicon.ico'}
+          { from: 'src/favicon.ico', to: './favicon.ico'}
       ]
     }),
     new webpack.DefinePlugin({
