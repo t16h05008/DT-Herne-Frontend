@@ -656,3 +656,12 @@ img.menu-category-icon {
     width: 100%;
     height: calc(100% - var(--img-360-top-bar-height));
 }
+
+#demo-video {
+    display: none;
+    position: absolute;
+    bottom: 75px;
+    left: calc(50% - 320px/2);
+    width: 320px;
+    height: 180px;
+}

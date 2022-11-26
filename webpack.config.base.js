@@ -105,6 +105,7 @@ module.exports = {
           { from: "src/libs/toggle-switchy/toggle-switchy.css", to: "./dependencies/toggle-switchy/toggle-switchy.css"},
           // Copy images
           { from: 'src/images', to: './static/images/'},
+          { from: 'src/videos', to: './static/videos/'},
           { from: nodeModulePathConstant + 'bootstrap-icons/icons/', to: './static/icons/bootstrap/' },
           // Copy favicon
           { from: 'src/favicon.ico', to: './favicon.ico'}

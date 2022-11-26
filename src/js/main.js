@@ -1418,6 +1418,24 @@ function addLayer(layer) {
             });
     }
 
+    if(layer.name === "videoBoard") {
+        const videoElement = document.getElementById("demo-video");
+        const entity = new Cesium.Entity({
+            name: "Viedo Wall",
+            position: Cesium.Cartesian3.fromDegrees(7.15409, 51.53253, 96.5),
+            plane: {
+            // east-west orientation, but inverted to show the video non-mirrored
+            plane: new Cesium.Plane(new Cesium.Cartesian3(0, -1, 0), 0.0),
+            dimensions: new Cesium.Cartesian2(32, 18), // m
+            material: videoElement,
+            outline: true,
+            outlineColor: Cesium.Color.BLACK,
+            }
+        });
+        layer.cesiumReference = entity;
+        viewer.entities.add(entity);
+    }
+
     if(layer.type === "wms") {
         let credit = layer.displayName + ": © " + layer.credit
         credit = new Cesium.Credit(DOMPurify.sanitize(marked.parse(credit), false));

@@ -168,6 +168,14 @@ const layerCategories = [
             tooltip: "360° Panorama Aufnahmen von ausgewählten Standpunkten.",
             credit: "[Stadt Herne, Fachbereich Vermessung und Kataster](https://www.herne.de/Wirtschaft-und-Infrastruktur/Bauen-und-Wohnen/Vermessung-Kataster/)",
             apiEndpoint: "images/360deg/locations"
+        }, {
+            name: "videoBoard",
+            displayName:  "Video-Leinwand",
+            thumbnailSrc: "static/images/layerPreview/video-film.webp",
+            show: false,
+            opacity: 100,
+            tooltip: "Ein Video, das auf eine virtuelle Wand projeziert wird.",
+            credit: "",
         }]
     },
     /* ========================================
