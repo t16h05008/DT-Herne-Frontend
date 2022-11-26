@@ -633,7 +633,7 @@ img.menu-category-icon {
     left: 10px;
     padding: 3px;
     background-color: white;
-    display: block;
+    display: none;
     z-index: 10;
     resize: both;
     overflow: auto;

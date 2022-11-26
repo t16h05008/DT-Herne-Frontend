@@ -891,6 +891,10 @@ function onMenuLayerChbClicked(event, layer) {
                 hideSensorList();
             }
         }
+        // Hide 360 deg image viewer
+        if(layer.name === "360images") {
+            document.getElementById("img360container").style.display = "none";
+        }
     }
 }
 
