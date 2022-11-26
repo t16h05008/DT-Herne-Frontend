@@ -998,55 +998,6 @@ function convertColorPickerResultToCesiumColor(color) {
     return newColor;
 }
 
-
-function initializeIndexedDB() {
-    
-    if (!window.indexedDB) {
-        dataSource("Your browser doesn't support a stable version of IndexedDB. Caching 3D-Models will not be available, resulting in longer loading times.");
-        return;
-    } else {
-        var dbDeletionRequest = indexedDB.deleteDatabase("gltfModelStoreDB");
-        dbDeletionRequest.onsuccess = function () {
-            console.log("Deleted database successfully");
-
-            // create new db
-            var dbCreationRequest = window.indexedDB.open("gltfModelStoreDB", 1);
-            dbCreationRequest.onerror = event => {
-                console.error("Error while opening 'gltfModelStoreDB': " + event.target.errorCode);
-            };
-            dbCreationRequest.onsuccess = event => {
-                gltfModelStoreDB = event.target.result;
-
-                // add a generic error handler for all kinds of errors
-                gltfModelStoreDB.onerror = event => {
-                    console.error("IndexedDB error: " + event.target.errorCode);
-                }
-            };
-
-            // This should be called only once (and not every time the user opens the application)
-            // This is called when the version number of the database is updated due to changes in the schema.
-            dbCreationRequest.onupgradeneeded = event => {
-                gltfModelStoreDB = event.target.result;
-                var objectStore = gltfModelStoreDB.createObjectStore("gltfModels", { 
-                    keyPath: "id" // this is the "primary key"
-                });
-  
-                objectStore.createIndex("id", "id", { unique: true });
-                console.log("database object store created");
-            };
-
-        };
-
-        dbDeletionRequest.onerror = function () {
-            console.log("Couldn't delete database");
-        };
-        dbDeletionRequest.onblocked = function () {
-            console.log("Couldn't delete database due to the operation being blocked");
-        };
-
-    }
-}
-
 function initializeDataLoadingManager() {
 
     dataLoadingManager.postMessage({
