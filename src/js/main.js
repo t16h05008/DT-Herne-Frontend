@@ -482,7 +482,10 @@ function initializeSidebar() {
 
 function initializeImageSpotViewer() {
     image360viewer = new PhotoSphereViewer.Viewer({
-        container: document.querySelector('#img360viewer'),
+        container: 'img360viewer',
+        adapter: [PhotoSphereViewer.CubemapTilesAdapter, {
+            flipTopBottom: true,
+        }]
     });
 }
 
@@ -1427,8 +1430,8 @@ function addLayer(layer) {
                             scaleByDistance: new Cesium.NearFarScalar(1, 1.0, 10000, 0.5) // slightly reduce size if camera is far away (100x100 --> 50x50)
                         },
                         properties: new Cesium.PropertyBag({
+                            id: marker.properties.id,
                             position: {lon: lon, lat: lat},
-                            src: marker.properties.src,
                             description: marker.properties.description,
                             isImageSpotMarker: true
                         })
@@ -1640,12 +1643,38 @@ let handleSelectedEntityChanged = async function(entity) {
             }
         } else if(props.hasOwnProperty("isImageSpotMarker") && props.isImageSpotMarker) {
             viewer.selectedEntity = undefined;
+            const id = props.id;
+            const baseUrl = "static/images/360deg/"
             let image360container = document.getElementById("img360container");
-            image360container.style.display = "block"
-            image360viewer.setPanorama("static/images/" + props.src),
+            
+            image360viewer.setPanorama({
+                faceSize: 512,
+                nbTiles : 4,
+                // Low res, shown as long as the tiles load
+                baseUrl: {
+                    back:   `${baseUrl}/standort_${id}/1/b/0/0.jpg`,
+                    bottom: `${baseUrl}/standort_${id}/1/d/0/0.jpg`,
+                    front:  `${baseUrl}/standort_${id}/1/f/0/0.jpg`,
+                    left:   `${baseUrl}/standort_${id}/1/l/0/0.jpg`,
+                    right:  `${baseUrl}/standort_${id}/1/r/0/0.jpg`,
+                    top:    `${baseUrl}/standort_${id}/1/u/0/0.jpg`,
+                },
+                tileUrl : (face, col, row) => {
+                    // Map front to folder name
+                    if(face == "front") {face = "f"};
+                    if(face == "right") {face = "r"};
+                    if(face == "left") {face = "l"};
+                    if(face == "back") {face = "b"};
+                    if(face == "top") {face = "u"};
+                    if(face == "bottom") {face = "d"};
+                    let res = `${baseUrl}/standort_${id}/3/${face}/${row}/${col}.jpg`
+                    return res;
+                },
+            });
             image360viewer.setOption("caption", props.description)
             image360viewer.setOption("description", props.description) // Shown when the user clicks the "i" button
             image360viewer.autoSize(); // Fit image to container size
+            image360container.style.display = "block"
         } else {
             closeSensorInfoPanel();
             entity.description = "Frage Attribut-Informationen vom Server ab...";
