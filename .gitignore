@@ -6,3 +6,5 @@ node_modules/
 dist/
 .htpasswd_wanne
 .htpasswd_herne
+/src/images/360deg
+/src/videos
