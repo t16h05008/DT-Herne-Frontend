@@ -2,7 +2,9 @@
 FROM nginx:latest
 
 # Replace default config
-RUN rm /etc/nginx/conf.d/default.conf
+
+COPY .htpasswd_wanne /etc/nginx/.htpasswd_wanne
+RUN rm /etc/nginx/conf.d/default.conf && chmod 644 /etc/nginx/.htpasswd_wanne
 COPY nginx.config /etc/nginx/conf.d/default.conf
 
 # Copy build application
