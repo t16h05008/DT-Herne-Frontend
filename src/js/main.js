@@ -484,9 +484,9 @@ function initializeSidebar() {
 function initializeImageSpotViewer() {
     image360viewer = new PhotoSphereViewer.Viewer({
         container: 'img360viewer',
-        adapter: [PhotoSphereViewer.CubemapTilesAdapter, {
-            flipTopBottom: true,
-        }],
+        // adapter: [PhotoSphereViewer.CubemapTilesAdapter, {
+        //     flipTopBottom: true,
+        // }],
         plugins: [
             [PhotoSphereViewer.VirtualTourPlugin, {
                 positionMode: PhotoSphereViewer.VirtualTourPlugin.MODE_GPS,
@@ -2498,30 +2498,32 @@ function createImageNodes(entities) {
         let props = entity.properties.getValue(Cesium.JulianDate.now());
         const id = props.id;
         node.id = id;
-        node.panorama = {
-            faceSize: 512,
-            nbTiles : 4,
-            // Low res, shown as long as the tiles load
-            baseUrl: {
-                back:   `${baseUrl}/standort_${id}/1/b/0/0.jpg`,
-                bottom: `${baseUrl}/standort_${id}/1/d/0/0.jpg`,
-                front:  `${baseUrl}/standort_${id}/1/f/0/0.jpg`,
-                left:   `${baseUrl}/standort_${id}/1/l/0/0.jpg`,
-                right:  `${baseUrl}/standort_${id}/1/r/0/0.jpg`,
-                top:    `${baseUrl}/standort_${id}/1/u/0/0.jpg`,
-            },
-            tileUrl : (face, col, row) => {
-                // Map front to folder name
-                if(face == "front") {face = "f"};
-                if(face == "right") {face = "r"};
-                if(face == "left") {face = "l"};
-                if(face == "back") {face = "b"};
-                if(face == "top") {face = "u"};
-                if(face == "bottom") {face = "d"};
-                let res = `${baseUrl}/standort_${id}/3/${face}/${row}/${col}.jpg`
-                return res;
-            },
-        }
+        node.panorama = baseUrl + id + ".webp" // for equirectangular images
+        // Use this code for tiled images instead
+        //     {
+        //     faceSize: 512,
+        //     nbTiles : 4,
+        //     // Low res, shown as long as the tiles load
+        //     baseUrl: {
+        //         back:   `${baseUrl}/standort_${id}/1/b/0/0.jpg`,
+        //         bottom: `${baseUrl}/standort_${id}/1/d/0/0.jpg`,
+        //         front:  `${baseUrl}/standort_${id}/1/f/0/0.jpg`,
+        //         left:   `${baseUrl}/standort_${id}/1/l/0/0.jpg`,
+        //         right:  `${baseUrl}/standort_${id}/1/r/0/0.jpg`,
+        //         top:    `${baseUrl}/standort_${id}/1/u/0/0.jpg`,
+        //     },
+        //     tileUrl : (face, col, row) => {
+        //         // Map front to folder name
+        //         if(face == "front") {face = "f"};
+        //         if(face == "right") {face = "r"};
+        //         if(face == "left") {face = "l"};
+        //         if(face == "back") {face = "b"};
+        //         if(face == "top") {face = "u"};
+        //         if(face == "bottom") {face = "d"};
+        //         let res = `${baseUrl}/standort_${id}/3/${face}/${row}/${col}.jpg`
+        //         return res;
+        //     },
+        // }
         node.position = [props.position.lon, props.position.lat];
         // Shown when the user clicks the "i" button
         node.caption = props.description;
