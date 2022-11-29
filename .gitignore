@@ -4,4 +4,4 @@
 .vscode
 node_modules/
 dist/
-.htpasswd
+.htpasswd_herne
