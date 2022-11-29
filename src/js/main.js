@@ -1421,7 +1421,7 @@ function addLayer(layer) {
     if(layer.name === "videoBoard") {
         const videoElement = document.getElementById("demo-video");
         const entity = new Cesium.Entity({
-            name: "Viedo Wall",
+            name: "Video Wall",
             position: Cesium.Cartesian3.fromDegrees(7.15409, 51.53253, 96.5),
             plane: {
             // east-west orientation, but inverted to show the video non-mirrored
