@@ -1388,8 +1388,8 @@ function addLayer(layer) {
                             verticalOrigin: Cesium.VerticalOrigin.CENTER,
                             horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
                             disableDepthTestDistance: Number.POSITIVE_INFINITY, // Never applied --> symbol visible even underground
-                            width: 75, // in px
-                            height: 75,
+                            width: 40, // in px
+                            height: 40,
                             scaleByDistance: new Cesium.NearFarScalar(1, 1.0, 10000, 0.5) // slightly reduce size if camera is far away (100x100 --> 50x50)
                         },
                         properties: new Cesium.PropertyBag({
