@@ -148,7 +148,7 @@ const layerCategories = [
                 opacity: 100,
                 tooltip: "3D-Mesh der Stadt Herne.",
                 credit: "Datenursprung: Regionalverband Ruhr",
-                apiEndpoint: "terrain/3dmesh"
+                apiEndpoint: "terrain/3dmesh/" // The last slash is important
             }
         ]
     },
