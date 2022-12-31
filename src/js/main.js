@@ -38,7 +38,7 @@ let diagramUpdateInterval;
 let settingsNumberTimeseriesMeasurementsValue = document.getElementById("settings-number-timeseries-measurements").value;
 let settingsTimeseriesUpdateIntervalValue = document.getElementById("settings-timeseries-update-interval").value;
 let image360viewer;
-let virtualTour;
+//let virtualTour;
 
 // Needed to display data attribution correctly
 // https://github.com/markedjs/marked/issues/395
@@ -484,18 +484,18 @@ function initializeSidebar() {
 function initializeImageSpotViewer() {
     image360viewer = new PhotoSphereViewer.Viewer({
         container: 'img360viewer',
-        // adapter: [PhotoSphereViewer.CubemapTilesAdapter, {
+        // adapter: [PhotoSphereViewer.CubemapAdapter, {
         //     flipTopBottom: true,
         // }],
         plugins: [
-            [PhotoSphereViewer.VirtualTourPlugin, {
-                positionMode: PhotoSphereViewer.VirtualTourPlugin.MODE_GPS,
-                renderMode  : PhotoSphereViewer.VirtualTourPlugin.MODE_3D,
-            }],
+            // [PhotoSphereViewer.VirtualTourPlugin, {
+            //     positionMode: PhotoSphereViewer.VirtualTourPlugin.MODE_GPS,
+            //     renderMode  : PhotoSphereViewer.VirtualTourPlugin.MODE_3D,
+            // }],
             // PhotoSphereViewer.CompassPlugin,
         ]
     });
-    virtualTour = image360viewer.getPlugin(PhotoSphereViewer.VirtualTourPlugin);
+    // virtualTour = image360viewer.getPlugin(PhotoSphereViewer.VirtualTourPlugin);
 }
 
 /**
@@ -1373,7 +1373,6 @@ function addLayer(layer) {
                 // CustomDataSource is easier than GeoJsonDataSource
                 // We can set our own icons from an image.
                 let dataSource = new Cesium.CustomDataSource(layer.name);
-                let entities = [];
                 for(let marker of data.features) {
                     let lon = marker.geometry.coordinates[0];
                     let lat = marker.geometry.coordinates[1];
@@ -1401,15 +1400,10 @@ function addLayer(layer) {
                             isImageSpotMarker: true
                         })
                     });
+                    console.log(entity)
                     dataSource.entities.add(entity);
-                    entities.push(entity);
                 }
-                // Create the nodemap and pass it to the viewer here.
-                // On icon click we just set the correct node by id.
-                let nodes = createImageNodes(entities);
-                // Take the first node as default. This gets overwritten when clicking on an icon.
-                virtualTour.setNodes(nodes, '1');
-                
+               
                 viewer.dataSources.add(dataSource);
                 layer.cesiumReference = dataSource;
             })
@@ -1632,8 +1626,12 @@ let handleSelectedEntityChanged = async function(entity) {
             }
         } else if(props.hasOwnProperty("isImageSpotMarker") && props.isImageSpotMarker) {
             viewer.selectedEntity = undefined;
+            const id = props.id;
+            const baseUrl = "static/images/360deg/"
             let image360container = document.getElementById("img360container");
-            virtualTour.setCurrentNode(props.id.toString())
+            image360viewer.setPanorama(baseUrl + id + ".webp")
+            image360viewer.setOption("caption", props.description)
+            image360viewer.setOption("description", props.description) // Shown when the user clicks the "i" button
             image360viewer.autoSize(); // Fit image to container size
             image360container.style.display = "block"
         } else {
@@ -2488,54 +2486,4 @@ function initDragImg360container(elmnt) {
       document.onmouseup = null;
       document.onmousemove = null;
     }
-}
-
-function createImageNodes(entities) {
-    const baseUrl = "static/images/360deg/"
-    let nodes = [];
-    for(let entity of entities) {
-        let node = {};
-        let props = entity.properties.getValue(Cesium.JulianDate.now());
-        const id = props.id;
-        node.id = id;
-        node.panorama = baseUrl + id + ".webp" // for equirectangular images
-        // Use this code for tiled images instead
-        //     {
-        //     faceSize: 512,
-        //     nbTiles : 4,
-        //     // Low res, shown as long as the tiles load
-        //     baseUrl: {
-        //         back:   `${baseUrl}/standort_${id}/1/b/0/0.jpg`,
-        //         bottom: `${baseUrl}/standort_${id}/1/d/0/0.jpg`,
-        //         front:  `${baseUrl}/standort_${id}/1/f/0/0.jpg`,
-        //         left:   `${baseUrl}/standort_${id}/1/l/0/0.jpg`,
-        //         right:  `${baseUrl}/standort_${id}/1/r/0/0.jpg`,
-        //         top:    `${baseUrl}/standort_${id}/1/u/0/0.jpg`,
-        //     },
-        //     tileUrl : (face, col, row) => {
-        //         // Map front to folder name
-        //         if(face == "front") {face = "f"};
-        //         if(face == "right") {face = "r"};
-        //         if(face == "left") {face = "l"};
-        //         if(face == "back") {face = "b"};
-        //         if(face == "top") {face = "u"};
-        //         if(face == "bottom") {face = "d"};
-        //         let res = `${baseUrl}/standort_${id}/3/${face}/${row}/${col}.jpg`
-        //         return res;
-        //     },
-        // }
-        node.position = [props.position.lon, props.position.lat];
-        // Shown when the user clicks the "i" button
-        node.caption = props.description;
-        node.description = props.description;
-        
-        let links = [];
-        for(let number of props.linksTo) {
-            links.push( {nodeId: number.toString()} )
-        }
-        node.links = links;
-        nodes.push(node);
-    }
-
-    return nodes;
 }
