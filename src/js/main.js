@@ -38,7 +38,6 @@ let diagramUpdateInterval;
 let settingsNumberTimeseriesMeasurementsValue = document.getElementById("settings-number-timeseries-measurements").value;
 let settingsTimeseriesUpdateIntervalValue = document.getElementById("settings-timeseries-update-interval").value;
 let image360viewer;
-//let virtualTour;
 
 // Needed to display data attribution correctly
 // https://github.com/markedjs/marked/issues/395
@@ -148,8 +147,6 @@ function initializeViewer(initialCameraViewFormatted) {
         animation: false,
         timeline: false
     });
-    //viewer.extend(Cesium.viewerCesiumInspectorMixin);
-    //viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);
     camera = viewer.camera;
     scene = viewer.scene;
     globe = scene.globe;
@@ -157,7 +154,6 @@ function initializeViewer(initialCameraViewFormatted) {
     // Decrease the distance the camera has to change before the "changed" event is fired.
     camera.percentageChanged = 0.1; 
     camera.setView(initialCameraViewFormatted); 
-    // changeBaseLayer() // select WGS84 ellipsoid for testing
     viewer.baseLayerPicker.destroy(); // No longer needed, we manage base layers in the sidebar based on the stored references
 
     document.querySelector(".cesium-credit-expand-link").textContent = "Copyright Datenquellen";
@@ -484,18 +480,8 @@ function initializeSidebar() {
 function initializeImageSpotViewer() {
     image360viewer = new PhotoSphereViewer.Viewer({
         container: 'img360viewer',
-        // adapter: [PhotoSphereViewer.CubemapAdapter, {
-        //     flipTopBottom: true,
-        // }],
-        plugins: [
-            // [PhotoSphereViewer.VirtualTourPlugin, {
-            //     positionMode: PhotoSphereViewer.VirtualTourPlugin.MODE_GPS,
-            //     renderMode  : PhotoSphereViewer.VirtualTourPlugin.MODE_3D,
-            // }],
-            // PhotoSphereViewer.CompassPlugin,
-        ]
+        plugins: []
     });
-    // virtualTour = image360viewer.getPlugin(PhotoSphereViewer.VirtualTourPlugin);
 }
 
 /**
@@ -553,7 +539,6 @@ function enableMenuToggle(sidebarBtns) {
             // No need to add the sidebar width since it is not in this div
             cesiumContainer.style.marginLeft = menuWidth;
             sensorInfoPanel.style.marginLeft = menuWidth;
-            //sensorInfoPanel.style.width = "calc(100% - " + menuWidth + ")";
             let sensorInfoPanelWidth = window.getComputedStyle(sensorInfoPanel).width;
             let newSensorInfoPanelWidth = parseFloat(sensorInfoPanelWidth);
             if(!switchingMenu) {
@@ -666,7 +651,6 @@ function createMenuLayerHTML(category, layer) {
         if(category.depth === 3) color = window.getComputedStyle(document.documentElement).getPropertyValue('--tertiary-ui-color');
         color = color.replace("#", "%23")
         let svg = "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='" + color + "'/%3e%3c/svg%3e\")";
-        //svg = "#ffff00"
         document.documentElement.style.setProperty("--radio-btn-level-" + category.depth + "-background", svg)
         
         radioBtn.addEventListener("click", function(event) {
@@ -1066,7 +1050,6 @@ function handleLoadingAndUnloadingCityModelEntities(entitiesToShow) {
         if(obj.name === "dgm1m") dgm1Layer = obj;
     });
     // The entities have different formats, but both have an id property that can be used for comparison
-    //console.log("number of entities to show", entitiesToShow.length);
     let currentEntities = viewer.dataSources.getByName(layer.name)[0].entities;
     let entitiesToShowIds = entitiesToShow.map( entity => entity.id );
     let currentEntitiesIds = currentEntities.values.map( entity => entity.id );
@@ -1080,7 +1063,6 @@ function handleLoadingAndUnloadingCityModelEntities(entitiesToShow) {
     let entitiesToUnload = currentEntities.values.filter( (entity) => {
         return !entitiesToShowIds.includes(entity.id);
     });
-    //console.log("number of entities to unload", entitiesToUnload.length);
     // unload
     for(let entity of entitiesToUnload) {
         currentEntities.remove(entity);
@@ -1137,54 +1119,6 @@ function handleLoadingAndUnloadingCityModelEntities(entitiesToShow) {
 
         
     })();
-
-        // Code below is for caching the model.
-        // It doesn't work since cesium doesn't have a way to create a model directly form the data instead of an url
-        //
-        // check if an entity with this id is already cached from a previous load
-        // if(gltfModelStoreDB) {
-        //     var transaction = gltfModelStoreDB.transaction(["gltfModels"]);
-        //     var objectStore = transaction.objectStore("gltfModels");
-        //     var getRequest = objectStore.get(newEntity.id);
-        //     console.log(getRequest);
-        //     getRequest.onsuccess = event => {
-        //         if(getRequest.result) {
-        //             // If found load model from cache
-        //             console.log("FOUND IN DATABASE");
-        //             console.log("typeof(getRequest.result.model): ", typeof(getRequest.result.model))
-        //             console.log("getRequest.result.model: ", getRequest.result.model)
-        //             newEntity.model = getRequest.result.model;
-        //             viewer.entities.add(newEntity);
-        //         } else {
-        //             // If not get it from server and cache it
-        //             // We can directly set the result as uri
-        //             console.log("NOT FOUND IN DATABASE");
-        //             let url = backendBaseUrl + "buildings/" + newEntity.id
-        //             newEntity.model = new Cesium.ModelGraphics({
-        //                 uri: url
-        //             });
-        //             // Add a property with the current timestamp so we can implement FIFO
-        //             newEntity.addProperty("addedToViewerTimestamp");
-        //             newEntity.addedToViewerTimestamp = Date.now();
-        //             viewer.entities.add(newEntity);
-
-        //             fetch(url)
-        //                 .then(response => response.json())
-        //                 .then(data => {
-        //                     newEntity.addProperty("modelData")
-        //                     newEntity.modelData = data;
-
-        //                     var transaction = gltfModelStoreDB.transaction(["gltfModels"], "readwrite");
-        //                     var objectStore = transaction.objectStore("gltfModels");
-        //                     // TODO remove old entities first if max cache size is reached
-        //                     // If max cache size is reached delete the oldest cached model (FIFO)
-        //                     objectStore.add(newEntity.modelData); // all entities must have a unique id property here
-
-        //                 });
-
-        //         }
-        //     };
-        // }
 }
 
 /**
@@ -1340,8 +1274,8 @@ function addLayer(layer) {
                             verticalOrigin: Cesium.VerticalOrigin.CENTER,
                             horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
                             disableDepthTestDistance: Number.POSITIVE_INFINITY, // Never applied --> symbol visible even underground
-                            width: 100, // in px
-                            height: 100,
+                            width: 75, // in px
+                            height: 75,
                             scaleByDistance: new Cesium.NearFarScalar(1, 1.0, 10000, 0.5) // slightly reduce size if camera is far away (100x100 --> 50x50)
                         },
                         properties: new Cesium.PropertyBag({
@@ -1709,8 +1643,6 @@ function startMeasurement(drawingMode) {
     let activeShape; // The shape that is currently drawn (polyline, polygon, ...)
     let activeShapePoints = []; // The shape's vertices
     let floatingPoint; // The point floating beneath the mouse cursor 
-    //let currentPolygonTriangle; // Stored here so we don't have to create millions of triangles when cursor moves
-    //let currentPolygonTrianglePositions;
 
     // Clear all existing measurements (delete entities)
     let entitiesToRemove = viewer.entities.values.filter( entity => entity.name.includes("measurement") );
@@ -1953,24 +1885,6 @@ function enableSlicers(entity, hideOutside) {
     });
     globe.backFaceCulling = false;
     globe.showSkirts = false;
-
-    // for(let direction of [north, east, south, west]) {
-    //     viewer.entities.add({
-    //         name: "",
-    //         position: Cesium.Cartesian3.fromDegrees(-107.0, 40.0, 300000.0),
-    //         ellipsoid: {
-    //           radii: new Cesium.Cartesian3(300000.0, 300000.0, 300000.0),
-    //           material: Cesium.Color.GRAY,
-    //         },
-    //     });
-    // }
-    
-
-    // If edge of rectangle was clicked (with epsilon)
-        // check which edge it was
-        // translate mouse movement into resizing the corresponding edge
-        // update clipping planes
-
 }
 
 
