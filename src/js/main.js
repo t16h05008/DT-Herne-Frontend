@@ -837,7 +837,7 @@ function addImageryEmptyLayer(category, wrapper) {
     layerDiv.appendChild(radioBtn)
 
     let thumb = new Image(64, 64);
-    thumb.src = "static/images/red-x.svg";
+    thumb.src = "./static/images/red-x.svg";
     thumb.alt = "Layer Vorschaubild";
     thumb.style.borderRadius = "10%";
     layerDiv.appendChild(thumb);
