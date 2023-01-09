@@ -10,7 +10,7 @@
     --sensor-info-panel-height: 250px;
     --cesium-container-height: calc(100vh - var(--header-height) - var(--header-spacer-height) - var(--footer-height));
     --coord-overlay-bot-spacer: 10px;
-    --north-arrow-bot-spacer: 170px;
+    --north-arrow-bot-spacer: 10px; /* 170 px */
 
     --primary-ui-color: #00A4D7;
     --secondary-ui-color: #007C33;
@@ -51,7 +51,8 @@ body, html {
     bottom: var(--coord-overlay-bot-spacer);
     right: 15px;
     width: min-content;
-    background-color: rgba(255, 255, 255, 0.3)
+    background-color: rgba(255, 255, 255, 0.3);
+    visibility: hidden; /* don't need that for now */
 }
 
 #coordOverlay td:first-child {
